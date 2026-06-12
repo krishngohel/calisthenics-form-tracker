@@ -1,0 +1,249 @@
+import { describe, it, expect } from "vitest";
+import {
+  angleAtJoint,
+} from "../pose/geometry";
+import { HoldStateMachine } from "../hold/stateMachine";
+import { getDistanceContext } from "../pose/distance";
+import { detectSkill } from "../skills/autoDetect";
+import { computeFormScore } from "../scoring/formScore";
+import { evaluateSkill, getSkill, SKILLS } from "../skills/registry";
+import { generateCoachingPlan } from "../coaching/planGenerator";
+
+describe("geometry", () => {
+  it("computes straight angle", () => {
+    const a = { x: 0, y: 0 };
+    const b = { x: 0.5, y: 0 };
+    const c = { x: 1, y: 0 };
+    expect(angleAtJoint(a, b, c)).toBeCloseTo(180, 0);
+  });
+});
+
+describe("hold state machine", () => {
+  it("starts holding immediately with default config", () => {
+    const fsm = new HoldStateMachine();
+    const r = fsm.tick(true, 1000);
+    expect(r.state).toBe("holding");
+    expect(r.holdStartTime).toBe(1000);
+  });
+
+  it("stops immediately when criteria lost with default config", () => {
+    const fsm = new HoldStateMachine();
+    fsm.tick(true, 1000);
+    const r = fsm.tick(false, 2500);
+    expect(r.state).toBe("dropped");
+    expect(r.lastHoldMs).toBe(1500);
+  });
+
+  it("transitions idle to holding after qualifying", () => {
+    const fsm = new HoldStateMachine({ qualifyingMs: 100, dropGraceMs: 50, resetDelayMs: 100, mode: "hold_only" });
+    let r = fsm.tick(true, 0);
+    expect(r.state).toBe("qualifying");
+    r = fsm.tick(true, 150);
+    expect(r.state).toBe("holding");
+  });
+
+  it("returns to idle when criteria lost while qualifying", () => {
+    const fsm = new HoldStateMachine({ qualifyingMs: 100, dropGraceMs: 50, resetDelayMs: 100, mode: "hold_only" });
+    fsm.tick(true, 0);
+    const r = fsm.tick(false, 50);
+    expect(r.state).toBe("idle");
+  });
+
+  it("measures hold from skill start through grace config", () => {
+    const fsm = new HoldStateMachine({ qualifyingMs: 100, dropGraceMs: 200, resetDelayMs: 100, mode: "perfect" });
+    fsm.tick(true, 0); // skill begins
+    fsm.tick(true, 150); // now holding (timer backdated to skill start)
+    fsm.tick(false, 1150); // criteria lost — grace begins
+    const r = fsm.tick(false, 1400); // grace expired -> dropped
+    expect(r.state).toBe("dropped");
+    expect(r.lastHoldMs).toBe(1150);
+  });
+
+  it("survives a brief form break within the grace window", () => {
+    const fsm = new HoldStateMachine({ qualifyingMs: 100, dropGraceMs: 200, resetDelayMs: 100, mode: "perfect" });
+    fsm.tick(true, 0);
+    fsm.tick(true, 150); // holding
+    fsm.tick(false, 300); // blip
+    const r = fsm.tick(true, 400); // recovered within grace
+    expect(r.state).toBe("holding");
+  });
+});
+
+describe("distance context", () => {
+  it("detects far camera from small body span", () => {
+    const farBody: Record<string, { x: number; y: number } | null> = {
+      nose: { x: 0.5, y: 0.2 },
+      leftShoulder: { x: 0.45, y: 0.28 },
+      rightShoulder: { x: 0.55, y: 0.28 },
+      leftHip: { x: 0.45, y: 0.38 },
+      rightHip: { x: 0.55, y: 0.38 },
+      leftAnkle: { x: 0.45, y: 0.48 },
+      rightAnkle: { x: 0.55, y: 0.48 },
+    };
+    const ctx = getDistanceContext(farBody);
+    expect(ctx.isFar).toBe(true);
+    expect(ctx.captureMaxEdge).toBeGreaterThan(640);
+    expect(ctx.visThreshold).toBeLessThan(0.4);
+  });
+});
+
+describe("skills registry", () => {
+  it("has all 19 skills", () => {
+    expect(SKILLS.length).toBe(19);
+  });
+
+  it("caps form score when not in hold position", () => {
+    const score = computeFormScore(false, [
+      { id: "a", label: "A", score: 100, passed: true },
+    ]);
+    expect(score).toBeLessThanOrEqual(25);
+  });
+
+  it("does not treat standing as dips hold", () => {
+    const standing: Record<string, { x: number; y: number } | null> = {
+      leftShoulder: { x: 0.45, y: 0.3 },
+      rightShoulder: { x: 0.55, y: 0.3 },
+      leftElbow: { x: 0.45, y: 0.45 },
+      rightElbow: { x: 0.55, y: 0.45 },
+      leftWrist: { x: 0.45, y: 0.55 },
+      rightWrist: { x: 0.55, y: 0.55 },
+      leftHip: { x: 0.45, y: 0.5 },
+      rightHip: { x: 0.55, y: 0.5 },
+    };
+    const result = evaluateSkill(
+      "dips",
+      standing,
+      { left: null, right: null },
+      [standing],
+      "hold_only"
+    );
+    expect(result?.holdCriteriaMet).toBe(false);
+    expect(result?.formScore).toBeLessThanOrEqual(25);
+  });
+
+  it("does not treat standing as push-up hold", () => {
+    const standing: Record<string, { x: number; y: number } | null> = {
+      leftShoulder: { x: 0.45, y: 0.25 },
+      rightShoulder: { x: 0.55, y: 0.25 },
+      leftElbow: { x: 0.45, y: 0.4 },
+      rightElbow: { x: 0.55, y: 0.4 },
+      leftWrist: { x: 0.45, y: 0.55 },
+      rightWrist: { x: 0.55, y: 0.55 },
+      leftHip: { x: 0.45, y: 0.45 },
+      rightHip: { x: 0.55, y: 0.45 },
+      leftAnkle: { x: 0.45, y: 0.7 },
+      rightAnkle: { x: 0.55, y: 0.7 },
+    };
+    const result = evaluateSkill(
+      "push-ups",
+      standing,
+      { left: null, right: null },
+      [standing],
+      "hold_only"
+    );
+    expect(result?.holdCriteriaMet).toBe(false);
+    expect(result?.formScore).toBeLessThanOrEqual(25);
+  });
+
+  it("auto-detects handstand from inverted pose", () => {
+    const body: Record<string, { x: number; y: number } | null> = {
+      nose: { x: 0.5, y: 0.2 },
+      leftShoulder: { x: 0.45, y: 0.35 },
+      rightShoulder: { x: 0.55, y: 0.35 },
+      leftHip: { x: 0.45, y: 0.5 },
+      rightHip: { x: 0.55, y: 0.5 },
+      leftWrist: { x: 0.45, y: 0.7 },
+      rightWrist: { x: 0.55, y: 0.7 },
+      leftAnkle: { x: 0.45, y: 0.1 },
+      rightAnkle: { x: 0.55, y: 0.1 },
+      leftElbow: { x: 0.45, y: 0.5 },
+      rightElbow: { x: 0.55, y: 0.5 },
+      leftKnee: { x: 0.45, y: 0.35 },
+      rightKnee: { x: 0.55, y: 0.35 },
+    };
+    const detected = detectSkill(body, { left: null, right: null }, [body], "hold_only");
+    expect(detected?.skillId).toBe("handstand");
+    expect(detected?.holdMatch).toBe(true);
+  });
+
+  it("evaluates handstand inverted", () => {
+    const body: Record<string, { x: number; y: number } | null> = {
+      nose: { x: 0.5, y: 0.2 },
+      leftShoulder: { x: 0.45, y: 0.35 },
+      rightShoulder: { x: 0.55, y: 0.35 },
+      leftHip: { x: 0.45, y: 0.5 },
+      rightHip: { x: 0.55, y: 0.5 },
+      leftWrist: { x: 0.45, y: 0.7 },
+      rightWrist: { x: 0.55, y: 0.7 },
+      leftAnkle: { x: 0.45, y: 0.1 },
+      rightAnkle: { x: 0.55, y: 0.1 },
+      leftElbow: { x: 0.45, y: 0.5 },
+      rightElbow: { x: 0.55, y: 0.5 },
+      leftKnee: { x: 0.45, y: 0.35 },
+      rightKnee: { x: 0.55, y: 0.35 },
+    };
+    const result = evaluateSkill("handstand", body, { left: null, right: null }, [body], "hold_only");
+    expect(result?.holdCriteriaMet).toBe(true);
+  });
+});
+
+describe("one-arm handstand", () => {
+  const invertedBody: Record<string, { x: number; y: number } | null> = {
+    nose: { x: 0.5, y: 0.25 },
+    leftShoulder: { x: 0.45, y: 0.4 },
+    rightShoulder: { x: 0.55, y: 0.4 },
+    leftHip: { x: 0.45, y: 0.55 },
+    rightHip: { x: 0.55, y: 0.55 },
+    leftWrist: { x: 0.45, y: 0.75 },
+    rightWrist: { x: 0.55, y: 0.6 }, // free hand raised
+    leftAnkle: { x: 0.45, y: 0.1 },
+    rightAnkle: { x: 0.55, y: 0.1 },
+    leftElbow: { x: 0.45, y: 0.55 },
+    rightElbow: { x: 0.55, y: 0.5 },
+    leftKnee: { x: 0.45, y: 0.35 },
+    rightKnee: { x: 0.55, y: 0.35 },
+  };
+
+  it("detects hand off ground via wrist height delta", () => {
+    const result = evaluateSkill(
+      "one-arm-handstand",
+      invertedBody,
+      { left: null, right: null },
+      [invertedBody],
+      "hold_only"
+    );
+    expect(result?.holdCriteriaMet).toBe(true);
+  });
+
+  it("detects hand off ground when only one hand is tracked", () => {
+    const levelWrists = {
+      ...invertedBody,
+      rightWrist: { x: 0.55, y: 0.75 },
+    };
+    const result = evaluateSkill(
+      "one-arm-handstand",
+      levelWrists,
+      { left: [{ x: 0.45, y: 0.75 }], right: null },
+      [levelWrists],
+      "hold_only"
+    );
+    expect(result?.holdCriteriaMet).toBe(true);
+  });
+});
+
+describe("coaching", () => {
+  it("generates plan from failed metrics", () => {
+    const plan = generateCoachingPlan("handstand", [
+      { id: "body_line", label: "Straight line", score: 40, passed: false },
+    ]);
+    expect(plan.recommendedDrills.length).toBeGreaterThan(0);
+  });
+});
+
+describe("skill map", () => {
+  it("every skill is retrievable", () => {
+    for (const s of SKILLS) {
+      expect(getSkill(s.id)?.name).toBe(s.name);
+    }
+  });
+});

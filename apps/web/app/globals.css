@@ -1,0 +1,30 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+:root {
+  --bg: #0a0f14;
+  --surface: #121a22;
+  --accent: #22d3a7;
+  --accent-dim: #14866a;
+  --text: #e8f0f5;
+  --muted: #8aa0b2;
+  --danger: #f87171;
+  --warning: #fbbf24;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: max(3rem, env(safe-area-inset-bottom));
+}
