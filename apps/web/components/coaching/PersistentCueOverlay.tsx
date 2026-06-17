@@ -46,7 +46,7 @@ export function PersistentCueOverlay({
           <button
             type="button"
             onClick={() => onDismiss(cue.id)}
-            className="shrink-0 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-bg hover:bg-accent/90"
+            className="shrink-0 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground shadow-sm hover:bg-accent-hover"
             aria-label={`Dismiss cue: ${cue.text}`}
           >
             Got it

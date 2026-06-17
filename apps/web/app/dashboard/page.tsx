@@ -67,28 +67,31 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-muted">Welcome back — track your skill progress</p>
         </div>
-        <Link
-          href="/skills"
-          className="inline-flex min-h-11 items-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-bg"
-        >
+        <Link href="/skills" className="btn-primary text-sm">
           Train
         </Link>
       </div>
 
       <section className="mb-8 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-white/10 bg-surface p-4">
-          <p className="text-xs uppercase tracking-wide text-muted">Trained skills</p>
-          <p className="mt-1 text-2xl font-semibold">{trainedSkills}</p>
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Trained skills
+          </p>
+          <p className="mt-2 text-2xl font-bold text-accent-hover">{trainedSkills}</p>
         </div>
-        <div className="rounded-xl border border-white/10 bg-surface p-4">
-          <p className="text-xs uppercase tracking-wide text-muted">Best hold</p>
-          <p className="mt-1 text-2xl font-semibold">
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Best hold
+          </p>
+          <p className="mt-2 text-2xl font-bold text-accent-hover">
             {bestAnySkillMs ? `${(bestAnySkillMs / 1000).toFixed(1)}s` : "—"}
           </p>
         </div>
-        <div className="rounded-xl border border-white/10 bg-surface p-4">
-          <p className="text-xs uppercase tracking-wide text-muted">Sessions (7d)</p>
-          <p className="mt-1 text-2xl font-semibold">{sessionsThisWeek}</p>
+        <div className="card p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Sessions (7d)
+          </p>
+          <p className="mt-2 text-2xl font-bold text-accent-hover">{sessionsThisWeek}</p>
         </div>
       </section>
 
@@ -109,7 +112,7 @@ export default async function DashboardPage() {
               <Link
                 key={skill.id}
                 href={`/train/${skill.id}`}
-                className="rounded-xl border border-white/10 bg-surface p-4 hover:border-accent/40"
+                className="card-interactive p-4"
               >
                 <h3 className="font-medium">{skill.name}</h3>
                 <p className="mt-1 text-sm text-muted">

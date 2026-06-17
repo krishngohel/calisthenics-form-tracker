@@ -32,39 +32,46 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="mb-6 text-2xl font-bold">Log in</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg bg-surface px-4 py-3 outline-none ring-accent focus:ring-2"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg bg-surface px-4 py-3 outline-none ring-accent focus:ring-2"
-          required
-        />
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-xl bg-accent py-3 font-semibold text-bg disabled:opacity-50"
-        >
-          {loading ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
-      <p className="mt-4 text-center text-sm text-muted">
-        No account?{" "}
-        <Link href="/signup" className="text-accent hover:underline">
-          Sign up
-        </Link>
-      </p>
+      <div className="card p-8">
+        <h1 className="mb-2 text-2xl font-bold text-foreground">Welcome back</h1>
+        <p className="mb-6 text-sm text-muted">Sign in to save sessions and track progress.</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input-field"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="input-field"
+            required
+          />
+          {error && (
+            <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full disabled:opacity-50"
+          >
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+        <p className="mt-6 text-center text-sm text-muted">
+          No account?{" "}
+          <Link href="/signup" className="font-medium text-accent hover:text-accent-hover hover:underline">
+            Sign up
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

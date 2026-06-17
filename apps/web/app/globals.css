@@ -3,18 +3,34 @@
 @import "tailwindcss/utilities";
 
 :root {
-  --bg: #0a0f14;
-  --surface: #121a22;
-  --accent: #22d3a7;
-  --accent-dim: #14866a;
-  --text: #e8f0f5;
-  --muted: #8aa0b2;
-  --danger: #f87171;
-  --warning: #fbbf24;
+  --bg: #f6faf8;
+  --bg-alt: #e9f5f0;
+  --surface: #ffffff;
+  --surface-muted: #f0f7f4;
+  --border: #d4e8df;
+  --border-subtle: #e8f2ed;
+  --accent: #0d9488;
+  --accent-hover: #0f766e;
+  --accent-soft: #ccfbf1;
+  --accent-muted: #99f6e4;
+  --accent-foreground: #ffffff;
+  --text: #1a2e28;
+  --muted: #5f736a;
+  --danger: #e11d48;
+  --danger-soft: #fff1f2;
+  --warning: #d97706;
+  --warning-soft: #fffbeb;
+  --shadow-color: 26 46 40;
 }
 
 body {
-  background: var(--bg);
+  background: linear-gradient(
+    165deg,
+    var(--bg) 0%,
+    var(--bg-alt) 45%,
+    #f0faf6 100%
+  );
+  background-attachment: fixed;
   color: var(--text);
   min-height: 100vh;
   -webkit-tap-highlight-color: transparent;
@@ -27,4 +43,42 @@ body {
 
 .safe-bottom {
   padding-bottom: max(3rem, env(safe-area-inset-bottom));
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-border bg-surface shadow-card;
+  }
+
+  .card-interactive {
+    @apply card transition hover:border-accent hover:shadow-card-hover;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border border-border bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent-soft;
+  }
+
+  .btn-primary {
+    @apply rounded-xl bg-accent px-6 py-3 font-semibold text-accent-foreground shadow-sm transition hover:bg-accent-hover hover:shadow-md active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply rounded-xl border border-border bg-surface px-6 py-3 font-semibold text-foreground shadow-sm transition hover:border-accent hover:bg-surface-muted active:scale-[0.98];
+  }
+
+  .chip {
+    @apply rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent-hover;
+  }
+
+  .mode-toggle {
+    @apply flex w-full rounded-xl border border-border bg-surface-muted p-1 shadow-sm sm:w-auto;
+  }
+
+  .mode-toggle-btn {
+    @apply min-h-11 flex-1 rounded-lg px-3 py-2 text-sm capitalize text-muted transition hover:text-accent-hover sm:flex-none sm:px-4;
+  }
+
+  .mode-toggle-btn-active {
+    @apply bg-accent font-medium text-accent-foreground shadow-sm;
+  }
 }

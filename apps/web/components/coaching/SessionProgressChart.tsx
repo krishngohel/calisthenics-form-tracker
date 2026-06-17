@@ -15,15 +15,21 @@ interface SessionProgressChartProps {
   points: SessionProgressPoint[];
 }
 
+const GRID = "#d4e8df";
+const AXIS = "#5f736a";
+const ACCENT = "#0d9488";
+
 export function SessionProgressChart({ points }: SessionProgressChartProps) {
   const latest = points[points.length - 1]?.formScore;
 
   return (
-    <div className="rounded-xl border border-white/10 bg-surface p-4">
+    <div className="card p-4">
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold text-muted">Session progress</h3>
         {latest != null && (
-          <span className="text-sm tabular-nums text-accent">{latest}% form</span>
+          <span className="text-sm tabular-nums font-medium text-accent">
+            {latest}% form
+          </span>
         )}
       </div>
 
@@ -38,26 +44,27 @@ export function SessionProgressChart({ points }: SessionProgressChartProps) {
               data={points}
               margin={{ top: 4, right: 8, left: -16, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff12" />
+              <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
               <XAxis
                 dataKey="elapsedSec"
-                tick={{ fill: "#94a3b8", fontSize: 11 }}
+                tick={{ fill: AXIS, fontSize: 11 }}
                 tickFormatter={(v) => `${v}s`}
-                stroke="#ffffff20"
+                stroke={GRID}
               />
               <YAxis
                 domain={[0, 100]}
-                tick={{ fill: "#94a3b8", fontSize: 11 }}
+                tick={{ fill: AXIS, fontSize: 11 }}
                 tickFormatter={(v) => `${v}%`}
-                stroke="#ffffff20"
+                stroke={GRID}
                 width={36}
               />
               <Tooltip
                 contentStyle={{
-                  background: "#0f1419",
-                  border: "1px solid #22d3a740",
-                  borderRadius: 8,
+                  background: "#ffffff",
+                  border: "1px solid #d4e8df",
+                  borderRadius: 12,
                   fontSize: 12,
+                  boxShadow: "0 4px 16px rgba(26, 46, 40, 0.08)",
                 }}
                 labelFormatter={(v) => `${v}s into session`}
                 formatter={(value: number) => [`${value}%`, "Form"]}
@@ -65,7 +72,7 @@ export function SessionProgressChart({ points }: SessionProgressChartProps) {
               <Line
                 type="monotone"
                 dataKey="formScore"
-                stroke="#22d3a7"
+                stroke={ACCENT}
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}

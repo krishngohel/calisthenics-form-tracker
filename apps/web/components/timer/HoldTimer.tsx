@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { HoldState } from "@cft/core";
+import type { HoldState, TrainMode } from "@cft/core";
 
 interface HoldTimerProps {
   state: HoldState;
-  /** performance.now() timestamp when the hold started (null when not holding). */
   holdStartTime: number | null;
   lastHoldMs: number;
   bestHoldMs: number;
   formScore: number;
-  mode: "hold_only" | "perfect";
+  mode: TrainMode;
 }
 
 function formatMs(ms: number): string {
@@ -37,8 +36,6 @@ export function HoldTimer({
   const [elapsedMs, setElapsedMs] = useState(0);
   const rafRef = useRef(0);
 
-  // Self-animating elapsed time — smooth at display refresh rate regardless
-  // of how often pose detection results arrive.
   useEffect(() => {
     if (state !== "holding" || holdStartTime === null) {
       cancelAnimationFrame(rafRef.current);
@@ -58,36 +55,46 @@ export function HoldTimer({
 
   const displayMs =
     state === "holding" ? elapsedMs : state === "dropped" ? lastHoldMs : 0;
+  const isLearn = mode === "learn";
   const isActive = state === "holding";
-  const showForm = isActive || formScore > 0;
+  const showForm = isLearn || isActive || formScore > 0;
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="card flex flex-col items-center gap-2 p-6">
       <div
-        className={`text-sm font-medium uppercase tracking-widest ${
-          state === "holding" ? "text-accent" : "text-muted"
+        className={`text-sm font-semibold uppercase tracking-widest ${
+          isLearn
+            ? "text-warning"
+            : state === "holding"
+              ? "text-accent"
+              : "text-muted"
         }`}
       >
-        {STATE_LABELS[state]}
+        {isLearn ? "Learn" : STATE_LABELS[state]}
       </div>
-      <div
-        className={`font-mono text-4xl font-bold tabular-nums sm:text-5xl ${
-          state === "holding" ? "text-accent" : "text-white"
-        }`}
-      >
-        {formatMs(displayMs)}
-      </div>
+      {!isLearn && (
+        <div
+          className={`font-mono text-4xl font-bold tabular-nums sm:text-5xl ${
+            state === "holding" ? "text-accent" : "text-foreground"
+          }`}
+        >
+          {formatMs(displayMs)}
+        </div>
+      )}
+      {isLearn && (
+        <div className="text-center text-sm leading-relaxed text-muted">
+          Match the ghost pose — follow the yellow arrows
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted">
-        <span>
-          Form {showForm ? `${formScore}%` : "—"}
-        </span>
+        <span>Form {showForm ? `${formScore}%` : "—"}</span>
         <span className="capitalize">{mode.replace("_", " ")}</span>
-        {bestHoldMs > 0 && <span>Best {formatMs(bestHoldMs)}</span>}
+        {!isLearn && bestHoldMs > 0 && <span>Best {formatMs(bestHoldMs)}</span>}
       </div>
-      {isActive && (
-        <div className="h-1 w-full max-w-48 overflow-hidden rounded-full bg-surface">
+      {(isActive || isLearn) && (
+        <div className="h-1.5 w-full max-w-48 overflow-hidden rounded-full bg-accent-soft">
           <div
-            className="h-full bg-accent transition-[width] duration-700 ease-out"
+            className="h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
             style={{ width: `${formScore}%` }}
           />
         </div>

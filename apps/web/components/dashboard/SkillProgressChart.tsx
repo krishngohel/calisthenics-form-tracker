@@ -26,10 +26,14 @@ function formatSec(ms: number): string {
   return `${(ms / 1000).toFixed(1)}s`;
 }
 
+const GRID = "#d4e8df";
+const AXIS = "#5f736a";
+const ACCENT = "#0d9488";
+
 export function SkillProgressChart({ data, skillName }: SkillProgressChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-xl bg-surface text-muted">
+      <div className="card flex h-48 items-center justify-center text-muted">
         No sessions yet for {skillName}
       </div>
     );
@@ -41,15 +45,22 @@ export function SkillProgressChart({ data, skillName }: SkillProgressChartProps)
   }));
 
   return (
-    <div className="rounded-xl bg-surface p-4">
-      <h3 className="mb-4 font-semibold">{skillName} — hold progress</h3>
+    <div className="card p-5">
+      <h3 className="mb-4 font-semibold text-foreground">
+        {skillName} — hold progress
+      </h3>
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#ffffff15" />
-          <XAxis dataKey="date" stroke="#8aa0b2" fontSize={12} />
-          <YAxis stroke="#8aa0b2" fontSize={12} unit="s" />
+          <CartesianGrid strokeDasharray="3 3" stroke={GRID} />
+          <XAxis dataKey="date" stroke={AXIS} fontSize={12} />
+          <YAxis stroke={AXIS} fontSize={12} unit="s" />
           <Tooltip
-            contentStyle={{ background: "#121a22", border: "1px solid #ffffff20" }}
+            contentStyle={{
+              background: "#ffffff",
+              border: "1px solid #d4e8df",
+              borderRadius: 12,
+              boxShadow: "0 4px 16px rgba(26, 46, 40, 0.08)",
+            }}
             formatter={(value: number, name: string) => {
               if (name === "bestHoldSec") return [formatSec(value * 1000), "Best hold"];
               if (name === "avgFormScore") return [`${value}%`, "Form score"];
@@ -59,9 +70,9 @@ export function SkillProgressChart({ data, skillName }: SkillProgressChartProps)
           <Line
             type="monotone"
             dataKey="bestHoldSec"
-            stroke="#22d3a7"
+            stroke={ACCENT}
             strokeWidth={2}
-            dot={{ fill: "#22d3a7" }}
+            dot={{ fill: ACCENT, strokeWidth: 0, r: 4 }}
           />
         </LineChart>
       </ResponsiveContainer>

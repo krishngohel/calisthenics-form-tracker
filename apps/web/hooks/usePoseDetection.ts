@@ -6,6 +6,7 @@ import type {
   HandLandmarks,
   Landmark,
   PerformanceTier,
+  DistanceContext,
 } from "@cft/core";
 import {
   HandInterpolator,
@@ -18,6 +19,7 @@ import {
   OVERLAY_SMOOTHING,
   HOLD_SMOOTHING,
 } from "@cft/core";
+import { isIOS } from "@/lib/camera/platform";
 
 export interface PoseDetectionState {
   inferenceMs: number;
@@ -31,6 +33,8 @@ export interface UsePoseDetectionOptions {
   /** Run hand landmarker for fingertip skeleton. Default true. */
   trackHands?: boolean;
   onFrame?: (body: Record<string, Landmark | null>, hands: HandLandmarks) => void;
+  /** Fired each detection frame with athlete distance in frame. */
+  onDistanceContext?: (ctx: DistanceContext) => void;
 }
 
 /** Max consecutive outlier rejections before force-accepting (legit fast movement). */
@@ -78,7 +82,8 @@ export function usePoseDetection(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   options: UsePoseDetectionOptions = {}
 ) {
-  const { bodyProvider = "movenet", trackHands = true, onFrame } = options;
+  const { bodyProvider = "movenet", trackHands = true, onFrame, onDistanceContext } =
+    options;
   const workerRef = useRef<Worker | null>(null);
   const overlaySmootherRef = useRef(new PoseSmoother());
   const holdSmootherRef = useRef(new PoseSmoother());
@@ -98,6 +103,11 @@ export function usePoseDetection(
     onFrameRef.current = onFrame;
   });
 
+  const onDistanceContextRef = useRef(onDistanceContext);
+  useEffect(() => {
+    onDistanceContextRef.current = onDistanceContext;
+  });
+
   // Default to medium so SSR and first client paint match; tier is resolved after mount.
   const [tier, setTier] = useState<PerformanceTier>("medium");
   const profile = PERFORMANCE_PROFILES[tier];
@@ -105,7 +115,7 @@ export function usePoseDetection(
   const holdTuning = HOLD_SMOOTHING[tier];
 
   useEffect(() => {
-    setTier(detectPerformanceTier());
+    setTier(isIOS() ? "low" : detectPerformanceTier());
   }, []);
 
   const [state, setState] = useState<PoseDetectionState>({
@@ -157,6 +167,7 @@ export function usePoseDetection(
         const rawBody = data.body as Record<string, Landmark | null>;
         const distanceCtx = getDistanceContext(rawBody);
         captureEdgeRef.current = distanceCtx.captureMaxEdge;
+        onDistanceContextRef.current?.(distanceCtx);
 
         if (rejectOutliers(lastBodyRef.current, rawBody)) {
           rejectCountRef.current++;
@@ -403,5 +414,6 @@ export function usePoseBenchmark(
 export function getStoredBodyProvider(): BodyProviderId {
   if (typeof window === "undefined") return "movenet";
   const stored = localStorage.getItem("cft-body-provider");
-  return stored === "mediapipe" ? "mediapipe" : "movenet";
+  if (stored === "mediapipe" || stored === "movenet") return stored;
+  return isIOS() ? "mediapipe" : "movenet";
 }

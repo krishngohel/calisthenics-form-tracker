@@ -168,3 +168,31 @@ export function midpoint(
     visibility: Math.min(a.visibility ?? 1, b.visibility ?? 1),
   };
 }
+
+/** Shoulders elevated toward ears — poor scapular depression. */
+export function shouldersShrugged(
+  lm: Record<string, Landmark | null>,
+  threshold = 0.06
+): boolean {
+  const nose = lm.nose;
+  const shoulder = midpoint(lm.leftShoulder, lm.rightShoulder);
+  if (!nose || !shoulder) return false;
+  return shoulder.y - nose.y < threshold;
+}
+
+/** Chin clears bar but chest stayed low — "chicken necking". */
+export function chickenNecking(lm: Record<string, Landmark | null>): boolean {
+  const nose = lm.nose;
+  const shoulder = midpoint(lm.leftShoulder, lm.rightShoulder);
+  const wrist = midpoint(lm.leftWrist, lm.rightWrist);
+  if (!nose || !shoulder || !wrist) return false;
+  const chinAbove = nose.y < wrist.y + 0.05;
+  const chestLow = shoulder.y > wrist.y - 0.04;
+  return chinAbove && chestLow;
+}
+
+/** Excessive arch when inverted (banana handstand). */
+export function invertedArch(lm: Record<string, Landmark | null>): boolean {
+  if (!isInverted(lm)) return false;
+  return bodyLineDeviation(lm) < 158;
+}

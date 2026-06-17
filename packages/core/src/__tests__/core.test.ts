@@ -1,13 +1,22 @@
 import { describe, it, expect } from "vitest";
 import {
   angleAtJoint,
+  chickenNecking,
+  shouldersShrugged,
+  invertedArch,
 } from "../pose/geometry";
 import { HoldStateMachine } from "../hold/stateMachine";
-import { getDistanceContext } from "../pose/distance";
+import {
+  getDistanceContext,
+  recommendBackCameraZoom,
+  recommendFramingGuidance,
+  shouldSwitchToWiderLens,
+} from "../pose/distance";
 import { detectSkill } from "../skills/autoDetect";
 import { computeFormScore } from "../scoring/formScore";
 import { evaluateSkill, getSkill, SKILLS } from "../skills/registry";
 import { generateCoachingPlan } from "../coaching/planGenerator";
+import { validateLearningPaths } from "../skills/learningPaths";
 
 describe("geometry", () => {
   it("computes straight angle", () => {
@@ -15,6 +24,32 @@ describe("geometry", () => {
     const b = { x: 0.5, y: 0 };
     const c = { x: 1, y: 0 };
     expect(angleAtJoint(a, b, c)).toBeCloseTo(180, 0);
+  });
+
+  it("detects shrugged shoulders vs depressed", () => {
+    const shrugged = {
+      nose: { x: 0.5, y: 0.2 },
+      leftShoulder: { x: 0.45, y: 0.22 },
+      rightShoulder: { x: 0.55, y: 0.22 },
+    };
+    const depressed = {
+      nose: { x: 0.5, y: 0.2 },
+      leftShoulder: { x: 0.45, y: 0.35 },
+      rightShoulder: { x: 0.55, y: 0.35 },
+    };
+    expect(shouldersShrugged(shrugged)).toBe(true);
+    expect(shouldersShrugged(depressed)).toBe(false);
+  });
+
+  it("detects chicken necking at pull-up top", () => {
+    const neckReach = {
+      nose: { x: 0.5, y: 0.15 },
+      leftShoulder: { x: 0.45, y: 0.28 },
+      rightShoulder: { x: 0.55, y: 0.28 },
+      leftWrist: { x: 0.45, y: 0.2 },
+      rightWrist: { x: 0.55, y: 0.2 },
+    };
+    expect(chickenNecking(neckReach)).toBe(true);
   });
 });
 
@@ -85,11 +120,34 @@ describe("distance context", () => {
     expect(ctx.captureMaxEdge).toBeGreaterThan(640);
     expect(ctx.visThreshold).toBeLessThan(0.4);
   });
+
+  it("recommends zoom in when athlete is too small in frame", () => {
+    const range = { min: 1, max: 4, step: 0.1 };
+    expect(recommendBackCameraZoom(0.4, 1.5, range)).toBeGreaterThan(1.5);
+    expect(recommendBackCameraZoom(0.7, 1.5, range)).toBeNull();
+    expect(recommendBackCameraZoom(0.85, 2, range)).toBeLessThan(2);
+  });
+
+  it("requests a wider lens when zoom is already at minimum", () => {
+    const range = { min: 1, max: 4, step: 0.1 };
+    expect(shouldSwitchToWiderLens(0.82, 1, range)).toBe(true);
+    expect(shouldSwitchToWiderLens(0.7, 1.5, range)).toBe(false);
+  });
+
+  it("suggests position coaching when hardware zoom is unavailable", () => {
+    expect(recommendFramingGuidance(0.85)).toContain("Step back");
+    expect(recommendFramingGuidance(0.4)).toContain("Move closer");
+    expect(recommendFramingGuidance(0.68)).toBeNull();
+  });
 });
 
 describe("skills registry", () => {
-  it("has all 19 skills", () => {
-    expect(SKILLS.length).toBe(19);
+  it("has all 29 skills", () => {
+    expect(SKILLS.length).toBe(29);
+  });
+
+  it("assigns every skill to exactly one learning path in order", () => {
+    expect(validateLearningPaths()).toEqual([]);
   });
 
   it("caps form score when not in hold position", () => {

@@ -36,47 +36,54 @@ export default function SignupPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-16">
-      <h1 className="mb-6 text-2xl font-bold">Create account</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          placeholder="Display name"
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          className="w-full rounded-lg bg-surface px-4 py-3 outline-none ring-accent focus:ring-2"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg bg-surface px-4 py-3 outline-none ring-accent focus:ring-2"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password (min 6 chars)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg bg-surface px-4 py-3 outline-none ring-accent focus:ring-2"
-          minLength={6}
-          required
-        />
-        {error && <p className="text-sm text-danger">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-xl bg-accent py-3 font-semibold text-bg disabled:opacity-50"
-        >
-          {loading ? "Creating…" : "Sign up"}
-        </button>
-      </form>
-      <p className="mt-4 text-center text-sm text-muted">
-        Already have an account?{" "}
-        <Link href="/login" className="text-accent hover:underline">
-          Log in
-        </Link>
-      </p>
+      <div className="card p-8">
+        <h1 className="mb-2 text-2xl font-bold text-foreground">Create account</h1>
+        <p className="mb-6 text-sm text-muted">Start tracking holds and form progress.</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Display name"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="input-field"
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input-field"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password (min 6 chars)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="input-field"
+            minLength={6}
+            required
+          />
+          {error && (
+            <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary w-full disabled:opacity-50"
+          >
+            {loading ? "Creating…" : "Sign up"}
+          </button>
+        </form>
+        <p className="mt-6 text-center text-sm text-muted">
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-accent hover:text-accent-hover hover:underline">
+            Log in
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,8 @@
 export type HoldMode = "hold_only" | "perfect";
 
+/** UI training mode — learn shows target pose + correction arrows. */
+export type TrainMode = "learn" | HoldMode;
+
 export type HoldState = "idle" | "qualifying" | "holding" | "dropped";
 
 export interface HoldMachineConfig {

@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
   getSkill,
+  getSkillPathStep,
   evaluateSkill,
   HoldStateMachine,
   generateCoachingPlan,
   type HoldMode,
+  type TrainMode,
   type HoldState,
   type CoachingPlan,
   type FormMetric,
@@ -16,10 +18,12 @@ import {
   type Landmark,
 } from "@cft/core";
 import { TrainCameraPanel } from "@/components/camera/TrainCameraPanel";
-import type { CameraFacingMode } from "@/components/camera/CameraFeed";
+import { useAutoBackCameraFraming } from "@/hooks/useAutoBackCameraFraming";
 import { PoseOverlay } from "@/components/camera/PoseOverlay";
+import { LearnOverlay } from "@/components/camera/LearnOverlay";
 import { HoldTimer } from "@/components/timer/HoldTimer";
 import { CoachingPanel } from "@/components/coaching/CoachingPanel";
+import { LearnMetricsPanel } from "@/components/coaching/LearnMetricsPanel";
 import { PersistentCueOverlay } from "@/components/coaching/PersistentCueOverlay";
 import { SessionProgressChart } from "@/components/coaching/SessionProgressChart";
 import {
@@ -59,9 +63,10 @@ export default function TrainPage() {
   const params = useParams();
   const skillId = params.skillId as string;
   const skill = getSkill(skillId);
+  const pathStep = getSkillPathStep(skillId);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
-  const [mode, setMode] = useState<HoldMode>("hold_only");
+  const [mode, setMode] = useState<TrainMode>("learn");
   const [bodyProvider, setBodyProvider] = useState<"movenet" | "mediapipe">(
     "movenet"
   );
@@ -73,13 +78,25 @@ export default function TrainPage() {
   const [coachingPlan, setCoachingPlan] = useState<CoachingPlan | null>(null);
   const [bestHoldMs, setBestHoldMs] = useState(0);
   const [holdView, setHoldView] = useState<HoldView>(INITIAL_VIEW);
-  const [facingMode, setFacingMode] = useState<CameraFacingMode>("user");
+  const {
+    facingMode,
+    deviceId,
+    onFacingModeChange,
+    onStreamReady,
+    onDistanceContext,
+    framingLabel,
+    framingGuidance,
+    isManualFraming,
+    enableAutoFraming,
+  } = useAutoBackCameraFraming();
   const mirrored = facingMode === "user";
 
   const sessionEndedRef = useRef(false);
   const historyRef = useRef<Record<string, Landmark | null>[]>([]);
   const holdMachineRef = useRef(new HoldStateMachine());
   const prevViewRef = useRef<HoldView>(INITIAL_VIEW);
+  const metricsRef = useRef<FormMetric[]>([]);
+  const [learnMetrics, setLearnMetrics] = useState<FormMetric[]>([]);
   const { process: processFormScore, reset: resetFormScore } =
     useSmoothedFormScore();
   const sessionFormScoreRef = useRef(0);
@@ -96,9 +113,11 @@ export default function TrainPage() {
     reset: resetProgress,
   } = useSessionProgress();
 
+  const holdMode: HoldMode = mode === "learn" ? "hold_only" : mode;
+
   const handleSessionEnd = useCallback(
     async (durationMs: number, formScore: number, metrics: FormMetric[]) => {
-      if (sessionEndedRef.current) return;
+      if (sessionEndedRef.current || mode === "learn") return;
       sessionEndedRef.current = true;
       const plan = generateCoachingPlan(skillId, metrics);
       setCoachingPlan(plan);
@@ -113,7 +132,7 @@ export default function TrainPage() {
         await saveHoldSession({
           userId: user.id,
           skillId,
-          mode,
+          mode: holdMode,
           durationMs,
           formScore,
           metrics,
@@ -121,7 +140,7 @@ export default function TrainPage() {
         await saveCoachingPlan(user.id, plan);
       }
     },
-    [skillId, mode]
+    [skillId, mode, holdMode]
   );
 
   const onFrame = useCallback(
@@ -130,21 +149,58 @@ export default function TrainPage() {
       historyRef.current.push(body);
       if (historyRef.current.length > 30) historyRef.current.shift();
 
+      const evalMode: HoldMode = mode === "learn" ? "perfect" : mode;
       const evaluation = evaluateSkill(
         skillId,
         body,
         hands,
         historyRef.current,
-        mode
+        evalMode
       );
       if (!evaluation) return;
 
+      metricsRef.current = evaluation.metrics;
+      if (mode === "learn") {
+        setLearnMetrics(evaluation.metrics);
+      }
+
+      if (mode === "learn") {
+        const next: HoldView = {
+          state: "idle",
+          holdStartTime: null,
+          lastHoldMs: 0,
+          formScore: processFormScore(
+            evaluation.formScore,
+            "idle",
+            prevViewRef.current.formScore
+          ),
+          liveCues: evaluation.liveCues,
+          visibilityOk: evaluation.visibilityOk,
+          farCamera: evaluation.farCamera ?? false,
+        };
+
+        ingestCues(evaluation.liveCues);
+        recordProgress(next.formScore, "idle");
+
+        const prev = prevViewRef.current;
+        const changed =
+          prev.formScore !== next.formScore ||
+          prev.visibilityOk !== next.visibilityOk ||
+          prev.farCamera !== next.farCamera ||
+          prev.liveCues.join("|") !== next.liveCues.join("|");
+        if (changed) {
+          prevViewRef.current = next;
+          setHoldView(next);
+        }
+        return;
+      }
+
       const criteriaMet =
-        mode === "perfect"
+        holdMode === "perfect"
           ? evaluation.perfectCriteriaMet
           : evaluation.holdCriteriaMet;
 
-      holdMachineRef.current.setMode(mode);
+      holdMachineRef.current.setMode(holdMode);
       const result = holdMachineRef.current.tick(
         criteriaMet,
         performance.now()
@@ -195,7 +251,7 @@ export default function TrainPage() {
         );
       }
     },
-    [skill, skillId, mode, handleSessionEnd, processFormScore, ingestCues, recordProgress]
+    [skill, skillId, mode, holdMode, handleSessionEnd, processFormScore, ingestCues, recordProgress]
   );
 
   const { getRenderLandmarks, getRenderHands, ready, error, profile } =
@@ -203,6 +259,7 @@ export default function TrainPage() {
       bodyProvider,
       trackHands: true,
       onFrame,
+      onDistanceContext,
     });
 
   const resetSession = useCallback(() => {
@@ -214,6 +271,8 @@ export default function TrainPage() {
     resetCues();
     resetProgress();
     sessionFormScoreRef.current = 0;
+    metricsRef.current = [];
+    setLearnMetrics([]);
     prevViewRef.current = INITIAL_VIEW;
     setHoldView(INITIAL_VIEW);
   }, [resetFormScore, resetCues, resetProgress]);
@@ -243,20 +302,40 @@ export default function TrainPage() {
     <div className="mx-auto max-w-6xl px-4 py-4 sm:py-6">
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <Link href="/skills" className="text-sm text-muted hover:text-white">
-            ← Skills
+          <Link href="/skills" className="text-sm font-medium text-muted hover:text-accent">
+            ← Learning paths
           </Link>
+          {pathStep && (
+            <p className="mt-1 text-xs text-accent">
+              {pathStep.path.name} · Step {pathStep.step} of {pathStep.total}
+            </p>
+          )}
           <h1 className="text-xl font-bold sm:text-2xl">{skill.name}</h1>
           <p className="text-sm text-muted">{skill.cameraGuide}</p>
+          {pathStep && pathStep.step > 1 && (
+            <Link
+              href={`/train/${pathStep.path.skillIds[pathStep.step - 2]}`}
+              className="mt-2 inline-block text-xs text-muted hover:text-accent"
+            >
+              ← Previous:{" "}
+              {getSkill(pathStep.path.skillIds[pathStep.step - 2])?.name}
+            </Link>
+          )}
+          {pathStep && pathStep.step < pathStep.total && (
+            <Link
+              href={`/train/${pathStep.path.skillIds[pathStep.step]}`}
+              className="mt-1 inline-block text-xs text-accent hover:underline"
+            >
+              Next: {getSkill(pathStep.path.skillIds[pathStep.step])?.name} →
+            </Link>
+          )}
         </div>
-        <div className="flex w-full rounded-lg bg-surface p-1 sm:w-auto">
-          {(["hold_only", "perfect"] as HoldMode[]).map((m) => (
+        <div className="mode-toggle">
+          {(["learn", "hold_only", "perfect"] as TrainMode[]).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`min-h-11 flex-1 rounded-md px-4 py-2 text-sm capitalize sm:flex-none ${
-                mode === m ? "bg-accent text-bg" : "text-muted hover:text-white"
-              }`}
+              className={`mode-toggle-btn ${mode === m ? "mode-toggle-btn-active" : ""}`}
             >
               {m.replace("_", " ")}
             </button>
@@ -269,8 +348,14 @@ export default function TrainPage() {
           <TrainCameraPanel
             videoRef={videoRef}
             onVideoReady={() => setVideoReady(true)}
+            onStreamReady={onStreamReady}
             facingMode={facingMode}
-            onFacingModeChange={setFacingMode}
+            deviceId={deviceId}
+            onFacingModeChange={onFacingModeChange}
+            framingLabel={framingLabel}
+            framingGuidance={framingGuidance}
+            isManualFraming={isManualFraming}
+            onEnableAutoFraming={enableAutoFraming}
             footer={
               <>
                 {profile.label}
@@ -279,15 +364,25 @@ export default function TrainPage() {
             }
           >
             {videoReady && ready && (
-              <PoseOverlay
-                getLandmarks={getRenderLandmarks}
-                getHands={getRenderHands}
-                mirror={mirrored}
-                opacity={holdView.state === "holding" ? 0.5 : 0.85}
-              />
+              <>
+                <PoseOverlay
+                  getLandmarks={getRenderLandmarks}
+                  getHands={getRenderHands}
+                  mirror={mirrored}
+                  opacity={mode === "learn" ? 0.7 : holdView.state === "holding" ? 0.5 : 0.85}
+                />
+                {mode === "learn" && (
+                  <LearnOverlay
+                    skillId={skillId}
+                    getLandmarks={getRenderLandmarks}
+                    getMetrics={() => metricsRef.current}
+                    mirror={mirrored}
+                  />
+                )}
+              </>
             )}
             {videoReady && !ready && !error && (
-              <div className="absolute inset-x-0 top-14 z-10 mx-auto w-fit max-w-[calc(100%-2rem)] rounded-lg bg-surface/90 px-4 py-2 text-center text-sm text-muted">
+              <div className="absolute inset-x-0 top-14 z-10 mx-auto w-fit max-w-[calc(100%-2rem)] rounded-xl border border-border bg-surface/95 px-4 py-2 text-center text-sm text-muted shadow-card">
                 Loading pose model…
               </div>
             )}
@@ -318,7 +413,8 @@ export default function TrainPage() {
             formScore={holdView.formScore}
             mode={mode}
           />
-          <SessionProgressChart points={progressPoints} />
+          {mode === "learn" && <LearnMetricsPanel metrics={learnMetrics} />}
+          {mode !== "learn" && <SessionProgressChart points={progressPoints} />}
           <CoachingPanel
             pinnedCues={pinnedCues}
             onDismissCue={dismissCue}
@@ -326,7 +422,7 @@ export default function TrainPage() {
             weakPoints={coachingPlan?.weakPoints}
           />
           {sessionEnded && coachingPlan && (
-            <div className="rounded-xl border border-accent/30 p-4">
+            <div className="card border-accent/25 bg-accent-soft/30 p-4">
               <h3 className="mb-2 font-semibold text-accent">Session saved</h3>
               <p className="text-sm text-muted">
                 Hold: {(holdView.lastHoldMs / 1000).toFixed(2)}s · Form{" "}

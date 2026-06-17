@@ -60,8 +60,13 @@ const MP_POSE_MAP: Record<number, string> = {
 
 async function initMoveNet(): Promise<void> {
   if (!tfReady) {
-    await tf.setBackend("webgl");
-    await tf.ready();
+    try {
+      await tf.setBackend("webgl");
+      await tf.ready();
+    } catch {
+      await tf.setBackend("cpu");
+      await tf.ready();
+    }
     tfReady = true;
   }
   if (moveNetDetector) return;
@@ -74,20 +79,64 @@ async function initMoveNet(): Promise<void> {
   );
 }
 
+async function createPoseLandmarker(
+  vision: Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>>
+): Promise<PoseLandmarker> {
+  try {
+    return await PoseLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+        delegate: "GPU",
+      },
+      runningMode: "VIDEO",
+      numPoses: 1,
+    });
+  } catch {
+    return PoseLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+        delegate: "CPU",
+      },
+      runningMode: "VIDEO",
+      numPoses: 1,
+    });
+  }
+}
+
+async function createHandLandmarker(
+  vision: Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>>
+): Promise<HandLandmarker> {
+  try {
+    return await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+        delegate: "GPU",
+      },
+      runningMode: "VIDEO",
+      numHands: 2,
+    });
+  } catch {
+    return HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+        delegate: "CPU",
+      },
+      runningMode: "VIDEO",
+      numHands: 2,
+    });
+  }
+}
+
 async function initMediaPipePose(): Promise<void> {
   if (mpPose) return;
   const vision = await FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm"
   );
-  mpPose = await PoseLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath:
-        "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-      delegate: "GPU",
-    },
-    runningMode: "VIDEO",
-    numPoses: 1,
-  });
+  mpPose = await createPoseLandmarker(vision);
 }
 
 async function initHands(): Promise<void> {
@@ -95,15 +144,7 @@ async function initHands(): Promise<void> {
   const vision = await FilesetResolver.forVisionTasks(
     "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm"
   );
-  handLandmarker = await HandLandmarker.createFromOptions(vision, {
-    baseOptions: {
-      modelAssetPath:
-        "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
-      delegate: "GPU",
-    },
-    runningMode: "VIDEO",
-    numHands: 2,
-  });
+  handLandmarker = await createHandLandmarker(vision);
 }
 
 function ensureCanvas(w: number, h: number): OffscreenCanvasRenderingContext2D {

@@ -1,19 +1,23 @@
 import type { HandLandmarks, Landmark } from "../pose/provider";
 import {
   bodyLineDeviation,
+  chickenNecking,
   elbowFlexion,
   horizontalBodyScore,
+  invertedArch,
   isHorizontalHold,
   isInverted,
   kneeFlexion,
   landmarkVariance,
   midpoint,
+  shouldersShrugged,
   visibilityScore,
   wristsBelowShoulders,
   inWeightSupportPosition,
 } from "../pose/geometry";
 import { computeFormScore } from "../scoring/formScore";
 import { getDistanceContext, stableAngle } from "../pose/distance";
+import { CUES } from "./formPointers";
 
 export type SkillCategory = "upper" | "static" | "bosu" | "legs";
 export type CameraAngle = "side" | "front" | "diagonal";
@@ -45,6 +49,10 @@ export interface SkillDefinition {
   cameraGuide: string;
   needsHands: boolean;
   requiredLandmarks: string[];
+  /**
+   * Rule-based evaluator: pretrained pose landmarks → geometry → cues.
+   * No training data or user-specific models required.
+   */
   evaluate: (
     body: Record<string, Landmark | null>,
     hands: HandLandmarks,
@@ -76,7 +84,182 @@ function vis(body: Record<string, Landmark | null>, keys: string[]): boolean {
   return visibilityScore(body, keys) > ctx.visThreshold;
 }
 
+function shoulderForwardOfWrist(
+  body: Record<string, Landmark | null>,
+  margin = 0.015
+): boolean {
+  const shoulder = midpoint(body.leftShoulder, body.rightShoulder);
+  const wrist = midpoint(body.leftWrist, body.rightWrist);
+  if (!shoulder || !wrist) return false;
+  return Math.abs(shoulder.x - wrist.x) > margin;
+}
+
+function avgKneeFlexion(body: Record<string, Landmark | null>): number {
+  return (kneeFlexion(body, "left") + kneeFlexion(body, "right")) / 2;
+}
+
+function ankleSpreadX(body: Record<string, Landmark | null>): number {
+  const l = body.leftAnkle;
+  const r = body.rightAnkle;
+  if (!l || !r) return 0;
+  return Math.abs(l.x - r.x);
+}
+
 export const SKILLS: SkillDefinition[] = [
+  {
+    id: "dead-hang",
+    name: "Dead Hang",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Side view, full hang with straight arms and relaxed shoulders.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "nose"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "nose"]);
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const shoulder = midpoint(body.leftShoulder, body.rightShoulder);
+      const wrist = midpoint(body.leftWrist, body.rightWrist);
+      const hanging = shoulder && wrist ? wrist.y < shoulder.y - 0.04 : false;
+      const straightArms = elbow > 165;
+      const depressed = !shouldersShrugged(body);
+      const holdMet = hanging && straightArms;
+      const metrics: FormMetric[] = [
+        {
+          id: "hang_position",
+          label: "Active hang",
+          score: hanging ? 100 : 25,
+          passed: !!hanging,
+          cue: CUES.basics.deadHang,
+        },
+        {
+          id: "elbow_bend",
+          label: "Straight arms",
+          score: straightArms ? 100 : Math.max(0, 100 - (165 - elbow)),
+          passed: straightArms,
+          cue: CUES.basics.deadHang,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push({
+          id: "scap_depression",
+          label: "Shoulders packed",
+          score: depressed ? 100 : 45,
+          passed: depressed,
+          cue: CUES.basics.deadHang,
+        });
+      }
+      return baseEval(holdMet, holdMet && depressed, metrics, ok);
+    },
+  },
+  {
+    id: "scapular-pulls",
+    name: "Scapular Pulls",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Hang with straight arms; pull shoulders down without bending elbows.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "nose"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "nose"]);
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const shoulder = midpoint(body.leftShoulder, body.rightShoulder);
+      const wrist = midpoint(body.leftWrist, body.rightWrist);
+      const hanging = shoulder && wrist ? wrist.y < shoulder.y - 0.04 : false;
+      const straightArms = elbow > 165;
+      const scapGap = shoulder && wrist ? shoulder.y - wrist.y : 0;
+      const activeScap = scapGap > 0.14;
+      const holdMet = hanging && straightArms && activeScap;
+      const metrics: FormMetric[] = [
+        {
+          id: "hang_position",
+          label: "Hang setup",
+          score: hanging ? 100 : 25,
+          passed: !!hanging,
+          cue: CUES.basics.scapPull,
+        },
+        {
+          id: "elbow_bend",
+          label: "Straight elbows",
+          score: straightArms ? 100 : Math.max(0, 100 - (165 - elbow)),
+          passed: straightArms,
+          cue: CUES.basics.scapPull,
+        },
+        {
+          id: "active_scap",
+          label: "Scapular depression",
+          score: activeScap ? 100 : 40,
+          passed: activeScap,
+          cue: CUES.basics.scapPull,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push({
+          id: "scap_depression",
+          label: "No shrug",
+          score: !shouldersShrugged(body) ? 100 : 45,
+          passed: !shouldersShrugged(body),
+          cue: CUES.basics.scapPull,
+        });
+      }
+      return baseEval(
+        holdMet,
+        holdMet && !shouldersShrugged(body),
+        metrics,
+        ok
+      );
+    },
+  },
+  {
+    id: "plank-hold",
+    name: "Plank Hold",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Side view, straight line from head to heels.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip"]);
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const horiz = isHorizontalHold(body);
+      const inSupport = inWeightSupportPosition(body);
+      const bodyLine = bodyLineDeviation(body);
+      const straightLine = bodyLine > 165;
+      const lockedElbows = elbow > 165;
+      const holdMet = horiz && inSupport && lockedElbows;
+      const metrics: FormMetric[] = [
+        {
+          id: "horizontal",
+          label: "Plank position",
+          score: horiz && inSupport ? 100 : 30,
+          passed: horiz && inSupport,
+          cue: CUES.basics.plank,
+        },
+        {
+          id: "plank_line",
+          label: "Body line",
+          score: straightLine ? 100 : 50,
+          passed: straightLine,
+          cue: CUES.basics.plank,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push({
+          id: "elbow_bend",
+          label: "Locked elbows",
+          score: lockedElbows ? 100 : 55,
+          passed: lockedElbows,
+          cue: CUES.pushUps.topLockout,
+        });
+      }
+      return baseEval(holdMet, holdMet && straightLine, metrics, ok);
+    },
+  },
   {
     id: "pull-ups",
     name: "Pull-Ups",
@@ -96,32 +279,55 @@ export const SKILLS: SkillDefinition[] = [
       const holdMet = elbow < 120 && chinAbove;
       const bodyLine = bodyLineDeviation(body);
       const hollow = bodyLine > 155;
+      const packedShoulders = !shouldersShrugged(body);
+      const noNeckReach = !chickenNecking(body);
       const metrics: FormMetric[] = [
         {
           id: "chin_height",
           label: "Chin above bar",
           score: chinAbove ? 100 : 30,
           passed: !!chinAbove,
-          cue: "Pull chin above wrist line",
+          cue: CUES.pullUps.chinHeight,
         },
         {
           id: "elbow_bend",
           label: "Elbow flexion",
           score: elbow < 120 ? 100 : Math.max(0, 100 - (elbow - 120)),
           passed: elbow < 120,
-          cue: "Bend elbows more at top",
+          cue: CUES.pullUps.elbowFlex,
         },
       ];
       if (mode === "perfect") {
-        metrics.push({
-          id: "hollow",
-          label: "Hollow body",
-          score: hollow ? 100 : 50,
-          passed: hollow,
-          cue: "Keep ribs down, hollow body",
-        });
+        metrics.push(
+          {
+            id: "hollow",
+            label: "Hollow body",
+            score: hollow ? 100 : 50,
+            passed: hollow,
+            cue: CUES.pullUps.hollow,
+          },
+          {
+            id: "scap_init",
+            label: "Scapular depression",
+            score: packedShoulders ? 100 : 45,
+            passed: packedShoulders,
+            cue: CUES.pullUps.scapInit,
+          },
+          {
+            id: "no_chicken_neck",
+            label: "Chest-driven top",
+            score: noNeckReach ? 100 : 40,
+            passed: noNeckReach,
+            cue: CUES.pullUps.chinHeight,
+          }
+        );
       }
-      return baseEval(holdMet, holdMet && hollow, metrics, ok);
+      return baseEval(
+        holdMet,
+        holdMet && hollow && packedShoulders && noNeckReach,
+        metrics,
+        ok
+      );
     },
   },
   {
@@ -146,25 +352,40 @@ export const SKILLS: SkillDefinition[] = [
           ? landmarkVariance(history.slice(-10), "leftHip")
           : 0;
       const noSwing = variance < 0.002;
+      const packedShoulders = !shouldersShrugged(body);
       const metrics: FormMetric[] = [
         {
           id: "top_position",
           label: "Top hold",
           score: holdMet ? 100 : 40,
           passed: holdMet,
-          cue: "Hold chin above bar",
+          cue: CUES.chinUps.topHold,
         },
       ];
       if (mode === "perfect") {
-        metrics.push({
-          id: "no_swing",
-          label: "Minimal swing",
-          score: noSwing ? 100 : 55,
-          passed: noSwing,
-          cue: "Control momentum, no kip",
-        });
+        metrics.push(
+          {
+            id: "no_swing",
+            label: "Minimal swing",
+            score: noSwing ? 100 : 55,
+            passed: noSwing,
+            cue: CUES.chinUps.noKip,
+          },
+          {
+            id: "scap_init",
+            label: "Packed shoulders",
+            score: packedShoulders ? 100 : 45,
+            passed: packedShoulders,
+            cue: CUES.chinUps.scapInit,
+          }
+        );
       }
-      return baseEval(holdMet, holdMet && noSwing, metrics, ok);
+      return baseEval(
+        holdMet,
+        holdMet && noSwing && packedShoulders,
+        metrics,
+        ok
+      );
     },
   },
   {
@@ -193,7 +414,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Hold position",
           score: holdMet ? (atBottom ? 95 : 85) : 20,
           passed: holdMet,
-          cue: atTop ? "Lock arms at top" : "Lower to 90° bottom",
+          cue: atTop ? CUES.dips.topLockout : CUES.dips.bottomDepth,
         },
       ];
       if (mode === "perfect") {
@@ -202,7 +423,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Bottom depth",
           score: depth ? 100 : atTop ? 70 : 40,
           passed: depth,
-          cue: "Reach 90° at bottom",
+          cue: CUES.dips.bottomDepth,
         });
       }
       return baseEval(holdMet, holdMet && (depth || atTop), metrics, ok);
@@ -233,7 +454,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Hold position",
           score: holdMet ? (atBottom ? 95 : 85) : 20,
           passed: holdMet,
-          cue: atTop ? "Lock arms at top" : "Lower to 90° bottom",
+          cue: atTop ? CUES.pushUps.topLockout : CUES.pushUps.bottomDepth,
         },
       ];
       if (mode === "perfect") {
@@ -242,7 +463,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Bottom depth",
           score: depth ? 100 : atTop ? 70 : 40,
           passed: depth,
-          cue: "Reach 90° at bottom",
+          cue: CUES.pushUps.bottomDepth,
         });
       }
       return baseEval(holdMet, holdMet && (depth || atTop), metrics, ok);
@@ -273,7 +494,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Transition hold",
           score: transition ? 100 : 25,
           passed: transition,
-          cue: "Hold at transition over bar",
+          cue: CUES.muscleUp.transition,
         },
       ];
       if (mode === "perfect") {
@@ -282,7 +503,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Controlled transition",
           score: lowKip ? 100 : 55,
           passed: lowKip,
-          cue: "Avoid excessive kip",
+          cue: CUES.muscleUp.noKip,
         });
       }
       return baseEval(holdMet, holdMet && lowKip, metrics, ok);
@@ -305,20 +526,28 @@ export const SKILLS: SkillDefinition[] = [
       const legsForward = knee > 150;
       const holdMet = hipUp && legsForward;
       const kneesLocked = knee > 165;
+      const scapDepressed = !shouldersShrugged(body);
       const metrics: FormMetric[] = [
         {
           id: "hip_height",
           label: "Hips elevated",
           score: hipUp ? 100 : 40,
           passed: hipUp,
-          cue: "Press hips above wrists",
+          cue: CUES.lSit.hipHeight,
         },
         {
           id: "leg_extension",
           label: "Legs extended",
           score: legsForward ? 100 : 50,
           passed: legsForward,
-          cue: "Extend legs forward",
+          cue: CUES.lSit.legExtension,
+        },
+        {
+          id: "scap_depression",
+          label: "Scapular depression",
+          score: scapDepressed ? 100 : 45,
+          passed: scapDepressed,
+          cue: CUES.lSit.scapDepression,
         },
       ];
       if (mode === "perfect") {
@@ -327,10 +556,15 @@ export const SKILLS: SkillDefinition[] = [
           label: "Knees locked",
           score: kneesLocked ? 100 : 55,
           passed: kneesLocked,
-          cue: "Lock knees and point toes",
+          cue: CUES.lSit.legExtension,
         });
       }
-      return baseEval(holdMet, holdMet && kneesLocked, metrics, ok);
+      return baseEval(
+        holdMet,
+        holdMet && kneesLocked && scapDepressed,
+        metrics,
+        ok
+      );
     },
   },
   {
@@ -360,7 +594,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Knees on arms",
           score: nearArms ? 100 : 45,
           passed: nearArms,
-          cue: "Rest knees on upper arms",
+          cue: CUES.frogStand.kneeStack,
         },
       ];
       if (mode === "perfect") {
@@ -369,7 +603,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Stable hold",
           score: stable ? 100 : 50,
           passed: stable,
-          cue: "Minimize sway",
+          cue: CUES.frogStand.stability,
         });
       }
       return baseEval(holdMet, holdMet && stable, metrics, ok);
@@ -400,7 +634,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Knee stack",
           score: stacked ? 100 : 40,
           passed: stacked,
-          cue: "Stack knees on upper arms",
+          cue: CUES.crowPose.kneeStack,
         },
       ];
       if (mode === "perfect") {
@@ -409,7 +643,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Arm extension",
           score: straightArms ? 100 : 60,
           passed: straightArms,
-          cue: "Straighten arms optional",
+          cue: CUES.crowPose.arms,
         });
       }
       return baseEval(holdMet, holdMet, metrics, ok);
@@ -429,25 +663,128 @@ export const SKILLS: SkillDefinition[] = [
       const holdMet = inverted;
       const line = bodyLineDeviation(body);
       const straight = line > 165;
+      const noBanana = !invertedArch(body);
       const metrics: FormMetric[] = [
         {
           id: "inverted",
           label: "Inverted hold",
           score: inverted ? 100 : 20,
           passed: inverted,
-          cue: "Stack ankles above shoulders",
+          cue: CUES.handstand.inverted,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push(
+          {
+            id: "body_line",
+            label: "Straight body line",
+            score: straight ? 100 : 50,
+            passed: straight,
+            cue: CUES.handstand.bodyLine,
+          },
+          {
+            id: "no_banana",
+            label: "Hollow line",
+            score: noBanana ? 100 : 45,
+            passed: noBanana,
+            cue: CUES.handstand.noBanana,
+          }
+        );
+      }
+      return baseEval(holdMet, holdMet && straight && noBanana, metrics, ok);
+    },
+  },
+  {
+    id: "handstand-push-ups-90",
+    name: "90° Handstand Push-Ups",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view — hold the bottom position with elbows at ~90°.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftAnkle"]);
+      const inverted = isInverted(body);
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const at90 = elbow >= 75 && elbow <= 105;
+      const holdMet = inverted && at90;
+      const line = bodyLineDeviation(body);
+      const stacked = line > 155;
+      const metrics: FormMetric[] = [
+        {
+          id: "inverted",
+          label: "Inverted hold",
+          score: inverted ? 100 : 20,
+          passed: inverted,
+          cue: CUES.hspu90.inverted,
+        },
+        {
+          id: "depth",
+          label: "90° elbow bend",
+          score: at90 ? 100 : Math.max(0, 100 - Math.abs(elbow - 90) * 2),
+          passed: at90,
+          cue: CUES.hspu90.elbow90,
         },
       ];
       if (mode === "perfect") {
         metrics.push({
           id: "body_line",
-          label: "Straight body line",
-          score: straight ? 100 : 50,
-          passed: straight,
-          cue: "Ribs in, straight line shoulder-hip-ankle",
+          label: "Stacked line",
+          score: stacked ? 100 : 50,
+          passed: stacked,
+          cue: CUES.hspu90.bodyLine,
         });
       }
-      return baseEval(holdMet, holdMet && straight, metrics, ok);
+      return baseEval(holdMet, holdMet && stacked, metrics, ok);
+    },
+  },
+  {
+    id: "handstand-push-ups",
+    name: "Handstand Push-Ups",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view — hold bottom or top of the HSPU range.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftAnkle"]);
+      const inverted = isInverted(body);
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const atBottom = elbow < 100;
+      const atTop = elbow > 155;
+      const holdMet = inverted && (atBottom || atTop);
+      const line = bodyLineDeviation(body);
+      const stacked = line > 155;
+      const metrics: FormMetric[] = [
+        {
+          id: "inverted",
+          label: "Inverted position",
+          score: inverted ? 100 : 20,
+          passed: inverted,
+          cue: CUES.hspu.inverted,
+        },
+        {
+          id: "position",
+          label: "ROM hold",
+          score: holdMet ? (atBottom ? 95 : 90) : 25,
+          passed: holdMet,
+          cue: atTop ? CUES.hspu.topLockout : CUES.hspu.bottomDepth,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push({
+          id: "body_line",
+          label: "Stacked line",
+          score: stacked ? 100 : 50,
+          passed: stacked,
+          cue: CUES.hspu.bodyLine,
+        });
+      }
+      return baseEval(holdMet, holdMet && stacked, metrics, ok);
     },
   },
   {
@@ -481,14 +818,14 @@ export const SKILLS: SkillDefinition[] = [
           label: "Inverted",
           score: inverted ? 100 : 25,
           passed: inverted,
-          cue: "Hold inversion",
+          cue: CUES.oneArmHandstand.inverted,
         },
         {
           id: "hand_off",
           label: "Free hand off ground",
           score: handOff ? 100 : 30,
           passed: handOff,
-          cue: "Lift free hand off floor",
+          cue: CUES.oneArmHandstand.handOff,
         },
       ];
       if (mode === "perfect") {
@@ -497,7 +834,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Stacked line",
           score: straight ? 100 : 50,
           passed: straight,
-          cue: "Stack over support hand",
+          cue: CUES.oneArmHandstand.bodyLine,
         });
       }
       return baseEval(holdMet, holdMet && straight, metrics, ok);
@@ -525,7 +862,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Arc phase hold",
           score: holdMet ? 100 : 35,
           passed: holdMet,
-          cue: "Hold through rotation phase",
+          cue: CUES.skinTheCat.arc,
         },
       ];
       if (mode === "perfect") {
@@ -534,7 +871,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Controlled tempo",
           score: controlled ? 100 : 55,
           passed: controlled,
-          cue: "Move slowly through range",
+          cue: CUES.skinTheCat.control,
         });
       }
       return baseEval(holdMet, holdMet && controlled, metrics, ok);
@@ -560,7 +897,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Horizontal body",
           score: horiz > 0.7 ? 100 : Math.round(horiz * 100),
           passed: horiz > 0.7,
-          cue: "Keep body parallel to ground",
+          cue: CUES.frontLever.horizontal,
         },
       ];
       if (mode === "perfect") {
@@ -569,10 +906,266 @@ export const SKILLS: SkillDefinition[] = [
           label: "Straight body",
           score: straight ? 100 : 50,
           passed: straight,
-          cue: "Protract shoulders, straight line",
+          cue: CUES.frontLever.straight,
         });
       }
       return baseEval(holdMet, holdMet && straight, metrics, ok);
+    },
+  },
+  {
+    id: "planche-lean",
+    name: "Planche Lean",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view — lean shoulders past wrists with locked elbows.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftWrist", "leftElbow", "leftHip"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftWrist", "leftElbow"]);
+      const inSupport = inWeightSupportPosition(body);
+      const lean = shoulderForwardOfWrist(body, 0.012);
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const locked = elbow > 165;
+      const horiz = horizontalBodyScore(body);
+      const holdMet = inSupport && lean && locked && horiz > 0.38;
+      const metrics: FormMetric[] = [
+        {
+          id: "lean",
+          label: "Forward lean",
+          score: lean ? 100 : 35,
+          passed: lean,
+          cue: CUES.plancheLean.lean,
+        },
+        {
+          id: "elbow_bend",
+          label: "Locked elbows",
+          score: locked ? 100 : 50,
+          passed: locked,
+          cue: CUES.plancheLean.elbows,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push({
+          id: "plank_line",
+          label: "Rigid plank line",
+          score: bodyLineDeviation(body) > 160 ? 100 : 55,
+          passed: bodyLineDeviation(body) > 160,
+          cue: CUES.plancheLean.line,
+        });
+      }
+      return baseEval(holdMet, holdMet && horiz > 0.42, metrics, ok);
+    },
+  },
+  {
+    id: "pseudo-planche-push-ups",
+    name: "Pseudo Planche Push-Ups",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Side view — push-up with planche lean at top or bottom.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist"]);
+      const inSupport = inWeightSupportPosition(body);
+      const lean = shoulderForwardOfWrist(body, 0.01);
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const atBottom = inSupport && lean && elbow < 105;
+      const atTop = inSupport && lean && elbow > 155;
+      const holdMet = atBottom || atTop;
+      const metrics: FormMetric[] = [
+        {
+          id: "lean",
+          label: "Planche lean",
+          score: lean ? 100 : 35,
+          passed: lean,
+          cue: CUES.pseudoPlanche.lean,
+        },
+        {
+          id: "position",
+          label: "Push position",
+          score: holdMet ? (atBottom ? 95 : 88) : 25,
+          passed: holdMet,
+          cue: atTop ? CUES.pseudoPlanche.topLockout : CUES.pseudoPlanche.bottomDepth,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push({
+          id: "plank_line",
+          label: "Body line",
+          score: bodyLineDeviation(body) > 155 ? 100 : 50,
+          passed: bodyLineDeviation(body) > 155,
+          cue: CUES.pseudoPlanche.line,
+        });
+      }
+      return baseEval(holdMet, holdMet && lean, metrics, ok);
+    },
+  },
+  {
+    id: "tuck-planche",
+    name: "Tuck Planche",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view — knees tucked, shoulders forward of wrists.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftWrist", "leftHip", "leftKnee"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftWrist", "leftHip", "leftKnee"]);
+      const lean = shoulderForwardOfWrist(body, 0.015);
+      const horiz = horizontalBodyScore(body);
+      const knees = avgKneeFlexion(body);
+      const tucked = knees < 95;
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const locked = elbow > 165;
+      const holdMet = lean && horiz > 0.48 && tucked && locked;
+      const metrics: FormMetric[] = [
+        {
+          id: "horizontal",
+          label: "Lifted tuck",
+          score: horiz > 0.48 ? 100 : Math.round(horiz * 100),
+          passed: horiz > 0.48,
+          cue: CUES.tuckPlanche.horizontal,
+        },
+        {
+          id: "lean",
+          label: "Shoulder lean",
+          score: lean ? 100 : 40,
+          passed: lean,
+          cue: CUES.tuckPlanche.lean,
+        },
+        {
+          id: "depth",
+          label: "Knee tuck",
+          score: tucked ? 100 : Math.max(0, 100 - (knees - 95)),
+          passed: tucked,
+          cue: CUES.tuckPlanche.tuck,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push({
+          id: "elbows",
+          label: "Elbow lock",
+          score: locked ? 100 : 55,
+          passed: locked,
+          cue: CUES.tuckPlanche.elbows,
+        });
+      }
+      return baseEval(holdMet, holdMet && locked, metrics, ok);
+    },
+  },
+  {
+    id: "advanced-tuck-planche",
+    name: "Advanced Tuck Planche",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view — open the tuck, hips extended, knees still bent.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftWrist", "leftHip", "leftKnee"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftWrist", "leftHip", "leftKnee"]);
+      const lean = shoulderForwardOfWrist(body, 0.015);
+      const horiz = horizontalBodyScore(body);
+      const knees = avgKneeFlexion(body);
+      const advTuck = knees >= 95 && knees <= 135;
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const locked = elbow > 165;
+      const holdMet = lean && horiz > 0.54 && advTuck && locked;
+      const metrics: FormMetric[] = [
+        {
+          id: "horizontal",
+          label: "Horizontal body",
+          score: horiz > 0.54 ? 100 : Math.round(horiz * 100),
+          passed: horiz > 0.54,
+          cue: CUES.advTuckPlanche.horizontal,
+        },
+        {
+          id: "lean",
+          label: "Shoulder lean",
+          score: lean ? 100 : 40,
+          passed: lean,
+          cue: CUES.advTuckPlanche.lean,
+        },
+        {
+          id: "depth",
+          label: "Advanced tuck",
+          score: advTuck ? 100 : 45,
+          passed: advTuck,
+          cue: CUES.advTuckPlanche.tuck,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push({
+          id: "elbows",
+          label: "Elbow lock",
+          score: locked ? 100 : 55,
+          passed: locked,
+          cue: CUES.advTuckPlanche.elbows,
+        });
+      }
+      return baseEval(holdMet, holdMet && locked, metrics, ok);
+    },
+  },
+  {
+    id: "straddle-planche",
+    name: "Straddle Planche",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view — legs straddled wide, body level.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftWrist", "leftHip", "leftAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftWrist", "leftHip", "leftAnkle"]);
+      const lean = shoulderForwardOfWrist(body, 0.015);
+      const horiz = horizontalBodyScore(body);
+      const spread = ankleSpreadX(body);
+      const straddle = spread > 0.1;
+      const knees = avgKneeFlexion(body);
+      const openLegs = knees > 140;
+      const elbow = stableAngle(history, body, (frame) =>
+        Math.min(elbowFlexion(frame, "left"), elbowFlexion(frame, "right"))
+      );
+      const locked = elbow > 165;
+      const holdMet = lean && horiz > 0.6 && straddle && openLegs && locked;
+      const metrics: FormMetric[] = [
+        {
+          id: "horizontal",
+          label: "Level body",
+          score: horiz > 0.6 ? 100 : Math.round(horiz * 100),
+          passed: horiz > 0.6,
+          cue: CUES.straddlePlanche.horizontal,
+        },
+        {
+          id: "lean",
+          label: "Shoulder lean",
+          score: lean ? 100 : 40,
+          passed: lean,
+          cue: CUES.straddlePlanche.lean,
+        },
+        {
+          id: "leg_extension",
+          label: "Straddle width",
+          score: straddle ? 100 : Math.round(spread * 500),
+          passed: straddle,
+          cue: CUES.straddlePlanche.straddle,
+        },
+      ];
+      if (mode === "perfect") {
+        metrics.push({
+          id: "elbows",
+          label: "Elbow lock",
+          score: locked ? 100 : 55,
+          passed: locked,
+          cue: CUES.straddlePlanche.elbows,
+        });
+      }
+      return baseEval(holdMet, holdMet && locked, metrics, ok);
     },
   },
   {
@@ -601,14 +1194,14 @@ export const SKILLS: SkillDefinition[] = [
           label: "Body horizontal",
           score: horiz > 0.65 ? 100 : Math.round(horiz * 90),
           passed: horiz > 0.65,
-          cue: "Keep body level",
+          cue: CUES.planche.horizontal,
         },
         {
           id: "lean",
           label: "Shoulders forward",
           score: forward ? 100 : 40,
           passed: forward,
-          cue: "Lean shoulders past wrists",
+          cue: CUES.planche.lean,
         },
       ];
       if (mode === "perfect") {
@@ -617,7 +1210,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Elbow lock",
           score: locked ? 100 : 55,
           passed: locked,
-          cue: "Lock elbows out",
+          cue: CUES.planche.elbows,
         });
       }
       return baseEval(holdMet, holdMet && locked, metrics, ok);
@@ -697,7 +1290,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Upright torso",
           score: upright ? 100 : 55,
           passed: upright,
-          cue: "Keep chest up",
+          cue: CUES.pistolSquats.upright,
         });
       }
       return baseEval(holdMet, holdMet && upright, metrics, ok);
@@ -825,7 +1418,7 @@ export const SKILLS: SkillDefinition[] = [
           label: "Hips extended",
           score: hipsExtended ? 100 : 55,
           passed: hipsExtended,
-          cue: "Keep hips open, no break",
+          cue: CUES.nordicCurls.hips,
         });
       }
       return baseEval(holdMet, holdMet && hipsExtended, metrics, ok);

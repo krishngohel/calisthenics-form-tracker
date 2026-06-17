@@ -24,6 +24,72 @@ const DEFAULT_CONTEXT: DistanceContext = {
   outlierJumpRatio: 0.22,
 };
 
+/** Ideal body height in frame — full body visible with room to move. */
+export const TARGET_BODY_SPAN = 0.68;
+/** Below this the athlete is too small in frame → zoom in / narrower lens. */
+export const FRAMING_ZOOM_IN_BODY_SPAN = 0.56;
+/** Above this the frame is too tight → zoom out / wider lens. */
+export const FRAMING_ZOOM_OUT_BODY_SPAN = 0.76;
+
+export type CameraFacingMode = "user" | "environment";
+
+export interface ZoomRange {
+  min: number;
+  max: number;
+  step: number;
+}
+
+/**
+ * Compute a new zoom level to frame the full body with movement margin.
+ * Returns null when framing is already in the sweet spot or change is negligible.
+ */
+export function recommendBackCameraZoom(
+  bodySpan: number,
+  currentZoom: number,
+  range: ZoomRange
+): number | null {
+  if (bodySpan >= FRAMING_ZOOM_IN_BODY_SPAN && bodySpan <= FRAMING_ZOOM_OUT_BODY_SPAN) {
+    return null;
+  }
+
+  const raw = currentZoom * (TARGET_BODY_SPAN / bodySpan);
+  const step = range.step > 0 ? range.step : 0.05;
+  const snapped = Math.round(raw / step) * step;
+  const next = Math.min(range.max, Math.max(range.min, snapped));
+
+  if (Math.abs(next - currentZoom) < step * 0.5) return null;
+  return next;
+}
+
+/** Wider lens when zoom is already at minimum but the frame is still too tight. */
+export function shouldSwitchToWiderLens(
+  bodySpan: number,
+  currentZoom: number,
+  range: ZoomRange
+): boolean {
+  return bodySpan > FRAMING_ZOOM_OUT_BODY_SPAN && currentZoom <= range.min + range.step;
+}
+
+/** Narrower lens when zoom is already at maximum but the athlete is still too small. */
+export function shouldSwitchToNarrowerLens(
+  bodySpan: number,
+  currentZoom: number,
+  range: ZoomRange
+): boolean {
+  return bodySpan < FRAMING_ZOOM_IN_BODY_SPAN && currentZoom >= range.max - range.step;
+}
+
+/** Coaching hint when hardware zoom / lens switching is unavailable (iOS Safari). */
+export function recommendFramingGuidance(bodySpan: number): string | null {
+  if (bodySpan > FRAMING_ZOOM_OUT_BODY_SPAN) {
+    return "Step back — keep your full body in frame with room to move";
+  }
+  if (bodySpan < FRAMING_ZOOM_IN_BODY_SPAN) {
+    return "Move closer or prop the phone farther away";
+  }
+  return null;
+}
+
 export function estimateBodySpan(
   body: Record<string, Landmark | null>
 ): number {

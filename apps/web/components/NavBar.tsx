@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/skills", label: "Skills" },
+  { href: "/skills", label: "Paths" },
   { href: "/dev/pose-benchmark", label: "Benchmark" },
 ] as const;
 
@@ -13,9 +13,12 @@ export function NavBar() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-surface/80 backdrop-blur safe-top">
+    <header className="sticky top-0 z-50 border-b border-border bg-surface/90 shadow-nav backdrop-blur-md safe-top">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:py-4">
-        <Link href="/" className="text-lg font-bold text-accent">
+        <Link
+          href="/"
+          className="text-lg font-bold tracking-tight text-accent hover:text-accent-hover"
+        >
           CFT
         </Link>
 
@@ -24,14 +27,14 @@ export function NavBar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-muted hover:text-white"
+              className="font-medium text-muted transition hover:text-accent"
             >
               {link.label}
             </Link>
           ))}
           <Link
             href="/login"
-            className="rounded-lg bg-accent/20 px-3 py-1.5 text-accent hover:bg-accent/30"
+            className="rounded-xl bg-accent-soft px-4 py-2 font-semibold text-accent-hover transition hover:bg-accent-muted/60"
           >
             Account
           </Link>
@@ -40,7 +43,7 @@ export function NavBar() {
         <button
           type="button"
           onClick={() => setMenuOpen((open) => !open)}
-          className="flex h-11 w-11 items-center justify-center rounded-lg text-muted hover:bg-white/5 hover:text-white sm:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition hover:bg-surface-muted hover:text-accent sm:hidden"
           aria-expanded={menuOpen}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
@@ -49,14 +52,14 @@ export function NavBar() {
       </div>
 
       {menuOpen && (
-        <nav className="border-t border-white/10 px-4 py-3 sm:hidden">
+        <nav className="border-t border-border-subtle bg-surface px-4 py-3 sm:hidden">
           <ul className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="flex min-h-11 items-center rounded-lg px-3 text-muted hover:bg-white/5 hover:text-white"
+                  className="flex min-h-11 items-center rounded-xl px-3 font-medium text-muted transition hover:bg-surface-muted hover:text-accent"
                 >
                   {link.label}
                 </Link>
@@ -66,7 +69,7 @@ export function NavBar() {
               <Link
                 href="/login"
                 onClick={() => setMenuOpen(false)}
-                className="flex min-h-11 items-center rounded-lg bg-accent/20 px-3 font-medium text-accent hover:bg-accent/30"
+                className="flex min-h-11 items-center rounded-xl bg-accent-soft px-3 font-semibold text-accent-hover"
               >
                 Account
               </Link>

@@ -1,13 +1,18 @@
 "use client";
 
 import { forwardRef, useEffect, useRef, useState } from "react";
+import type { CameraFacingMode } from "@cft/core";
+import { openCameraStream } from "@/lib/camera/openCameraStream";
+import { cameraUnavailableReason, iosBrowserName, isIOS } from "@/lib/camera/platform";
 
-export type CameraFacingMode = "user" | "environment";
+export type { CameraFacingMode };
 
 interface CameraFeedProps {
   onVideoReady?: (video: HTMLVideoElement) => void;
+  onStreamReady?: (stream: MediaStream) => void;
   className?: string;
   facingMode?: CameraFacingMode;
+  deviceId?: string;
   onFacingModeChange?: (mode: CameraFacingMode) => void;
   showFlipButton?: boolean;
 }
@@ -16,8 +21,10 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
   function CameraFeed(
     {
       onVideoReady,
+      onStreamReady,
       className,
       facingMode: facingModeProp,
+      deviceId,
       onFacingModeChange,
       showFlipButton = false,
     },
@@ -25,10 +32,11 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
   ) {
     const [error, setError] = useState<string | null>(null);
     const [internalFacingMode, setInternalFacingMode] =
-      useState<CameraFacingMode>("user");
+      useState<CameraFacingMode>("environment");
 
     const facingMode = facingModeProp ?? internalFacingMode;
     const mirrored = facingMode === "user";
+    const effectiveDeviceId = isIOS() ? undefined : deviceId;
 
     const setFacingMode = (mode: CameraFacingMode) => {
       if (facingModeProp === undefined) {
@@ -41,13 +49,23 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
       setFacingMode(facingMode === "user" ? "environment" : "user");
     };
 
-    // Keep the callback in a ref so a new inline prop never restarts the camera.
     const onVideoReadyRef = useRef(onVideoReady);
     useEffect(() => {
       onVideoReadyRef.current = onVideoReady;
     });
 
+    const onStreamReadyRef = useRef(onStreamReady);
     useEffect(() => {
+      onStreamReadyRef.current = onStreamReady;
+    });
+
+    useEffect(() => {
+      const blocked = cameraUnavailableReason();
+      if (blocked) {
+        setError(blocked);
+        return;
+      }
+
       let stream: MediaStream | null = null;
       let cancelled = false;
 
@@ -55,14 +73,9 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
 
       (async () => {
         try {
-          stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: facingMode },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-              frameRate: { ideal: 30, max: 60 },
-            },
-            audio: false,
+          stream = await openCameraStream({
+            facingMode,
+            deviceId: effectiveDeviceId,
           });
           if (cancelled) {
             stream.getTracks().forEach((t) => t.stop());
@@ -71,11 +84,22 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
           const video = ref && "current" in ref ? ref.current : null;
           if (video) {
             video.srcObject = stream;
+            video.setAttribute("playsinline", "true");
+            video.setAttribute("webkit-playsinline", "true");
             await video.play();
-            if (!cancelled) onVideoReadyRef.current?.(video);
+            if (!cancelled) {
+              onStreamReadyRef.current?.(stream);
+              onVideoReadyRef.current?.(video);
+            }
           }
         } catch (e) {
           if (!cancelled) {
+            if (e instanceof DOMException && e.name === "NotAllowedError") {
+              setError(
+                `Camera permission denied. On iPhone open Settings → ${iosBrowserName()} → Camera, allow access, then reload this page.`
+              );
+              return;
+            }
             setError(e instanceof Error ? e.message : "Camera access denied");
           }
         }
@@ -85,13 +109,13 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
         cancelled = true;
         stream?.getTracks().forEach((t) => t.stop());
       };
-    }, [ref, facingMode]);
+    }, [ref, facingMode, effectiveDeviceId]);
 
     if (error) {
       return (
-        <div className="flex aspect-[3/4] items-center justify-center rounded-xl bg-surface p-4 text-center text-muted sm:aspect-video">
+        <div className="flex aspect-[3/4] items-center justify-center rounded-2xl border border-border bg-surface-muted p-4 text-center text-muted sm:aspect-video">
           <div>
-            <p className="mb-1 font-medium text-white">Camera unavailable</p>
+            <p className="mb-1 font-medium text-foreground">Camera unavailable</p>
             <p className="text-sm">{error}</p>
           </div>
         </div>
@@ -109,6 +133,7 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
           className={videoClassName}
           playsInline
           muted
+          autoPlay
         />
         {showFlipButton && (
           <button

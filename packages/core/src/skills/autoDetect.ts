@@ -15,9 +15,28 @@ const MIN_MARGIN = 6;
 
 const INVERTED_SKILLS = new Set([
   "handstand",
+  "handstand-push-ups-90",
+  "handstand-push-ups",
   "one-arm-handstand",
   "frog-stand",
   "crow-pose",
+]);
+
+const PLANCHE_SKILLS = new Set([
+  "planche-lean",
+  "pseudo-planche-push-ups",
+  "tuck-planche",
+  "advanced-tuck-planche",
+  "straddle-planche",
+  "planche",
+]);
+
+const HANG_SKILLS = new Set([
+  "dead-hang",
+  "scapular-pulls",
+  "pull-ups",
+  "chin-ups",
+  "muscle-up",
 ]);
 
 const UPRIGHT_PUSH_PULL = new Set([
@@ -26,10 +45,13 @@ const UPRIGHT_PUSH_PULL = new Set([
   "chin-ups",
   "push-ups",
   "muscle-up",
+  "plank-hold",
+  "pseudo-planche-push-ups",
 ]);
 
 interface PoseContext {
   inverted: boolean;
+  hanging: boolean;
 }
 
 function inferPoseContext(
@@ -39,16 +61,36 @@ function inferPoseContext(
   const ankles = [body.leftAnkle, body.rightAnkle].filter(
     (lm): lm is Landmark => !!lm
   );
-  if (!nose || ankles.length === 0) return { inverted: false };
+  const shoulder = body.leftShoulder && body.rightShoulder
+    ? { x: (body.leftShoulder.x + body.rightShoulder.x) / 2, y: (body.leftShoulder.y + body.rightShoulder.y) / 2 }
+    : body.leftShoulder ?? body.rightShoulder;
+  const wrist = body.leftWrist && body.rightWrist
+    ? { x: (body.leftWrist.x + body.rightWrist.x) / 2, y: (body.leftWrist.y + body.rightWrist.y) / 2 }
+    : body.leftWrist ?? body.rightWrist;
 
-  const ankleY = Math.min(...ankles.map((a) => a.y));
-  return { inverted: ankleY < nose.y - 0.04 };
+  const inverted =
+    !!nose && ankles.length > 0
+      ? Math.min(...ankles.map((a) => a.y)) < nose.y - 0.04
+      : false;
+
+  const hanging =
+    !!shoulder && !!wrist ? wrist.y < shoulder.y - 0.04 : false;
+
+  return { inverted, hanging };
 }
 
 function contextBonus(skillId: string, context: PoseContext): number {
   if (context.inverted) {
     if (INVERTED_SKILLS.has(skillId)) return 35;
-    if (UPRIGHT_PUSH_PULL.has(skillId)) return -50;
+    if (PLANCHE_SKILLS.has(skillId) || UPRIGHT_PUSH_PULL.has(skillId)) return -50;
+  } else if (PLANCHE_SKILLS.has(skillId) && !context.hanging) {
+    return 20;
+  }
+  if (context.hanging) {
+    if (HANG_SKILLS.has(skillId)) return 25;
+    if (skillId === "plank-hold" || INVERTED_SKILLS.has(skillId)) return -40;
+  } else if (HANG_SKILLS.has(skillId)) {
+    return -35;
   }
   return 0;
 }

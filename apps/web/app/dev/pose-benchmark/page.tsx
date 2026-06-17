@@ -23,7 +23,7 @@ export default function PoseBenchmarkPage() {
         Web Worker; the winner becomes your default provider.
       </p>
 
-      <div className="relative mb-6 aspect-[3/4] max-h-[70vh] overflow-hidden rounded-xl bg-black sm:aspect-video sm:max-h-none">
+      <div className="relative mb-6 aspect-[3/4] max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-black shadow-card sm:aspect-video sm:max-h-none">
         <CameraFeed
           ref={videoRef}
           facingMode={facingMode}
@@ -45,7 +45,7 @@ export default function PoseBenchmarkPage() {
       <button
         onClick={runBenchmark}
         disabled={!videoReady || running}
-        className="rounded-xl bg-accent px-6 py-3 font-semibold text-bg disabled:opacity-50"
+        className="btn-primary disabled:opacity-50"
       >
         {running ? "Running benchmark…" : "Run 10s benchmark (both providers)"}
       </button>
@@ -59,8 +59,8 @@ export default function PoseBenchmarkPage() {
             {(["movenet", "mediapipe"] as const).map((p) => (
               <div
                 key={p}
-                className={`rounded-xl bg-surface p-4 ${
-                  recommendation === p ? "ring-1 ring-accent/50" : ""
+                className={`card p-4 ${
+                  recommendation === p ? "ring-2 ring-accent/30" : ""
                 }`}
               >
                 <h3 className="mb-2 font-semibold capitalize">{p}</h3>

@@ -17,7 +17,7 @@ import {
   type SkillDetectionResult,
 } from "@cft/core";
 import { TrainCameraPanel } from "@/components/camera/TrainCameraPanel";
-import type { CameraFacingMode } from "@/components/camera/CameraFeed";
+import { useAutoBackCameraFraming } from "@/hooks/useAutoBackCameraFraming";
 import { PoseOverlay } from "@/components/camera/PoseOverlay";
 import { HoldTimer } from "@/components/timer/HoldTimer";
 import { CoachingPanel } from "@/components/coaching/CoachingPanel";
@@ -73,9 +73,19 @@ export default function AutoTrainPage() {
   const [holdView, setHoldView] = useState<HoldView>(INITIAL_VIEW);
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
   const [detection, setDetection] = useState<SkillDetectionResult | null>(null);
-  const [facingMode, setFacingMode] = useState<CameraFacingMode>("user");
-  const [manualLock, setManualLock] = useState(false);
+  const {
+    facingMode,
+    deviceId,
+    onFacingModeChange,
+    onStreamReady,
+    onDistanceContext,
+    framingLabel,
+    framingGuidance,
+    isManualFraming,
+    enableAutoFraming,
+  } = useAutoBackCameraFraming();
   const mirrored = facingMode === "user";
+  const [manualLock, setManualLock] = useState(false);
 
   const sessionEndedRef = useRef(false);
   const historyRef = useRef<Record<string, Landmark | null>[]>([]);
@@ -257,6 +267,7 @@ export default function AutoTrainPage() {
       bodyProvider,
       trackHands: true,
       onFrame,
+      onDistanceContext,
     });
 
   const resetSession = useCallback(() => {
@@ -296,7 +307,7 @@ export default function AutoTrainPage() {
     <div className="mx-auto max-w-6xl px-4 py-4 sm:py-6">
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <Link href="/skills" className="text-sm text-muted hover:text-white">
+          <Link href="/skills" className="text-sm font-medium text-muted hover:text-accent">
             ← Skills
           </Link>
           <h1 className="text-xl font-bold sm:text-2xl">Auto-detect training</h1>
@@ -304,14 +315,12 @@ export default function AutoTrainPage() {
             Strike a hold — the app picks the skill automatically.
           </p>
         </div>
-        <div className="flex w-full rounded-lg bg-surface p-1 sm:w-auto">
+        <div className="mode-toggle">
           {(["hold_only", "perfect"] as HoldMode[]).map((m) => (
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`min-h-11 flex-1 rounded-md px-4 py-2 text-sm capitalize sm:flex-none ${
-                mode === m ? "bg-accent text-bg" : "text-muted hover:text-white"
-              }`}
+              className={`mode-toggle-btn sm:px-4 ${mode === m ? "mode-toggle-btn-active" : ""}`}
             >
               {m.replace("_", " ")}
             </button>
@@ -319,7 +328,7 @@ export default function AutoTrainPage() {
         </div>
       </div>
 
-      <div className="mb-4 rounded-xl border border-white/10 bg-surface p-4">
+      <div className="card mb-4 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted">Detected skill</p>
@@ -337,7 +346,7 @@ export default function AutoTrainPage() {
             {activeSkillId && (
               <Link
                 href={`/train/${activeSkillId}`}
-                className="min-h-11 rounded-lg border border-white/10 px-3 py-2 text-sm leading-7 hover:border-accent/40"
+                className="min-h-11 rounded-xl border border-border bg-surface px-3 py-2 text-sm leading-7 transition hover:border-accent/40 hover:bg-surface-muted"
               >
                 Open manual view
               </Link>
@@ -345,7 +354,7 @@ export default function AutoTrainPage() {
             {activeSkillId && (
               <button
                 onClick={clearSkill}
-                className="min-h-11 rounded-lg border border-white/10 px-3 py-2 text-sm hover:border-accent/40"
+                className="min-h-11 rounded-xl border border-border bg-surface px-3 py-2 text-sm transition hover:border-accent/40 hover:bg-surface-muted"
               >
                 Re-detect
               </button>
@@ -353,10 +362,10 @@ export default function AutoTrainPage() {
             {activeSkillId && (
               <button
                 onClick={() => setManualLock((v) => !v)}
-                className={`min-h-11 rounded-lg px-3 py-2 text-sm ${
+                className={`min-h-11 rounded-xl px-3 py-2 text-sm transition ${
                   manualLock
-                    ? "bg-accent text-bg"
-                    : "border border-white/10 hover:border-accent/40"
+                    ? "bg-accent font-medium text-accent-foreground shadow-sm"
+                    : "border border-border bg-surface hover:border-accent/40 hover:bg-surface-muted"
                 }`}
               >
                 {manualLock ? "Locked" : "Lock skill"}
@@ -371,8 +380,14 @@ export default function AutoTrainPage() {
           <TrainCameraPanel
             videoRef={videoRef}
             onVideoReady={() => setVideoReady(true)}
+            onStreamReady={onStreamReady}
             facingMode={facingMode}
-            onFacingModeChange={setFacingMode}
+            deviceId={deviceId}
+            onFacingModeChange={onFacingModeChange}
+            framingLabel={framingLabel}
+            framingGuidance={framingGuidance}
+            isManualFraming={isManualFraming}
+            onEnableAutoFraming={enableAutoFraming}
             footer={
               <>
                 {profile.label}
@@ -389,7 +404,7 @@ export default function AutoTrainPage() {
               />
             )}
             {videoReady && !ready && !error && (
-              <div className="absolute inset-x-0 top-14 z-10 mx-auto w-fit max-w-[calc(100%-2rem)] rounded-lg bg-surface/90 px-4 py-2 text-center text-sm text-muted">
+              <div className="absolute inset-x-0 top-14 z-10 mx-auto w-fit max-w-[calc(100%-2rem)] rounded-xl border border-border bg-surface/95 px-4 py-2 text-center text-sm text-muted shadow-card">
                 Loading pose model…
               </div>
             )}
@@ -404,7 +419,7 @@ export default function AutoTrainPage() {
               </div>
             )}
             {ready && !activeSkill && pinnedCues.length === 0 && (
-              <div className="absolute inset-x-0 top-14 z-10 mx-auto w-fit max-w-[calc(100%-2rem)] rounded-lg bg-surface/90 px-4 py-2 text-center text-sm text-muted">
+              <div className="absolute inset-x-0 top-14 z-10 mx-auto w-fit max-w-[calc(100%-2rem)] rounded-xl border border-border bg-surface/95 px-4 py-2 text-center text-sm text-muted shadow-card">
                 Get into position — detection starts in ~1s
               </div>
             )}
@@ -436,7 +451,7 @@ export default function AutoTrainPage() {
             <p className="text-sm text-muted">Hold a skill pose to begin training.</p>
           )}
           {sessionEnded && coachingPlan && activeSkill && (
-            <div className="rounded-xl border border-accent/30 p-4">
+            <div className="card border-accent/25 bg-accent-soft/30 p-4">
               <h3 className="mb-2 font-semibold text-accent">Session saved</h3>
               <p className="text-sm text-muted">
                 {activeSkill.name} · Hold: {(holdView.lastHoldMs / 1000).toFixed(2)}s · Form{" "}

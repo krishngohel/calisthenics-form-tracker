@@ -27,7 +27,7 @@ export function CoachingPanel({
           {pinnedCues.map((cue) => (
             <div
               key={cue.id}
-              className="flex items-start justify-between gap-3 rounded-xl border border-accent/30 bg-accent/10 p-3"
+              className="flex items-start justify-between gap-3 rounded-xl border border-accent/25 bg-accent-soft/50 p-3"
             >
               <p className="text-sm font-medium leading-snug">{cue.text}</p>
               {onDismissCue && (
@@ -65,7 +65,7 @@ export function CoachingPanel({
             {drills.map((d) => (
               <div
                 key={d.id}
-                className="rounded-lg bg-surface p-3 text-sm"
+                className="rounded-xl border border-border-subtle bg-surface-muted p-3 text-sm"
               >
                 <p className="font-medium">{d.name}</p>
                 <p className="text-muted">{d.description}</p>
