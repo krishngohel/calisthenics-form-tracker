@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { HoldState } from "@cft/core";
+import { readVoiceEnabled, writeVoiceEnabled } from "@/lib/preferences";
 
-const STORAGE_KEY = "cft-voice";
 /** Seconds between count-outs while holding. */
 const COUNT_INTERVAL_S = 5;
 /** Minimum gap between spoken cues so coaching never talks over itself. */
@@ -28,13 +28,9 @@ export function useVoiceCoach() {
 
   useEffect(() => {
     setSupported(speechAvailable());
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY) === "1";
-      setEnabled(stored);
-      enabledRef.current = stored;
-    } catch {
-      // ignore
-    }
+    const stored = readVoiceEnabled();
+    setEnabled(stored);
+    enabledRef.current = stored;
   }, []);
 
   const speak = useCallback((text: string, priority = false) => {
@@ -57,11 +53,7 @@ export function useVoiceCoach() {
     const next = !enabledRef.current;
     enabledRef.current = next;
     setEnabled(next);
-    try {
-      localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
-    } catch {
-      // ignore
-    }
+    writeVoiceEnabled(next);
     if (next) speak("Voice coach on", true);
     else {
       stopCounting();

@@ -14,22 +14,22 @@ import {
 } from "@cft/core";
 import { TrainCameraPanel } from "@/components/camera/TrainCameraPanel";
 import { CameraStatusBanner } from "@/components/camera/CameraStatusBanner";
-import { useAutoBackCameraFraming } from "@/hooks/useAutoBackCameraFraming";
 import { PoseOverlay, type SkeletonStatus } from "@/components/camera/PoseOverlay";
 import { HoldHud } from "@/components/train/HoldHud";
+import { TrainingScreen } from "@/components/train/TrainingScreen";
 import { CoachingPanel } from "@/components/coaching/CoachingPanel";
 import { PersistentCueOverlay } from "@/components/coaching/PersistentCueOverlay";
 import { SessionProgressChart } from "@/components/coaching/SessionProgressChart";
 import { HoldSummaryCard } from "@/components/coaching/HoldSummaryCard";
 import { ModeToggle } from "@/components/ModeToggle";
-import { ChevronLeft } from "@/components/app/Screen";
+import { useAutoBackCameraFraming } from "@/hooks/useAutoBackCameraFraming";
 import { getStoredBodyProvider, usePoseDetection, type PoseFrameInfo } from "@/hooks/usePoseDetection";
 import { useHoldSession } from "@/hooks/useHoldSession";
-import { readPreferences } from "@/lib/preferences";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
+import { useFrameHistory } from "@/hooks/useFrameHistory";
+import { readPreferences } from "@/lib/preferences";
 
 const HOLD_MODES: readonly HoldMode[] = ["hold_only", "perfect"];
-const HISTORY_FRAMES = 30;
 /** A guess must stay stable this long before it locks in. */
 const STABLE_DETECT_MS = 900;
 /** Switching away from a locked skill needs a longer, high-confidence run. */
@@ -57,13 +57,13 @@ export default function AutoTrainPage() {
   const session = useHoldSession(mode);
   const { processHold, resetLive, resetAll, holdView } = session;
   const feedback = useTrainingFeedback(holdView, session.pinnedCues, session.bestHoldMs);
+  const history = useFrameHistory();
 
   const modeRef = useRef(mode);
   const activeSkillIdRef = useRef<string | null>(null);
   const manualLockRef = useRef(false);
   const stableDetectRef = useRef<{ skillId: string; since: number } | null>(null);
   const detectionUiAtRef = useRef(0);
-  const historyRef = useRef<Record<string, Landmark | null>[]>([]);
 
   useEffect(() => {
     modeRef.current = mode;
@@ -91,13 +91,11 @@ export default function AutoTrainPage() {
     (raw: Record<string, Landmark | null>, hands: HandLandmarks, frame: PoseFrameInfo) => {
       // Rules measure angles and distances, so they need x and y in the same units.
       const body = toIsotropic(raw, frame.aspect);
-      const history = historyRef.current;
-      history.push(body);
-      if (history.length > HISTORY_FRAMES) history.shift();
+      const frames = history.push(body);
       const now = performance.now();
       const currentMode = modeRef.current;
 
-      const guess = detectSkill(body, hands, history, currentMode);
+      const guess = detectSkill(body, hands, frames, currentMode);
       if (guess) {
         if (now - detectionUiAtRef.current >= DETECTION_UI_INTERVAL_MS) {
           detectionUiAtRef.current = now;
@@ -123,10 +121,10 @@ export default function AutoTrainPage() {
 
       const skillId = activeSkillIdRef.current;
       if (!skillId) return;
-      const evaluation = evaluateSkill(skillId, body, hands, history, currentMode);
+      const evaluation = evaluateSkill(skillId, body, hands, frames, currentMode);
       if (evaluation) processHold(skillId, evaluation, now);
     },
-    [lockSkill, processHold]
+    [history, lockSkill, processHold]
   );
 
   const { getRenderLandmarks, getRenderHands, ready, error, profile } = usePoseDetection(videoRef, {
@@ -152,124 +150,103 @@ export default function AutoTrainPage() {
   const skillLabel = activeSkill?.name ?? detection?.skillName ?? null;
 
   return (
-    <div className="screen max-w-6xl">
-      <header className="mb-3">
-        <Link href="/skills" className="screen-back">
-          <ChevronLeft />
-          Paths
-        </Link>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-foreground">Auto-detect</h1>
-            <p className="mt-0.5 text-sm text-muted">Strike a hold — the app picks the skill.</p>
-          </div>
-          <ModeToggle value={mode} options={HOLD_MODES} onChange={setMode} label="Hold mode" />
-        </div>
-      </header>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <TrainCameraPanel
-            videoRef={videoRef}
-            onVideoReady={() => setVideoReady(true)}
-            onStreamReady={framing.onStreamReady}
-            facingMode={framing.facingMode}
-            deviceId={framing.deviceId}
-            onFacingModeChange={framing.onFacingModeChange}
-            framingLabel={framing.framingLabel}
-            framingGuidance={framing.framingGuidance}
-            isManualFraming={framing.isManualFraming}
-            onEnableAutoFraming={framing.enableAutoFraming}
-            focus={feedback.focus}
-            onToggleFocus={feedback.toggleFocus}
-            voiceEnabled={feedback.voice.enabled}
-            voiceSupported={feedback.voice.supported}
-            onToggleVoice={feedback.voice.toggle}
-            footer={
-              <>
-                {profile.label}
-                {holdView.farCamera && " · Full-body mode (distance compensated)"}
-              </>
-            }
-          >
-            {videoReady && ready && (
-              <PoseOverlay
-                getLandmarks={getRenderLandmarks}
-                getHands={getRenderHands}
-                getStatus={getStatus}
-                videoRef={videoRef}
-                mirror={mirrored}
-              />
-            )}
-            <HoldHud
-              state={activeSkill ? holdView.state : "idle"}
-              holdStartTime={holdView.holdStartTime}
-              lastHoldMs={holdView.lastHoldMs}
-              bestHoldMs={session.bestHoldMs}
-              formScore={holdView.formScore}
-              mode={mode}
-              skillLabel={skillLabel}
-              large={feedback.focus}
+    <TrainingScreen
+      back={{ href: "/skills", label: "Paths" }}
+      title="Auto-detect"
+      subtitle="Strike a hold — the app picks the skill."
+      modeControl={<ModeToggle value={mode} options={HOLD_MODES} onChange={setMode} label="Hold mode" />}
+      camera={
+        <TrainCameraPanel
+          videoRef={videoRef}
+          onVideoReady={() => setVideoReady(true)}
+          onStreamReady={framing.onStreamReady}
+          facingMode={framing.facingMode}
+          deviceId={framing.deviceId}
+          onFacingModeChange={framing.onFacingModeChange}
+          framingLabel={framing.framingLabel}
+          framingGuidance={framing.framingGuidance}
+          isManualFraming={framing.isManualFraming}
+          onEnableAutoFraming={framing.enableAutoFraming}
+          focus={feedback.focus}
+          onToggleFocus={feedback.toggleFocus}
+          voiceEnabled={feedback.voice.enabled}
+          voiceSupported={feedback.voice.supported}
+          onToggleVoice={feedback.voice.toggle}
+          footer={
+            <>
+              {profile.label}
+              {holdView.farCamera && " · Full-body mode (distance compensated)"}
+            </>
+          }
+        >
+          {videoReady && ready && (
+            <PoseOverlay
+              getLandmarks={getRenderLandmarks}
+              getHands={getRenderHands}
+              getStatus={getStatus}
+              videoRef={videoRef}
+              mirror={mirrored}
             />
-            <CameraStatusBanner
-              ready={ready}
-              error={error}
-              videoReady={videoReady}
-              visibilityWarning={!!activeSkill && !holdView.visibilityOk}
-              hint={
-                !activeSkill && session.pinnedCues.length === 0
-                  ? "Get into position — detection locks in after about a second"
-                  : null
-              }
-            />
-            <PersistentCueOverlay
-              cues={session.pinnedCues}
-              onDismiss={session.dismissCue}
-              onDismissAll={session.dismissAllCues}
-            />
-          </TrainCameraPanel>
-
-          <div className="card mt-3 p-3 sm:p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Detected skill</p>
-                <p className="truncate text-lg font-semibold" aria-live="polite">
-                  {skillLabel ?? "Scanning…"}
+          )}
+          <HoldHud
+            state={activeSkill ? holdView.state : "idle"}
+            holdStartTime={holdView.holdStartTime}
+            lastHoldMs={holdView.lastHoldMs}
+            bestHoldMs={session.bestHoldMs}
+            formScore={holdView.formScore}
+            mode={mode}
+            skillLabel={skillLabel}
+            large={feedback.focus}
+          />
+          <CameraStatusBanner
+            ready={ready}
+            error={error}
+            videoReady={videoReady}
+            visibilityWarning={!!activeSkill && !holdView.visibilityOk}
+            hint={!activeSkill && session.pinnedCues.length === 0 ? "Get into position — detection locks in after about a second" : null}
+          />
+          <PersistentCueOverlay cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />
+        </TrainCameraPanel>
+      }
+      belowCamera={
+        <div className="card mt-3 p-3 sm:p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Detected skill</p>
+              <p className="truncate text-lg font-semibold" aria-live="polite">
+                {skillLabel ?? "Scanning…"}
+              </p>
+              {detection && (
+                <p className="text-sm text-muted">
+                  Confidence {detection.confidence}%{detection.holdMatch ? " · hold matched" : " · searching pose"}
                 </p>
-                {detection && (
-                  <p className="text-sm text-muted">
-                    Confidence {detection.confidence}%
-                    {detection.holdMatch ? " · hold matched" : " · searching pose"}
-                  </p>
-                )}
-              </div>
-              {activeSkillId && (
-                <div className="flex flex-wrap gap-2">
-                  <Link href={`/train/${activeSkillId}`} className="btn-secondary min-h-11 px-3 py-2 text-sm">
-                    Open manual view
-                  </Link>
-                  <button type="button" onClick={clearSkill} className="btn-secondary min-h-11 px-3 py-2 text-sm">
-                    Re-detect
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setManualLock((v) => !v)}
-                    aria-pressed={manualLock}
-                    className={`min-h-11 rounded-xl px-3 py-2 text-sm font-medium transition ${
-                      manualLock
-                        ? "bg-accent text-accent-foreground shadow-sm"
-                        : "border border-border bg-surface hover:border-accent/40 hover:bg-surface-muted"
-                    }`}
-                  >
-                    {manualLock ? "Locked" : "Lock skill"}
-                  </button>
-                </div>
               )}
             </div>
+            {activeSkillId && (
+              <div className="flex flex-wrap gap-2">
+                <Link href={`/train/${activeSkillId}`} className="btn-secondary min-h-11 px-3 py-2 text-sm">
+                  Open manual view
+                </Link>
+                <button type="button" onClick={clearSkill} className="btn-secondary min-h-11 px-3 py-2 text-sm">
+                  Re-detect
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManualLock((v) => !v)}
+                  aria-pressed={manualLock}
+                  className={`min-h-11 rounded-xl px-3 py-2 text-sm font-medium transition ${
+                    manualLock ? "bg-accent text-accent-foreground shadow-sm" : "border border-border bg-surface hover:border-accent/40 hover:bg-surface-muted"
+                  }`}
+                >
+                  {manualLock ? "Locked" : "Lock skill"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
-
-        <div className="space-y-5">
+      }
+      side={
+        <>
           {session.lastHold && (
             <HoldSummaryCard
               hold={session.lastHold}
@@ -287,11 +264,9 @@ export default function AutoTrainPage() {
             drills={session.coachingPlan?.recommendedDrills}
             weakPoints={session.coachingPlan?.weakPoints}
           />
-          {!activeSkill && session.pinnedCues.length === 0 && (
-            <p className="text-sm text-muted">Hold a skill pose to begin training.</p>
-          )}
-        </div>
-      </div>
-    </div>
+          {!activeSkill && session.pinnedCues.length === 0 && <p className="text-sm text-muted">Hold a skill pose to begin training.</p>}
+        </>
+      }
+    />
   );
 }

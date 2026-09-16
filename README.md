@@ -65,9 +65,9 @@ Use **Paths** to pick a move, or **Auto-detect** to let the app lock on after ~1
 calisthenics-form-tracker/
 ├── apps/web/              Next.js 14 + Tailwind UI (static-exportable)
 │   ├── app/               Routes (onboarding, home, skills, progress, settings, train, dashboard, auth)
-│   ├── components/        App shell (tabs, screens), camera, HUD, coaching
-│   ├── hooks/             Pose detection, hold session, voice coach, auth
-│   ├── lib/               Camera, overlay projection, native bridge, Supabase
+│   ├── components/        App shell (tabs, screens), camera, HUD, training layout, coaching
+│   ├── hooks/             Pose detection, hold session, voice coach, stored values, auth
+│   ├── lib/               Storage (single typed module), history, preferences, camera, overlay, native, Supabase
 │   ├── ios/               Capacitor iOS project (open in Xcode)
 │   └── workers/           Pose inference Web Worker
 ├── packages/core/         Shared skill rules, hold FSM, pose geometry, scoring (unit tested)
@@ -111,7 +111,7 @@ Visit `/dev/pose-benchmark` to compare providers on your device. The winner is s
 | `npm run build` | Production build |
 | `npm run lint` | ESLint (web app) |
 | `npm run typecheck` | TypeScript, both workspaces |
-| `npm test` | Vitest unit tests for `@cft/core` |
+| `npm test` | Vitest unit tests (`@cft/core` rules and pipeline; web storage and history) |
 | `npm run check` | Lint + typecheck + test (what CI runs before build) |
 | `npm run build:ios -w apps/web` | Static export + `cap sync ios` |
 | `npm run ios -w apps/web` | Open the iOS project in Xcode |

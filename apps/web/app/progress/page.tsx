@@ -92,6 +92,15 @@ export default function ProgressPage() {
         </ListGroup>
       ))}
 
+      {configured && user && (
+        <p className="px-1 text-center text-sm text-muted">
+          <Link href="/dashboard" className="font-medium text-accent">
+            Open cloud dashboard
+          </Link>{" "}
+          for history synced from other devices.
+        </p>
+      )}
+
       {configured && !user && history.length > 0 && (
         <p className="px-1 text-center text-sm text-muted">
           <Link href="/login" className="font-medium text-accent">

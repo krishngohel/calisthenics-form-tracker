@@ -1,4 +1,5 @@
 import type { HoldMode } from "@cft/core";
+import { readFlag, readJson, STORAGE_KEYS, writeFlag, writeJson } from "./storage";
 
 export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
 
@@ -9,12 +10,16 @@ export interface Preferences {
   focusSkillId: string | null;
 }
 
-const KEY = "cft-preferences";
-
 export const DEFAULT_PREFERENCES: Preferences = {
   experience: "beginner",
   defaultMode: "hold_only",
   focusSkillId: null,
+};
+
+export const EXPERIENCE_LABELS: Record<ExperienceLevel, string> = {
+  beginner: "Getting started",
+  intermediate: "Training skills",
+  advanced: "Advanced holds",
 };
 
 /** First skill worth opening for each experience level. */
@@ -25,24 +30,20 @@ export const STARTER_SKILL: Record<ExperienceLevel, string> = {
 };
 
 export function readPreferences(): Preferences {
-  if (typeof window === "undefined") return DEFAULT_PREFERENCES;
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return DEFAULT_PREFERENCES;
-    const parsed = JSON.parse(raw) as Partial<Preferences>;
-    return { ...DEFAULT_PREFERENCES, ...parsed };
-  } catch {
-    return DEFAULT_PREFERENCES;
-  }
+  const stored = readJson<Partial<Preferences>>(STORAGE_KEYS.preferences, {});
+  return { ...DEFAULT_PREFERENCES, ...stored };
 }
 
 export function writePreferences(update: Partial<Preferences>): Preferences {
   const next = { ...readPreferences(), ...update };
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent("cft:preferences"));
-  } catch {
-    // ignore
-  }
+  writeJson(STORAGE_KEYS.preferences, next);
   return next;
+}
+
+export function readVoiceEnabled(): boolean {
+  return readFlag(STORAGE_KEYS.voice);
+}
+
+export function writeVoiceEnabled(enabled: boolean): void {
+  writeFlag(STORAGE_KEYS.voice, enabled);
 }

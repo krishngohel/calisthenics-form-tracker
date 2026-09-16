@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "build:ios": "CAPACITOR_BUILD=1 next build && cap sync ios",
     "ios": "cap open ios",
-    "ios:add": "cap add ios"
+    "ios:add": "cap add ios",
+    "test": "vitest run"
   },
   "dependencies": {
     "@capacitor/core": "^6.2.2",
@@ -44,6 +45,7 @@
     "eslint-config-next": "14.2.3",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.0"
   }
 }

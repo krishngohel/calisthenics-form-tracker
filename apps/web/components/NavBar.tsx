@@ -10,8 +10,9 @@ import { createClient } from "@/lib/supabase/client";
 const NAV_LINKS = [
   { href: "/skills", label: "Paths" },
   { href: "/train", label: "Auto-detect" },
+  { href: "/progress", label: "Progress" },
   { href: "/dashboard", label: "Dashboard", requiresCloud: true },
-  { href: "/dev/pose-benchmark", label: "Benchmark" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export function NavBar() {

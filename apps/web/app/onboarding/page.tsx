@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSkill } from "@cft/core";
 import { setOnboarded } from "@/lib/appShell";
-import { STARTER_SKILL, writePreferences, type ExperienceLevel } from "@/lib/preferences";
+import { STARTER_SKILL, writePreferences, writeVoiceEnabled, type ExperienceLevel } from "@/lib/preferences";
 import { hapticImpact, hapticNotify } from "@/lib/native";
 import { openCameraStream } from "@/lib/camera/openCameraStream";
 import { cameraUnavailableReason } from "@/lib/camera/platform";
@@ -60,11 +60,7 @@ export default function OnboardingPage() {
     (destination: "home" | "train") => {
       const focusSkillId = STARTER_SKILL[level];
       writePreferences({ experience: level, focusSkillId });
-      try {
-        localStorage.setItem("cft-voice", voice ? "1" : "0");
-      } catch {
-        // ignore
-      }
+      writeVoiceEnabled(voice);
       setOnboarded(true);
       void hapticNotify("success");
       router.replace(destination === "train" ? `/train/${focusSkillId}` : "/");

@@ -22,6 +22,7 @@ import {
   HOLD_SMOOTHING,
 } from "@cft/core";
 import { isIOS } from "@/lib/camera/platform";
+import { readString, STORAGE_KEYS, writeString } from "@/lib/storage";
 
 export interface PoseDetectionState {
   inferenceMs: number;
@@ -60,8 +61,6 @@ const STATS_UPDATE_INTERVAL_MS = 500;
 const BENCHMARK_TIMEOUT_MS = 45_000;
 /** Predict skeleton slightly ahead of the last detection frame. */
 const EXTRAPOLATE_MS = 40;
-/** localStorage key for the benchmark-selected provider. */
-export const BODY_PROVIDER_STORAGE_KEY = "cft-body-provider";
 
 function createWorker(): Worker {
   return new Worker(new URL("../workers/pose.worker.ts", import.meta.url));
@@ -430,11 +429,7 @@ export function usePoseBenchmark(
         ? "movenet"
         : "mediapipe";
     setRecommendation(winner);
-    try {
-      localStorage.setItem(BODY_PROVIDER_STORAGE_KEY, winner);
-    } catch {
-      // Private mode / blocked storage — the recommendation still shows on screen.
-    }
+    writeString(STORAGE_KEYS.bodyProvider, winner);
     setRunning(false);
   }, [runProviderBenchmark, running, videoRef]);
 
@@ -443,11 +438,7 @@ export function usePoseBenchmark(
 
 export function getStoredBodyProvider(): BodyProviderId {
   if (typeof window === "undefined") return "movenet";
-  try {
-    const stored = localStorage.getItem(BODY_PROVIDER_STORAGE_KEY);
-    if (stored === "mediapipe" || stored === "movenet") return stored;
-  } catch {
-    // ignore
-  }
+  const stored = readString(STORAGE_KEYS.bodyProvider);
+  if (stored === "mediapipe" || stored === "movenet") return stored;
   return isIOS() ? "mediapipe" : "movenet";
 }

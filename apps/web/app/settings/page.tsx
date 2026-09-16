@@ -10,13 +10,8 @@ import { clearHistory } from "@/lib/localHistory";
 import { applyThemePreference, readThemePreference, type ThemePreference } from "@/lib/theme";
 import { createClient } from "@/lib/supabase/client";
 import { isNativePlatform } from "@/lib/native";
-import type { ExperienceLevel } from "@/lib/preferences";
-
-const LEVEL_LABEL: Record<ExperienceLevel, string> = {
-  beginner: "Getting started",
-  intermediate: "Training skills",
-  advanced: "Advanced holds",
-};
+import { EXPERIENCE_LABELS, readVoiceEnabled, writeVoiceEnabled, type ExperienceLevel } from "@/lib/preferences";
+import { readString, STORAGE_KEYS } from "@/lib/storage";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -29,22 +24,14 @@ export default function SettingsPage() {
   const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
-    try {
-      setVoice(localStorage.getItem("cft-voice") === "1");
-      setProvider(localStorage.getItem("cft-body-provider") ?? "movenet");
-    } catch {
-      // ignore
-    }
+    setVoice(readVoiceEnabled());
+    setProvider(readString(STORAGE_KEYS.bodyProvider) ?? "movenet");
     setTheme(readThemePreference());
   }, []);
 
   const setVoicePref = (v: boolean) => {
     setVoice(v);
-    try {
-      localStorage.setItem("cft-voice", v ? "1" : "0");
-    } catch {
-      // ignore
-    }
+    writeVoiceEnabled(v);
   };
 
   const cycleTheme = () => {
@@ -74,7 +61,7 @@ export default function SettingsPage() {
           onClick={() => update({ defaultMode: prefs.defaultMode === "perfect" ? "hold_only" : "perfect" })}
           trailing={<span className="text-sm font-medium text-accent">{prefs.defaultMode === "perfect" ? "Perfect" : "Hold only"}</span>}
         />
-        <ListRow label="Experience level" detail="Sets the suggested skill on Home" onClick={cycleLevel} trailing={<span className="text-sm font-medium text-accent">{LEVEL_LABEL[prefs.experience]}</span>} />
+        <ListRow label="Experience level" detail="Sets the suggested skill on Home" onClick={cycleLevel} trailing={<span className="text-sm font-medium text-accent">{EXPERIENCE_LABELS[prefs.experience]}</span>} />
       </ListGroup>
 
       <ListGroup title="Appearance">

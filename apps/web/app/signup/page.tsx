@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Screen } from "@/components/app/Screen";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -35,10 +36,8 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <div className="card p-8">
-        <h1 className="mb-2 text-2xl font-bold text-foreground">Create account</h1>
-        <p className="mb-6 text-sm text-muted">Start tracking holds and form progress.</p>
+    <Screen title="Create account" subtitle="Start backing up holds and coaching plans." back={{ href: "/settings", label: "Settings" }} className="max-w-md">
+      <div className="card p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
@@ -86,6 +85,6 @@ export default function SignupPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </Screen>
   );
 }

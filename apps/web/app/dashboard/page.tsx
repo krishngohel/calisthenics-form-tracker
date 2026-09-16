@@ -6,6 +6,7 @@ import { SKILLS, getSkill, type ProgressionDrill } from "@cft/core";
 import { SkillProgressChart } from "@/components/dashboard/SkillProgressChart";
 import { CoachingPanel } from "@/components/coaching/CoachingPanel";
 import { useAuthUser } from "@/hooks/useAuthUser";
+import { Screen } from "@/components/app/Screen";
 import { createClient } from "@/lib/supabase/client";
 import { formatSec } from "@/lib/format";
 
@@ -113,16 +114,17 @@ export default function DashboardPage() {
   const sessionsThisWeek = sessions.filter((s) => new Date(s.started_at).getTime() >= weekAgo).length;
 
   return (
-    <div className="page">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="text-muted">Welcome back — track your skill progress</p>
-        </div>
+    <Screen
+      title="Cloud dashboard"
+      subtitle="Synced history across your devices"
+      back={{ href: "/progress", label: "Progress" }}
+      action={
         <Link href="/skills" className="btn-primary text-sm">
           Train
         </Link>
-      </div>
+      }
+      className="max-w-6xl"
+    >
 
       {error && (
         <p role="alert" className="mb-6 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
@@ -165,7 +167,7 @@ export default function DashboardPage() {
           <CoachingPanel weakPoints={activePlan.weak_points} drills={activePlan.recommended_drills} />
         </section>
       )}
-    </div>
+    </Screen>
   );
 }
 

@@ -166,17 +166,6 @@ html[data-native="true"] textarea {
     @apply inline-flex items-center rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-muted;
   }
 
-  .mode-toggle {
-    @apply flex w-full rounded-xl border border-border bg-surface-muted p-1 shadow-sm sm:w-auto;
-  }
-
-  .mode-toggle-btn {
-    @apply min-h-11 flex-1 rounded-lg px-3 py-2 text-sm font-medium text-muted transition hover:text-accent-hover sm:flex-none sm:px-4;
-  }
-
-  .mode-toggle-btn-active {
-    @apply bg-accent font-semibold text-accent-foreground shadow-sm;
-  }
 
   /* Camera controls: round, high contrast, large tap targets. */
   .cam-btn {

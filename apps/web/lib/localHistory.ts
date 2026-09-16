@@ -1,4 +1,5 @@
 import type { HoldMode } from "@cft/core";
+import { readJson, STORAGE_KEYS, writeJson, writeString } from "./storage";
 
 /**
  * On-device hold history. Every completed hold lands here regardless of
@@ -14,38 +15,22 @@ export interface LocalHold {
   endedAt: string; // ISO
 }
 
-const KEY = "cft-history";
 const MAX_ENTRIES = 500;
 
 export function readHistory(): LocalHold[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as LocalHold[]) : [];
-  } catch {
-    return [];
-  }
+  const stored = readJson<unknown>(STORAGE_KEYS.history, []);
+  return Array.isArray(stored) ? (stored as LocalHold[]) : [];
 }
 
 export function appendHold(hold: Omit<LocalHold, "id">): LocalHold[] {
   const entry: LocalHold = { ...hold, id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}` };
   const next = [entry, ...readHistory()].slice(0, MAX_ENTRIES);
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-    window.dispatchEvent(new CustomEvent("cft:history"));
-  } catch {
-    // ignore
-  }
+  writeJson(STORAGE_KEYS.history, next);
   return next;
 }
 
 export function clearHistory(): void {
-  try {
-    localStorage.removeItem(KEY);
-    window.dispatchEvent(new CustomEvent("cft:history"));
-  } catch {
-    // ignore
-  }
+  writeString(STORAGE_KEYS.history, null);
 }
 
 export interface DayTotal {

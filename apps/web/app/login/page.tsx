@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Screen } from "@/components/app/Screen";
 
 function LoginForm() {
   const router = useRouter();
@@ -34,10 +35,8 @@ function LoginForm() {
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <div className="card p-8">
-        <h1 className="mb-2 text-2xl font-bold text-foreground">Welcome back</h1>
-        <p className="mb-6 text-sm text-muted">Sign in to save sessions and track progress.</p>
+    <Screen title="Welcome back" subtitle="Sign in to back up sessions and see progress on every device." back={{ href: "/settings", label: "Settings" }} className="max-w-md">
+      <div className="card p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
@@ -77,7 +76,7 @@ function LoginForm() {
           </Link>
         </p>
       </div>
-    </div>
+    </Screen>
   );
 }
 

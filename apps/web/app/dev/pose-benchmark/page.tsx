@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { CameraFeed, type CameraFacingMode } from "@/components/camera/CameraFeed";
 import { PoseOverlay } from "@/components/camera/PoseOverlay";
 import { usePoseBenchmark, usePoseDetection } from "@/hooks/usePoseDetection";
+import { Screen } from "@/components/app/Screen";
 
 export default function PoseBenchmarkPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -16,12 +17,12 @@ export default function PoseBenchmarkPage() {
     usePoseBenchmark(videoRef);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="mb-2 text-2xl font-bold">Pose Detection Benchmark</h1>
-      <p className="mb-6 text-muted">
-        Compare MoveNet Lightning vs MediaPipe Pose Lite. Runs 10s each in a
-        Web Worker; the winner becomes your default provider.
-      </p>
+    <Screen
+      title="Pose model"
+      subtitle="Compare MoveNet Lightning and MediaPipe Pose Lite on this device. Each runs for 10 seconds; the faster one becomes your default."
+      back={{ href: "/settings", label: "Settings" }}
+      className="max-w-4xl"
+    >
 
       <div className="relative mb-6 aspect-[3/4] max-h-[70vh] overflow-hidden rounded-2xl border border-border bg-black shadow-card sm:aspect-video sm:max-h-none">
         <CameraFeed
@@ -76,6 +77,6 @@ export default function PoseBenchmarkPage() {
           </div>
         </div>
       )}
-    </div>
+    </Screen>
   );
 }

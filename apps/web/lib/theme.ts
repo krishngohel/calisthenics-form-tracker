@@ -1,28 +1,17 @@
+import { readString, STORAGE_KEYS, writeString } from "./storage";
+
 export type ThemePreference = "system" | "light" | "dark";
 
-export const THEME_STORAGE_KEY = "cft-theme";
-
 export function readThemePreference(): ThemePreference {
-  if (typeof window === "undefined") return "system";
-  try {
-    const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    if (stored === "light" || stored === "dark") return stored;
-  } catch {
-    // ignore
-  }
-  return "system";
+  const stored = readString(STORAGE_KEYS.theme);
+  return stored === "light" || stored === "dark" ? stored : "system";
 }
 
 export function applyThemePreference(pref: ThemePreference): void {
   const root = document.documentElement;
   if (pref === "system") root.removeAttribute("data-theme");
   else root.setAttribute("data-theme", pref);
-  try {
-    if (pref === "system") localStorage.removeItem(THEME_STORAGE_KEY);
-    else localStorage.setItem(THEME_STORAGE_KEY, pref);
-  } catch {
-    // ignore
-  }
+  writeString(STORAGE_KEYS.theme, pref === "system" ? null : pref);
 }
 
 /** Effective theme after resolving "system". */
@@ -37,5 +26,5 @@ export function resolvedTheme(pref: ThemePreference): "light" | "dark" {
  * string because it must run before React hydrates.
  */
 export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem(${JSON.stringify(
-  THEME_STORAGE_KEY
+  STORAGE_KEYS.theme
 )});if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t)}}catch(e){}})();`;
