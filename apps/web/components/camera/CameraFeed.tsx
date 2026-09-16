@@ -15,6 +15,7 @@ interface CameraFeedProps {
   deviceId?: string;
   onFacingModeChange?: (mode: CameraFacingMode) => void;
   showFlipButton?: boolean;
+  flipButtonClassName?: string;
 }
 
 export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
@@ -27,6 +28,7 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
       deviceId,
       onFacingModeChange,
       showFlipButton = false,
+      flipButtonClassName = "absolute right-3 top-3 z-30 cam-btn",
     },
     ref
   ) {
@@ -113,7 +115,7 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
 
     if (error) {
       return (
-        <div className="flex aspect-[3/4] items-center justify-center rounded-2xl border border-border bg-surface-muted p-4 text-center text-muted sm:aspect-video">
+        <div className="flex h-full min-h-[16rem] w-full items-center justify-center bg-surface-muted p-4 text-center text-muted">
           <div>
             <p className="mb-1 font-medium text-foreground">Camera unavailable</p>
             <p className="text-sm">{error}</p>
@@ -139,7 +141,7 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
           <button
             type="button"
             onClick={flipCamera}
-            className="absolute right-3 top-3 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80 active:scale-95"
+            className={flipButtonClassName}
             aria-label={
               facingMode === "user"
                 ? "Switch to back camera"

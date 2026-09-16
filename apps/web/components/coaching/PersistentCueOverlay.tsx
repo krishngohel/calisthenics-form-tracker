@@ -20,7 +20,7 @@ export function PersistentCueOverlay({
   if (cues.length === 0) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 p-3 sm:p-4">
+    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4">
       {cues.length > 1 && onDismissAll && (
         <button
           type="button"
@@ -33,10 +33,10 @@ export function PersistentCueOverlay({
       {cues.map((cue) => (
         <div
           key={cue.id}
-          className="pointer-events-auto flex items-start gap-3 rounded-xl border border-accent/50 bg-black/85 p-4 shadow-lg backdrop-blur-md sm:p-5"
+          className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-emerald-300/50 bg-black/85 p-4 shadow-lg backdrop-blur-md sm:p-5"
         >
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-widest text-accent">
+            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300">
               Form cue
             </p>
             <p className="mt-1 text-lg font-semibold leading-snug text-white sm:text-xl">
@@ -46,7 +46,7 @@ export function PersistentCueOverlay({
           <button
             type="button"
             onClick={() => onDismiss(cue.id)}
-            className="shrink-0 rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground shadow-sm hover:bg-accent-hover"
+            className="shrink-0 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-bold text-black shadow-sm hover:bg-emerald-300"
             aria-label={`Dismiss cue: ${cue.text}`}
           >
             Got it

@@ -15,9 +15,9 @@ interface SessionProgressChartProps {
   points: SessionProgressPoint[];
 }
 
-const GRID = "#d4e8df";
-const AXIS = "#5f736a";
-const ACCENT = "#0d9488";
+const GRID = "var(--border)";
+const AXIS = "var(--muted)";
+const ACCENT = "var(--accent)";
 
 export function SessionProgressChart({ points }: SessionProgressChartProps) {
   const latest = points[points.length - 1]?.formScore;
@@ -60,12 +60,13 @@ export function SessionProgressChart({ points }: SessionProgressChartProps) {
               />
               <Tooltip
                 contentStyle={{
-                  background: "#ffffff",
-                  border: "1px solid #d4e8df",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  color: "var(--text)",
                   borderRadius: 12,
                   fontSize: 12,
-                  boxShadow: "0 4px 16px rgba(26, 46, 40, 0.08)",
                 }}
+                labelStyle={{ color: "var(--muted)" }}
                 labelFormatter={(v) => `${v}s into session`}
                 formatter={(value: number) => [`${value}%`, "Form"]}
               />

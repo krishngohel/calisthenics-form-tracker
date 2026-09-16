@@ -32,7 +32,7 @@ export default function PoseBenchmarkPage() {
           onVideoReady={() => setVideoReady(true)}
         />
         {videoReady && ready && (
-          <PoseOverlay getLandmarks={getRenderLandmarks} mirror={mirrored} />
+          <PoseOverlay getLandmarks={getRenderLandmarks} videoRef={videoRef} mirror={mirrored} />
         )}
       </div>
 

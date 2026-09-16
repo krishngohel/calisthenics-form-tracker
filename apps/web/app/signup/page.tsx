@@ -53,6 +53,7 @@ export default function SignupPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="input-field"
+            autoComplete="email"
             required
           />
           <input
@@ -61,11 +62,12 @@ export default function SignupPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="input-field"
+            autoComplete="new-password"
             minLength={6}
             required
           />
           {error && (
-            <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+            <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
               {error}
             </p>
           )}
