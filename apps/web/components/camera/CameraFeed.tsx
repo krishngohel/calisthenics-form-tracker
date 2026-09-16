@@ -15,6 +15,9 @@ interface CameraFeedProps {
   deviceId?: string;
   onFacingModeChange?: (mode: CameraFacingMode) => void;
   showFlipButton?: boolean;
+  flipButtonClassName?: string;
+  /** Reports camera failures (and recovery) so the parent can hide overlays. */
+  onError?: (message: string | null) => void;
 }
 
 export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
@@ -27,6 +30,8 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
       deviceId,
       onFacingModeChange,
       showFlipButton = false,
+      flipButtonClassName = "absolute right-3 top-3 z-30 cam-btn",
+      onError,
     },
     ref
   ) {
@@ -55,9 +60,14 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
     });
 
     const onStreamReadyRef = useRef(onStreamReady);
+    const onErrorRef = useRef(onError);
     useEffect(() => {
       onStreamReadyRef.current = onStreamReady;
+      onErrorRef.current = onError;
     });
+    useEffect(() => {
+      onErrorRef.current?.(error);
+    }, [error]);
 
     useEffect(() => {
       const blocked = cameraUnavailableReason();
@@ -113,10 +123,13 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
 
     if (error) {
       return (
-        <div className="flex aspect-[3/4] items-center justify-center rounded-2xl border border-border bg-surface-muted p-4 text-center text-muted sm:aspect-video">
-          <div>
-            <p className="mb-1 font-medium text-foreground">Camera unavailable</p>
-            <p className="text-sm">{error}</p>
+        <div className="flex h-full min-h-[16rem] w-full items-center justify-center bg-black p-6 text-center text-white/80" role="alert">
+          <div className="max-w-sm">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-2xl" aria-hidden>
+              📷
+            </div>
+            <p className="mb-1 text-lg font-bold text-white">Camera unavailable</p>
+            <p className="text-sm leading-relaxed">{error}</p>
           </div>
         </div>
       );
@@ -139,7 +152,7 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
           <button
             type="button"
             onClick={flipCamera}
-            className="absolute right-3 top-3 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80 active:scale-95"
+            className={flipButtonClassName}
             aria-label={
               facingMode === "user"
                 ? "Switch to back camera"

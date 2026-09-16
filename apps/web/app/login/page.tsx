@@ -1,12 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { Screen } from "@/components/app/Screen";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get("next");
+  const redirectTo = nextPath && nextPath.startsWith("/") ? nextPath : "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -26,15 +30,13 @@ export default function LoginPage() {
       setError(authError.message);
       return;
     }
-    router.push("/dashboard");
+    router.push(redirectTo);
     router.refresh();
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16">
-      <div className="card p-8">
-        <h1 className="mb-2 text-2xl font-bold text-foreground">Welcome back</h1>
-        <p className="mb-6 text-sm text-muted">Sign in to save sessions and track progress.</p>
+    <Screen title="Welcome back" subtitle="Sign in to back up sessions and see progress on every device." back={{ href: "/settings", label: "Settings" }} className="max-w-md">
+      <div className="card p-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="email"
@@ -42,6 +44,7 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="input-field"
+            autoComplete="email"
             required
           />
           <input
@@ -50,10 +53,11 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="input-field"
+            autoComplete="current-password"
             required
           />
           {error && (
-            <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+            <p role="alert" className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
               {error}
             </p>
           )}
@@ -72,6 +76,14 @@ export default function LoginPage() {
           </Link>
         </p>
       </div>
-    </div>
+    </Screen>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

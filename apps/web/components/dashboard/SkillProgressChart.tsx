@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { formatSec } from "@/lib/format";
 
 export interface ProgressPoint {
   date: string;
@@ -22,13 +23,9 @@ interface SkillProgressChartProps {
   skillName: string;
 }
 
-function formatSec(ms: number): string {
-  return `${(ms / 1000).toFixed(1)}s`;
-}
-
-const GRID = "#d4e8df";
-const AXIS = "#5f736a";
-const ACCENT = "#0d9488";
+const GRID = "var(--border)";
+const AXIS = "var(--muted)";
+const ACCENT = "var(--accent)";
 
 export function SkillProgressChart({ data, skillName }: SkillProgressChartProps) {
   if (data.length === 0) {
@@ -56,11 +53,12 @@ export function SkillProgressChart({ data, skillName }: SkillProgressChartProps)
           <YAxis stroke={AXIS} fontSize={12} unit="s" />
           <Tooltip
             contentStyle={{
-              background: "#ffffff",
-              border: "1px solid #d4e8df",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              color: "var(--text)",
               borderRadius: 12,
-              boxShadow: "0 4px 16px rgba(26, 46, 40, 0.08)",
             }}
+            labelStyle={{ color: "var(--muted)" }}
             formatter={(value: number, name: string) => {
               if (name === "bestHoldSec") return [formatSec(value * 1000), "Best hold"];
               if (name === "avgFormScore") return [`${value}%`, "Form score"];

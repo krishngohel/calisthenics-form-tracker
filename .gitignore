@@ -5,3 +5,15 @@ dist/
 .env.local
 *.log
 .DS_Store
+*.tsbuildinfo
+.netlify/
+coverage/
+.env*.local
+apps/web/out/
+apps/web/ios/App/Pods/
+apps/web/ios/App/build/
+apps/web/ios/App/App/public/
+apps/web/ios/App/App/capacitor.config.json
+apps/web/ios/App/App/config.xml
+apps/web/ios/DerivedData/
+**/xcuserdata/

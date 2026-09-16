@@ -4,7 +4,11 @@ export * from "./pose/distance";
 export * from "./pose/hands";
 export * from "./pose/smoothing";
 export * from "./pose/interpolation";
+export * from "./pose/confidence";
+export * from "./pose/persistence";
+export * from "./pose/viewport";
 export * from "./hold/stateMachine";
+export * from "./hold/accumulator";
 export * from "./skills/registry";
 export * from "./skills/formPointers";
 export * from "./skills/learningPaths";
@@ -15,12 +19,4 @@ export * from "./scoring/formScore";
 export * from "./coaching/progressions";
 export * from "./coaching/planGenerator";
 
-export {
-  PERFORMANCE_PROFILES,
-  OVERLAY_SMOOTHING,
-  HOLD_SMOOTHING,
-  detectPerformanceTier,
-  computeJitterScore,
-  type PerformanceTier,
-  type PerformanceProfile,
-} from "./pose/performance";
+export * from "./pose/performance";

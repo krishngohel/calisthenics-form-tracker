@@ -1,31 +1,34 @@
 import { createClient } from "./client";
-import type { CoachingPlan } from "@cft/core";
-import type { FormMetric } from "@cft/core";
+import type { CoachingPlan, FormMetric, HoldMode } from "@cft/core";
 
 export interface HoldSessionInput {
   userId: string;
   skillId: string;
-  mode: "hold_only" | "perfect";
+  mode: HoldMode;
   durationMs: number;
   formScore: number;
   metrics: FormMetric[];
+  /** Wall-clock time the hold ended; defaults to now. */
+  endedAt?: Date;
 }
 
-export async function saveHoldSession(input: HoldSessionInput) {
+export async function saveHoldSession(input: HoldSessionInput): Promise<void> {
   const supabase = createClient();
+  const endedAt = input.endedAt ?? new Date();
+  const startedAt = new Date(endedAt.getTime() - input.durationMs);
   const { error } = await supabase.from("hold_sessions").insert({
     user_id: input.userId,
     skill_id: input.skillId,
     mode: input.mode,
-    duration_ms: input.durationMs,
-    form_score: input.formScore,
+    duration_ms: Math.round(input.durationMs),
+    form_score: Math.round(input.formScore),
     peak_metrics: input.metrics,
-    started_at: new Date().toISOString(),
+    started_at: startedAt.toISOString(),
   });
-  if (error) console.error("saveHoldSession", error);
+  if (error) throw new Error(`saveHoldSession: ${error.message}`);
 }
 
-export async function saveCoachingPlan(userId: string, plan: CoachingPlan) {
+export async function saveCoachingPlan(userId: string, plan: CoachingPlan): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from("coaching_plans").upsert(
     {
@@ -37,39 +40,5 @@ export async function saveCoachingPlan(userId: string, plan: CoachingPlan) {
     },
     { onConflict: "user_id,skill_id" }
   );
-  if (error) console.error("saveCoachingPlan", error);
-}
-
-export async function fetchUserSessions(userId: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("hold_sessions")
-    .select("*")
-    .eq("user_id", userId)
-    .order("started_at", { ascending: false });
-  if (error) return [];
-  return data ?? [];
-}
-
-export async function fetchDailyProgress(userId: string, skillId?: string) {
-  const supabase = createClient();
-  let query = supabase
-    .from("skill_progress_daily")
-    .select("*")
-    .eq("user_id", userId)
-    .order("date", { ascending: true });
-  if (skillId) query = query.eq("skill_id", skillId);
-  const { data, error } = await query;
-  if (error) return [];
-  return data ?? [];
-}
-
-export async function fetchCoachingPlans(userId: string) {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("coaching_plans")
-    .select("*")
-    .eq("user_id", userId);
-  if (error) return [];
-  return data ?? [];
+  if (error) throw new Error(`saveCoachingPlan: ${error.message}`);
 }

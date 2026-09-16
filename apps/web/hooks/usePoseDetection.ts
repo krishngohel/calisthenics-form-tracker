@@ -11,15 +11,18 @@ import type {
 import {
   HandInterpolator,
   LandmarkInterpolator,
+  LandmarkPersistence,
   PoseSmoother,
   rejectOutliers,
   getDistanceContext,
+  dropLowConfidence,
   detectPerformanceTier,
   PERFORMANCE_PROFILES,
   OVERLAY_SMOOTHING,
   HOLD_SMOOTHING,
 } from "@cft/core";
 import { isIOS } from "@/lib/camera/platform";
+import { readString, STORAGE_KEYS, writeString } from "@/lib/storage";
 
 export interface PoseDetectionState {
   inferenceMs: number;
@@ -28,11 +31,22 @@ export interface PoseDetectionState {
   error: string | null;
 }
 
+export interface PoseFrameInfo {
+  /** Video frame width / height. Pass to `toIsotropic` before running geometry. */
+  aspect: number;
+  timestamp: number;
+}
+
 export interface UsePoseDetectionOptions {
   bodyProvider?: BodyProviderId;
   /** Run hand landmarker for fingertip skeleton. Default true. */
   trackHands?: boolean;
-  onFrame?: (body: Record<string, Landmark | null>, hands: HandLandmarks) => void;
+  /** Fired per detection frame with confidence-filtered, hold-smoothed landmarks (frame space). */
+  onFrame?: (
+    body: Record<string, Landmark | null>,
+    hands: HandLandmarks,
+    frame: PoseFrameInfo
+  ) => void;
   /** Fired each detection frame with athlete distance in frame. */
   onDistanceContext?: (ctx: DistanceContext) => void;
 }
@@ -47,6 +61,10 @@ const STATS_UPDATE_INTERVAL_MS = 500;
 const BENCHMARK_TIMEOUT_MS = 45_000;
 /** Predict skeleton slightly ahead of the last detection frame. */
 const EXTRAPOLATE_MS = 40;
+
+function createWorker(): Worker {
+  return new Worker(new URL("../workers/pose.worker.ts", import.meta.url));
+}
 
 async function createCaptureBitmap(
   video: HTMLVideoElement,
@@ -85,8 +103,10 @@ export function usePoseDetection(
   const { bodyProvider = "movenet", trackHands = true, onFrame, onDistanceContext } =
     options;
   const workerRef = useRef<Worker | null>(null);
+  const readyRef = useRef(false);
   const overlaySmootherRef = useRef(new PoseSmoother());
   const holdSmootherRef = useRef(new PoseSmoother());
+  const persistenceRef = useRef(new LandmarkPersistence());
   const handSmootherRef = useRef(new PoseSmoother());
   const overlayInterpolatorRef = useRef(new LandmarkInterpolator());
   const handInterpolatorRef = useRef(new HandInterpolator());
@@ -97,26 +117,34 @@ export function usePoseDetection(
   const captureEdgeRef = useRef(DEFAULT_CAPTURE_EDGE);
   const lastStatsUpdateRef = useRef(0);
   const isPageVisibleRef = useRef(true);
+  const trackHandsRef = useRef(trackHands);
 
   const onFrameRef = useRef(onFrame);
-  useEffect(() => {
-    onFrameRef.current = onFrame;
-  });
-
   const onDistanceContextRef = useRef(onDistanceContext);
   useEffect(() => {
+    onFrameRef.current = onFrame;
     onDistanceContextRef.current = onDistanceContext;
+    trackHandsRef.current = trackHands;
   });
 
   // Default to medium so SSR and first client paint match; tier is resolved after mount.
   const [tier, setTier] = useState<PerformanceTier>("medium");
   const profile = PERFORMANCE_PROFILES[tier];
-  const overlayTuning = OVERLAY_SMOOTHING[tier];
-  const holdTuning = HOLD_SMOOTHING[tier];
 
   useEffect(() => {
     setTier(isIOS() ? "low" : detectPerformanceTier());
   }, []);
+
+  // Re-tune smoothing when the tier resolves — without tearing down the worker.
+  useEffect(() => {
+    const overlayTuning = OVERLAY_SMOOTHING[tier];
+    overlaySmootherRef.current = new PoseSmoother(overlayTuning);
+    holdSmootherRef.current = new PoseSmoother(HOLD_SMOOTHING[tier]);
+    handSmootherRef.current = new PoseSmoother({
+      minCutoff: overlayTuning.minCutoff + 0.5,
+      beta: overlayTuning.beta + 0.05,
+    });
+  }, [tier]);
 
   const [state, setState] = useState<PoseDetectionState>({
     inferenceMs: 0,
@@ -136,16 +164,13 @@ export function usePoseDetection(
   }, []);
 
   useEffect(() => {
-    const worker = new Worker(
-      new URL("../workers/pose.worker.ts", import.meta.url)
-    );
+    const worker = createWorker();
     workerRef.current = worker;
-    overlaySmootherRef.current = new PoseSmoother(overlayTuning);
-    holdSmootherRef.current = new PoseSmoother(holdTuning);
-    handSmootherRef.current = new PoseSmoother({
-      minCutoff: overlayTuning.minCutoff + 0.5,
-      beta: overlayTuning.beta + 0.05,
-    });
+    readyRef.current = false;
+    overlaySmootherRef.current.reset();
+    holdSmootherRef.current.reset();
+    handSmootherRef.current.reset();
+    persistenceRef.current.reset();
     overlayInterpolatorRef.current.reset();
     handInterpolatorRef.current.reset();
     lastBodyRef.current = null;
@@ -156,20 +181,25 @@ export function usePoseDetection(
     worker.onmessage = (ev) => {
       const data = ev.data;
       if (data.type === "ready") {
+        readyRef.current = true;
         setState((s) => ({
           ...s,
           ready: true,
           error: null,
           provider: data.bodyProvider,
         }));
+      } else if (data.type === "skipped") {
+        busyRef.current = false;
       } else if (data.type === "result") {
         busyRef.current = false;
-        const rawBody = data.body as Record<string, Landmark | null>;
-        const distanceCtx = getDistanceContext(rawBody);
+        // Off-frame / occluded joints come back with near-zero confidence at
+        // arbitrary positions; drop them before any geometry sees them.
+        const body = dropLowConfidence(data.body as Record<string, Landmark | null>);
+        const distanceCtx = getDistanceContext(body);
         captureEdgeRef.current = distanceCtx.captureMaxEdge;
         onDistanceContextRef.current?.(distanceCtx);
 
-        if (rejectOutliers(lastBodyRef.current, rawBody)) {
+        if (rejectOutliers(lastBodyRef.current, body)) {
           rejectCountRef.current++;
           if (rejectCountRef.current < MAX_CONSECUTIVE_REJECTS) return;
           holdSmootherRef.current.reset();
@@ -177,32 +207,31 @@ export function usePoseDetection(
         }
         rejectCountRef.current = 0;
 
-        const overlayBody = overlaySmootherRef.current.smoothLandmarks(
-          rawBody,
-          data.timestamp
-        );
-        let bodyForHold = holdSmootherRef.current.smoothLandmarks(
-          rawBody,
-          data.timestamp
-        );
+        const overlayBody = overlaySmootherRef.current.smoothLandmarks(body, data.timestamp);
+        // Rules get a gap-bridged body so a one-frame dropout cannot end a hold.
+        const persisted = persistenceRef.current.apply(body, data.timestamp);
+        let bodyForHold = holdSmootherRef.current.smoothLandmarks(persisted, data.timestamp);
         if (distanceCtx.isFar) {
-          bodyForHold = holdSmootherRef.current.smoothLandmarks(
-            bodyForHold,
-            data.timestamp
-          );
+          bodyForHold = holdSmootherRef.current.smoothLandmarks(bodyForHold, data.timestamp);
         }
-        lastBodyRef.current = rawBody;
+        lastBodyRef.current = body;
 
         const rawHands = data.hands as HandLandmarks;
-        const smoothedHands = trackHands
+        const wantHands = trackHandsRef.current;
+        const smoothedHands = wantHands
           ? handSmootherRef.current.smoothHands(rawHands, data.timestamp)
           : rawHands;
 
         overlayInterpolatorRef.current.update(overlayBody, data.timestamp);
-        if (trackHands) {
+        if (wantHands) {
           handInterpolatorRef.current.update(smoothedHands, data.timestamp);
         }
-        onFrameRef.current?.(bodyForHold, smoothedHands);
+        const frameWidth = Number(data.frameWidth) || 0;
+        const frameHeight = Number(data.frameHeight) || 0;
+        onFrameRef.current?.(bodyForHold, smoothedHands, {
+          aspect: frameWidth > 0 && frameHeight > 0 ? frameWidth / frameHeight : 1,
+          timestamp: data.timestamp,
+        });
 
         const now = performance.now();
         if (now - lastStatsUpdateRef.current > STATS_UPDATE_INTERVAL_MS) {
@@ -214,30 +243,28 @@ export function usePoseDetection(
           }));
         }
       } else if (data.type === "error") {
+        readyRef.current = false;
         setState((s) => ({ ...s, ready: false, error: data.message }));
         busyRef.current = false;
       }
     };
 
     setState((s) => ({ ...s, ready: false, error: null, provider: bodyProvider }));
-    worker.postMessage({
-      type: "init",
-      bodyProvider,
-      enableHands: trackHands,
-    });
+    worker.postMessage({ type: "init", bodyProvider, enableHands: trackHands });
 
     return () => {
+      readyRef.current = false;
       worker.postMessage({ type: "dispose" });
       worker.terminate();
       workerRef.current = null;
     };
-  }, [bodyProvider, trackHands, tier]);
+  }, [bodyProvider, trackHands]);
 
   const detectLoop = useCallback(async () => {
     const video = videoRef.current;
     const worker = workerRef.current;
-    if (!video || !worker || video.readyState < 2 || busyRef.current) return;
-    if (!video.videoWidth || !video.videoHeight) return;
+    if (!video || !worker || !readyRef.current || busyRef.current) return;
+    if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) return;
     if (!isPageVisibleRef.current) return;
 
     const now = performance.now();
@@ -253,14 +280,14 @@ export function usePoseDetection(
           type: "detect",
           imageBitmap: bitmap,
           timestamp: now,
-          enableHands: trackHands,
+          enableHands: trackHandsRef.current,
         },
         [bitmap]
       );
     } catch {
       busyRef.current = false;
     }
-  }, [videoRef, trackHands, profile.detectFps]);
+  }, [videoRef, profile.detectFps]);
 
   useEffect(() => {
     let raf = 0;
@@ -319,9 +346,7 @@ export function usePoseBenchmark(
         throw new Error("Video not ready");
       }
 
-      const worker = new Worker(
-        new URL("../workers/pose.worker.ts", import.meta.url)
-      );
+      const worker = createWorker();
 
       try {
         return await withTimeout(
@@ -404,7 +429,7 @@ export function usePoseBenchmark(
         ? "movenet"
         : "mediapipe";
     setRecommendation(winner);
-    localStorage.setItem("cft-body-provider", winner);
+    writeString(STORAGE_KEYS.bodyProvider, winner);
     setRunning(false);
   }, [runProviderBenchmark, running, videoRef]);
 
@@ -413,7 +438,7 @@ export function usePoseBenchmark(
 
 export function getStoredBodyProvider(): BodyProviderId {
   if (typeof window === "undefined") return "movenet";
-  const stored = localStorage.getItem("cft-body-provider");
+  const stored = readString(STORAGE_KEYS.bodyProvider);
   if (stored === "mediapipe" || stored === "movenet") return stored;
   return isIOS() ? "mediapipe" : "movenet";
 }

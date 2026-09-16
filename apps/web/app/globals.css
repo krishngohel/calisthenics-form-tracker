@@ -2,39 +2,110 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/*
+ * Design tokens. Light is the default; dark follows the OS unless the user
+ * pins a theme via data-theme on <html>. Training surfaces (camera HUD) are
+ * always dark so text stays legible over video.
+ */
 :root {
-  --bg: #f6faf8;
-  --bg-alt: #e9f5f0;
+  color-scheme: light;
+  --bg: #f4faf7;
+  --bg-alt: #e6f4ee;
   --surface: #ffffff;
-  --surface-muted: #f0f7f4;
-  --border: #d4e8df;
-  --border-subtle: #e8f2ed;
+  --surface-muted: #eef6f2;
+  --border: #cfe4da;
+  --border-subtle: #e3efe9;
   --accent: #0d9488;
   --accent-hover: #0f766e;
   --accent-soft: #ccfbf1;
   --accent-muted: #99f6e4;
   --accent-foreground: #ffffff;
-  --text: #1a2e28;
-  --muted: #5f736a;
+  --text: #14231e;
+  --muted: #55695f;
   --danger: #e11d48;
   --danger-soft: #fff1f2;
-  --warning: #d97706;
-  --warning-soft: #fffbeb;
-  --shadow-color: 26 46 40;
+  --warning: #c2410c;
+  --warning-soft: #fff7ed;
+  --shadow-color: 20 40 32;
+  --hud-bg: rgba(6, 14, 11, 0.72);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0b1512;
+    --bg-alt: #0f1d18;
+    --surface: #132119;
+    --surface-muted: #192c23;
+    --border: #244136;
+    --border-subtle: #1b3128;
+    --accent: #2dd4bf;
+    --accent-hover: #5eead4;
+    --accent-soft: #123f39;
+    --accent-muted: #0f5f57;
+    --accent-foreground: #04201b;
+    --text: #e8f4ee;
+    --muted: #9fb8ad;
+    --danger: #fb7185;
+    --danger-soft: #3b1220;
+    --warning: #fbbf24;
+    --warning-soft: #3a2a06;
+    --shadow-color: 0 0 0;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1512;
+  --bg-alt: #0f1d18;
+  --surface: #132119;
+  --surface-muted: #192c23;
+  --border: #244136;
+  --border-subtle: #1b3128;
+  --accent: #2dd4bf;
+  --accent-hover: #5eead4;
+  --accent-soft: #123f39;
+  --accent-muted: #0f5f57;
+  --accent-foreground: #04201b;
+  --text: #e8f4ee;
+  --muted: #9fb8ad;
+  --danger: #fb7185;
+  --danger-soft: #3b1220;
+  --warning: #fbbf24;
+  --warning-soft: #3a2a06;
+  --shadow-color: 0 0 0;
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: linear-gradient(
-    165deg,
-    var(--bg) 0%,
-    var(--bg-alt) 45%,
-    #f0faf6 100%
-  );
+  background: linear-gradient(165deg, var(--bg) 0%, var(--bg-alt) 55%, var(--bg) 100%);
   background-attachment: fixed;
   color: var(--text);
   min-height: 100vh;
+  min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+/* Native shell: no rubber-band, no text selection on controls. */
+html[data-native="true"] body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+html[data-native="true"] input,
+html[data-native="true"] textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .safe-top {
@@ -45,40 +116,204 @@ body {
   padding-bottom: max(3rem, env(safe-area-inset-bottom));
 }
 
+.safe-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 @layer components {
+  .page {
+    @apply mx-auto max-w-6xl px-4 py-6 sm:py-8;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold tracking-tight text-foreground sm:text-3xl;
+  }
+
+  .section-title {
+    @apply mb-4 text-lg font-semibold text-foreground;
+  }
+
   .card {
     @apply rounded-2xl border border-border bg-surface shadow-card;
   }
 
   .card-interactive {
-    @apply card transition hover:border-accent hover:shadow-card-hover;
+    @apply card transition hover:border-accent hover:shadow-card-hover active:scale-[0.99];
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-border bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent-soft;
+    @apply w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-foreground outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent-soft;
   }
 
   .btn-primary {
-    @apply rounded-xl bg-accent px-6 py-3 font-semibold text-accent-foreground shadow-sm transition hover:bg-accent-hover hover:shadow-md active:scale-[0.98];
+    @apply inline-flex min-h-12 items-center justify-center rounded-xl bg-accent px-6 py-3 font-semibold text-accent-foreground shadow-sm transition hover:bg-accent-hover hover:shadow-md active:scale-[0.98];
   }
 
   .btn-secondary {
-    @apply rounded-xl border border-border bg-surface px-6 py-3 font-semibold text-foreground shadow-sm transition hover:border-accent hover:bg-surface-muted active:scale-[0.98];
+    @apply inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-surface px-6 py-3 font-semibold text-foreground shadow-sm transition hover:border-accent hover:bg-surface-muted active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-muted hover:text-accent;
   }
 
   .chip {
-    @apply rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent-hover;
+    @apply inline-flex items-center rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent-hover;
   }
 
-  .mode-toggle {
-    @apply flex w-full rounded-xl border border-border bg-surface-muted p-1 shadow-sm sm:w-auto;
+  .chip-muted {
+    @apply inline-flex items-center rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-muted;
   }
 
-  .mode-toggle-btn {
-    @apply min-h-11 flex-1 rounded-lg px-3 py-2 text-sm capitalize text-muted transition hover:text-accent-hover sm:flex-none sm:px-4;
+
+  /* Camera controls: round, high contrast, large tap targets. */
+  .cam-btn {
+    @apply flex h-11 w-11 items-center justify-center rounded-full text-white backdrop-blur-sm transition active:scale-95;
+    background: var(--hud-bg);
+  }
+  .cam-btn[aria-pressed="true"] {
+    @apply bg-accent text-accent-foreground;
   }
 
-  .mode-toggle-btn-active {
-    @apply bg-accent font-medium text-accent-foreground shadow-sm;
+  .hud-panel {
+    @apply rounded-2xl px-3 py-2 text-white backdrop-blur-md;
+    background: var(--hud-bg);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* ------------------------------------------------------------------------
+ * App shell (native + phone-width web): bottom tabs, large-title screens.
+ * Desktop web keeps the top nav. Controlled by html[data-native] and the
+ * viewport width; the inline script in the layout sets data-native before
+ * first paint so there is no flash of the wrong chrome.
+ * --------------------------------------------------------------------- */
+:root {
+  --tab-bar-height: 56px;
+}
+
+.app-shell-only {
+  display: none;
+}
+@media (max-width: 640px) {
+  .app-shell-only {
+    display: block;
+  }
+  .web-only {
+    display: none;
+  }
+}
+html[data-native="true"] .app-shell-only {
+  display: block;
+}
+html[data-native="true"] .web-only {
+  display: none;
+}
+
+/* Reserve room for the tab bar on tabbed screens. */
+@media (max-width: 640px) {
+  main.with-tabs {
+    padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 1.5rem);
+  }
+}
+html[data-native="true"] main.with-tabs {
+  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 1.5rem);
+}
+
+@layer components {
+  .tab-bar {
+    @apply fixed inset-x-0 bottom-0 z-40 flex border-t border-border-subtle;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .tab-item {
+    @apply flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted transition active:opacity-60;
+  }
+
+  .tab-item-active {
+    @apply text-accent;
+  }
+
+  .screen {
+    @apply mx-auto max-w-2xl px-4 pb-8;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+  @media (min-width: 641px) {
+    .screen {
+      @apply pt-8;
+    }
+  }
+
+  .screen-header {
+    @apply mb-5;
+  }
+
+  .screen-title {
+    @apply text-[2rem] font-extrabold leading-tight tracking-tight text-foreground;
+  }
+
+  .screen-back {
+    @apply mb-1 -ml-1 inline-flex min-h-10 items-center gap-0.5 text-base font-medium text-accent;
+  }
+
+  .list-group-title {
+    @apply mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+
+  .list-group {
+    @apply overflow-hidden rounded-2xl border border-border-subtle bg-surface shadow-card;
+  }
+
+  .list-row {
+    @apply flex min-h-14 items-center gap-3 px-4 py-3 transition active:bg-surface-muted;
+  }
+  .list-row + .list-row {
+    @apply border-t border-border-subtle;
+  }
+
+  .toggle {
+    @apply relative h-8 w-[52px] shrink-0 rounded-full bg-border transition-colors;
+  }
+  .toggle-on {
+    @apply bg-accent;
+  }
+  .toggle-knob {
+    @apply absolute left-0.5 top-0.5 h-7 w-7 rounded-full bg-white shadow transition-transform;
+  }
+  .toggle-on .toggle-knob {
+    transform: translateX(20px);
+  }
+
+  .hero-card {
+    @apply relative overflow-hidden rounded-3xl p-5 text-white shadow-card;
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #2dd4bf 100%);
+  }
+
+  .stat-tile {
+    @apply rounded-2xl border border-border-subtle bg-surface p-4 shadow-card;
+  }
+
+  .segmented {
+    @apply flex rounded-xl bg-surface-muted p-1;
+  }
+  .segmented-btn {
+    @apply min-h-10 flex-1 rounded-lg px-3 text-sm font-medium text-muted transition;
+  }
+  .segmented-btn-active {
+    @apply bg-surface font-semibold text-foreground shadow-sm;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply mb-2 text-xs font-bold uppercase tracking-[0.2em] text-accent;
+  }
+  .onboarding-title {
+    @apply mb-3 text-[1.85rem] font-extrabold leading-tight tracking-tight text-foreground;
   }
 }

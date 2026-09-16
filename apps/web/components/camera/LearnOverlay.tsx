@@ -4,41 +4,41 @@ import { useEffect, useRef } from "react";
 import {
   SKELETON_CONNECTIONS,
   computeFormCorrections,
-  getTargetPose,
+  getAlignedTargetPose,
   type FormMetric,
   type Landmark,
 } from "@cft/core";
+import { prepareOverlayFrame, visible, type VideoRef } from "@/lib/overlay/canvas";
 
 interface LearnOverlayProps {
   skillId: string;
   getLandmarks: () => Record<string, Landmark | null> | null;
   getMetrics: () => FormMetric[] | null;
+  videoRef?: VideoRef;
   mirror?: boolean;
 }
 
-const MIN_DRAW_VISIBILITY = 0.3;
-
-function visible(lm: Landmark | null | undefined): lm is Landmark {
-  return !!lm && (lm.visibility ?? 1) >= MIN_DRAW_VISIBILITY;
-}
-
 /**
- * Learn mode overlay: ghost target pose + correction arrows toward ideal positions.
+ * Learn mode overlay: ghost target pose fitted onto the athlete, plus
+ * correction arrows from failing joints toward where they should be.
  */
 export function LearnOverlay({
   skillId,
   getLandmarks,
   getMetrics,
+  videoRef,
   mirror = true,
 }: LearnOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const getLandmarksRef = useRef(getLandmarks);
   const getMetricsRef = useRef(getMetrics);
+  const videoRefRef = useRef(videoRef);
   const mirrorRef = useRef(mirror);
 
   useEffect(() => {
     getLandmarksRef.current = getLandmarks;
     getMetricsRef.current = getMetrics;
+    videoRefRef.current = videoRef;
     mirrorRef.current = mirror;
   });
 
@@ -72,31 +72,19 @@ export function LearnOverlay({
       raf = requestAnimationFrame(draw);
       const canvas = canvasRef.current;
       if (!canvas) return;
-
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0) return;
-      const dpr = window.devicePixelRatio || 1;
-      const w = Math.round(rect.width * dpr);
-      const h = Math.round(rect.height * dpr);
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-      }
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.clearRect(0, 0, w, h);
+      const frame = prepareOverlayFrame(
+        canvas,
+        videoRefRef.current?.current,
+        mirrorRef.current
+      );
+      if (!frame) return;
+      const { ctx, dpr, toPx } = frame;
 
       const landmarks = getLandmarksRef.current();
+      if (!landmarks) return;
+      const targetPose = getAlignedTargetPose(skillId, landmarks);
+      if (!targetPose) return;
       const metrics = getMetricsRef.current();
-      const targetPose = getTargetPose(skillId);
-      if (!landmarks || !targetPose) return;
-
-      const useMirror = mirrorRef.current;
-      const toPx = (lm: Landmark) => ({
-        x: (useMirror ? 1 - lm.x : lm.x) * w,
-        y: lm.y * h,
-      });
 
       // Ghost target skeleton
       ctx.setLineDash([8 * dpr, 6 * dpr]);
@@ -124,7 +112,6 @@ export function LearnOverlay({
         ctx.fill();
       }
 
-      // "Target" label
       const noseTarget = targetPose.nose;
       if (noseTarget) {
         const p = toPx(noseTarget);
@@ -135,9 +122,8 @@ export function LearnOverlay({
 
       if (!metrics) return;
 
-      const corrections = computeFormCorrections(skillId, metrics, landmarks);
+      const corrections = computeFormCorrections(skillId, metrics, landmarks, targetPose);
 
-      // Correction arrows from current joint toward target
       ctx.strokeStyle = "#fbbf24";
       ctx.fillStyle = "#fbbf24";
       ctx.lineWidth = 3 * dpr;
@@ -163,12 +149,10 @@ export function LearnOverlay({
         ctx.stroke();
         drawArrowHead(ctx, from.x, from.y, endX, endY, 10 * dpr);
 
-        // Highlight joint to move
         ctx.beginPath();
         ctx.arc(from.x, from.y, 7 * dpr, 0, Math.PI * 2);
         ctx.stroke();
 
-        // Cue label near midpoint
         const midX = (from.x + endX) / 2;
         const midY = (from.y + endY) / 2;
         ctx.font = `bold ${10 * dpr}px system-ui, sans-serif`;
@@ -195,6 +179,7 @@ export function LearnOverlay({
   return (
     <canvas
       ref={canvasRef}
+      aria-hidden
       className="pointer-events-none absolute inset-0 h-full w-full"
     />
   );

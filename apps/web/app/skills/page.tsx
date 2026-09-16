@@ -2,108 +2,58 @@
 
 import Link from "next/link";
 import { LEARNING_PATHS, getSkill } from "@cft/core";
+import { Screen, ChevronRight } from "@/components/app/Screen";
+import { useLocalHistory } from "@/hooks/useLocalHistory";
+import { formatSec } from "@/lib/format";
 
 export default function SkillsPage() {
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
-      <h1 className="mb-2 text-xl font-bold text-foreground sm:text-2xl">
-        Learning paths
-      </h1>
-      <p className="mb-6 text-sm leading-relaxed text-muted sm:text-base">
-        Follow each path in order — earlier skills build the strength and positions
-        needed for later ones.
-      </p>
+  const { stats } = useLocalHistory();
 
-      <Link
-        href="/train"
-        className="card-interactive mb-8 flex items-center justify-between border-accent/25 bg-accent-soft/40 p-4 sm:p-5"
-      >
+  return (
+    <Screen title="Paths" subtitle="Each path builds toward a goal skill. Train in order or jump in.">
+      <Link href="/train" className="hero-card mb-6 flex items-center justify-between gap-4 active:scale-[0.99]">
         <div>
-          <h2 className="font-semibold text-accent-hover">Auto-detect training</h2>
-          <p className="mt-1 text-sm text-muted">
-            Already know a hold? The camera picks the skill automatically.
-          </p>
+          <div className="text-lg font-extrabold">Auto-detect</div>
+          <div className="text-sm text-white/85">Strike a hold and the app picks the skill.</div>
         </div>
-        <span className="text-xl text-accent">→</span>
+        <span className="text-2xl">→</span>
       </Link>
 
-      <div className="space-y-10">
-        {LEARNING_PATHS.map((path) => (
-          <section key={path.id}>
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-accent-hover">
-                {path.name}
-              </h2>
-              <p className="mt-1 text-sm leading-relaxed text-muted">
-                {path.description}
-              </p>
-            </div>
-
-            <ol className="space-y-3">
-              {path.skillIds.map((skillId, index) => {
-                const skill = getSkill(skillId);
-                if (!skill) return null;
-                const isFirst = index === 0;
-                const isLast = index === path.skillIds.length - 1;
-
-                return (
-                  <li key={skillId}>
-                    <Link
-                      href={`/train/${skillId}`}
-                      className="group flex gap-3 card-interactive p-4 sm:gap-4 sm:p-5"
-                    >
-                      <div className="flex shrink-0 flex-col items-center">
-                        <span
-                          className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${
-                            isFirst
-                              ? "bg-accent text-accent-foreground shadow-sm"
-                              : "bg-accent-soft text-accent-hover group-hover:bg-accent-muted/50"
-                          }`}
-                        >
-                          {index + 1}
-                        </span>
-                        {!isLast && (
-                          <span
-                            className="mt-1 min-h-4 w-px flex-1 bg-border"
-                            aria-hidden
-                          />
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-medium text-foreground">
-                            {skill.name}
-                          </h3>
-                          {isFirst && (
-                            <span className="chip">Start here</span>
-                          )}
-                          {isLast && path.skillIds.length > 1 && (
-                            <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-muted">
-                              Path goal
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-1 text-sm leading-relaxed text-muted">
-                          {skill.cameraGuide}
-                        </p>
-                        <p className="mt-2 text-xs capitalize text-muted/80">
-                          {skill.cameraAngle} camera
-                          {skill.needsHands ? " · hands tracked" : ""}
-                        </p>
-                      </div>
-
-                      <span className="shrink-0 self-center text-muted transition group-hover:text-accent">
-                        →
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-        ))}
-      </div>
-    </div>
+      {LEARNING_PATHS.map((path) => (
+        <section key={path.id} id={path.id} className="mb-8 scroll-mt-4">
+          <div className="mb-2 flex items-baseline justify-between px-1">
+            <h2 className="text-lg font-bold text-foreground">{path.name}</h2>
+            <span className="text-xs text-muted">{path.skillIds.length} skills</span>
+          </div>
+          <p className="mb-3 px-1 text-sm text-muted">{path.description}</p>
+          <div className="list-group">
+            {path.skillIds.map((skillId, index) => {
+              const skill = getSkill(skillId);
+              if (!skill) return null;
+              const best = stats.bestBySkill[skillId];
+              return (
+                <Link key={skillId} href={`/train/${skillId}`} className="list-row">
+                  <span
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                      best ? "bg-accent text-accent-foreground" : "bg-accent-soft text-accent-hover"
+                    }`}
+                  >
+                    {best ? "✓" : index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-foreground">{skill.name}</div>
+                    <div className="truncate text-xs text-muted">
+                      {best ? `Best ${formatSec(best.durationMs)} · ` : ""}
+                      {skill.cameraAngle} view
+                    </div>
+                  </div>
+                  <ChevronRight />
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </Screen>
   );
 }

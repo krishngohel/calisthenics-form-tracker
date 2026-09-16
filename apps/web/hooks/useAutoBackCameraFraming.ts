@@ -154,6 +154,11 @@ export function useAutoBackCameraFraming(): UseAutoBackCameraFramingResult {
   const onDistanceContext = useCallback(
     (ctx: DistanceContext) => {
       if (facingMode !== "environment" || !autoEnabledRef.current) return;
+      // No athlete in frame — don't zoom toward an empty room.
+      if (!ctx.bodyDetected) {
+        stableRef.current = null;
+        return;
+      }
 
       if (guidanceOnly) {
         const hint = recommendFramingGuidance(ctx.bodySpan);
@@ -212,10 +217,15 @@ export function useAutoBackCameraFraming(): UseAutoBackCameraFramingResult {
         if (now - stable.since < STABLE_MS) return;
 
         if (candidate === "zoom" && typeof candidateValue === "number") {
-          void applyZoom(track, candidateValue).then((applied) => {
-            currentZoomRef.current = applied;
-            refreshFramingLabel(applied, null);
-          });
+          void applyZoom(track, candidateValue)
+            .then((applied) => {
+              currentZoomRef.current = applied;
+              refreshFramingLabel(applied, null);
+            })
+            .catch(() => {
+              // Zoom rejected by the device — fall back to position guidance.
+              zoomRangeRef.current = null;
+            });
         } else if (candidate === "wider") {
           switchLens("wider");
         } else if (candidate === "narrower") {

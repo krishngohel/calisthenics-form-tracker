@@ -1,14 +1,4 @@
-import type { HandLandmarks, Landmark } from "./provider";
-
-/** MediaPipe hand landmark indices */
-export const HAND_WRIST = 0;
-export const HAND_THUMB_TIP = 4;
-export const HAND_INDEX_TIP = 8;
-export const HAND_MIDDLE_TIP = 12;
-export const HAND_RING_TIP = 16;
-export const HAND_PINKY_TIP = 20;
-
-/** Skeleton connections for one hand (index pairs). */
+/** Skeleton connections for one MediaPipe hand (landmark index pairs). */
 export const HAND_CONNECTIONS: [number, number][] = [
   [0, 1],
   [1, 2],
@@ -35,16 +25,5 @@ export const HAND_CONNECTIONS: [number, number][] = [
   [13, 17],
 ];
 
+/** Thumb, index, middle, ring, pinky fingertip indices. */
 export const HAND_TIP_INDICES = [4, 8, 12, 16, 20];
-
-export interface RenderHands {
-  left: Landmark[] | null;
-  right: Landmark[] | null;
-}
-
-export function normalizeHands(hands: HandLandmarks): RenderHands {
-  return {
-    left: hands.left,
-    right: hands.right,
-  };
-}

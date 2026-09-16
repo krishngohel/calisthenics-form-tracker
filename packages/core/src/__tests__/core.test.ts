@@ -5,7 +5,7 @@ import {
   shouldersShrugged,
   invertedArch,
 } from "../pose/geometry";
-import { HoldStateMachine } from "../hold/stateMachine";
+import { DEFAULT_HOLD_CONFIG, HoldStateMachine } from "../hold/stateMachine";
 import {
   getDistanceContext,
   recommendBackCameraZoom,
@@ -54,19 +54,40 @@ describe("geometry", () => {
 });
 
 describe("hold state machine", () => {
-  it("starts holding immediately with default config", () => {
+  it("backdates the hold start to the first qualifying frame (default config)", () => {
     const fsm = new HoldStateMachine();
-    const r = fsm.tick(true, 1000);
+    expect(fsm.tick(true, 1000).state).toBe("qualifying");
+    const r = fsm.tick(true, 1000 + DEFAULT_HOLD_CONFIG.qualifyingMs);
     expect(r.state).toBe("holding");
     expect(r.holdStartTime).toBe(1000);
   });
 
-  it("stops immediately when criteria lost with default config", () => {
+  it("ignores a single glitched frame but measures the hold to the true drop (default config)", () => {
     const fsm = new HoldStateMachine();
     fsm.tick(true, 1000);
+    fsm.tick(true, 1200); // holding
+    expect(fsm.tick(false, 1233).state).toBe("holding"); // one bad frame at 30fps
+    expect(fsm.tick(true, 1266).state).toBe("holding");
+    fsm.tick(false, 2500); // criteria genuinely lost
+    const r = fsm.tick(false, 2500 + DEFAULT_HOLD_CONFIG.dropGraceMs);
+    expect(r.state).toBe("dropped");
+    expect(r.lastHoldMs).toBe(1500);
+  });
+
+  it("starts and stops instantly when both windows are zero", () => {
+    const fsm = new HoldStateMachine({ qualifyingMs: 0, dropGraceMs: 0, resetDelayMs: 100, mode: "hold_only" });
+    expect(fsm.tick(true, 1000).state).toBe("holding");
     const r = fsm.tick(false, 2500);
     expect(r.state).toBe("dropped");
     expect(r.lastHoldMs).toBe(1500);
+  });
+
+  it("returns to idle after the reset delay", () => {
+    const fsm = new HoldStateMachine({ qualifyingMs: 0, dropGraceMs: 0, resetDelayMs: 100, mode: "hold_only" });
+    fsm.tick(true, 0);
+    fsm.tick(false, 500);
+    expect(fsm.tick(false, 550).state).toBe("dropped");
+    expect(fsm.tick(false, 650).state).toBe("idle");
   });
 
   it("transitions idle to holding after qualifying", () => {
@@ -117,8 +138,36 @@ describe("distance context", () => {
     };
     const ctx = getDistanceContext(farBody);
     expect(ctx.isFar).toBe(true);
+    expect(ctx.bodyDetected).toBe(true);
     expect(ctx.captureMaxEdge).toBeGreaterThan(640);
     expect(ctx.visThreshold).toBeLessThan(0.4);
+  });
+
+  it("reports the real body span when the athlete is close (needed for step-back guidance)", () => {
+    const nearBody: Record<string, { x: number; y: number } | null> = {
+      nose: { x: 0.5, y: 0.05 },
+      leftShoulder: { x: 0.4, y: 0.18 },
+      rightShoulder: { x: 0.6, y: 0.18 },
+      leftHip: { x: 0.42, y: 0.5 },
+      rightHip: { x: 0.58, y: 0.5 },
+      leftAnkle: { x: 0.42, y: 0.9 },
+      rightAnkle: { x: 0.58, y: 0.9 },
+    };
+    const ctx = getDistanceContext(nearBody);
+    expect(ctx.isFar).toBe(false);
+    expect(ctx.bodySpan).toBeGreaterThan(0.8);
+    expect(recommendFramingGuidance(ctx.bodySpan)).toContain("Step back");
+  });
+
+  it("flags frames with no usable body instead of guessing a distance", () => {
+    const ctx = getDistanceContext({});
+    expect(ctx.bodyDetected).toBe(false);
+    expect(ctx.isFar).toBe(false);
+  });
+
+  it("memoizes the context per landmark object", () => {
+    const body = { nose: { x: 0.5, y: 0.1 }, leftAnkle: { x: 0.5, y: 0.8 } };
+    expect(getDistanceContext(body)).toBe(getDistanceContext(body));
   });
 
   it("recommends zoom in when athlete is too small in frame", () => {
