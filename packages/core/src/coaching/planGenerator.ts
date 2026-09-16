@@ -47,17 +47,3 @@ export function generateCoachingPlan(
     updatedAt: new Date().toISOString(),
   };
 }
-
-export function mergeCoachingPlans(
-  existing: CoachingPlan | null,
-  latest: CoachingPlan
-): CoachingPlan {
-  if (!existing) return latest;
-  const combinedWeak = Array.from(
-    new Set([...existing.weakPoints, ...latest.weakPoints])
-  ).slice(0, 5);
-  return {
-    ...latest,
-    weakPoints: combinedWeak,
-  };
-}

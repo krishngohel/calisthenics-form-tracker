@@ -1,6 +1,6 @@
 import type { Landmark } from "../pose/provider";
 import type { FormMetric } from "./registry";
-import { getTargetPose } from "./targetPoses";
+import { getAlignedTargetPose } from "./targetPoses";
 
 export interface FormCorrection {
   joint: string;
@@ -30,14 +30,27 @@ const METRIC_JOINTS: Record<string, string[]> = {
   hang_position: ["leftShoulder", "rightShoulder", "leftWrist", "rightWrist"],
   active_scap: ["leftShoulder", "rightShoulder"],
   plank_line: ["leftHip", "rightHip", "leftShoulder", "rightShoulder"],
+  stacked: ["leftShoulder", "rightShoulder"],
+  hip_angle: ["leftKnee", "rightKnee", "leftAnkle", "rightAnkle"],
+  elbows: ["leftElbow", "rightElbow"],
+  knee_stack: ["leftKnee", "rightKnee"],
+  stack: ["leftKnee", "rightKnee"],
+  transition: ["leftShoulder", "rightShoulder"],
+  lowering: ["leftShoulder", "rightShoulder", "leftHip", "rightHip"],
 };
 
+/**
+ * Arrows from failing joints toward their position in the target pose.
+ * The target is first aligned onto the athlete (see `alignTargetPose`), so the
+ * arrows describe relative corrections rather than "walk to the frame center".
+ */
 export function computeFormCorrections(
   skillId: string,
   metrics: FormMetric[],
-  current: Record<string, Landmark | null>
+  current: Record<string, Landmark | null>,
+  alignedTarget?: Record<string, Landmark> | null
 ): FormCorrection[] {
-  const targetPose = getTargetPose(skillId);
+  const targetPose = alignedTarget ?? getAlignedTargetPose(skillId, current);
   if (!targetPose) return [];
 
   const failed = metrics.filter((m) => !m.passed && m.cue);

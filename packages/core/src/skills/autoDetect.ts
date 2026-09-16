@@ -1,4 +1,5 @@
 import type { HandLandmarks, Landmark } from "../pose/provider";
+import { bodyUnit, midpoint } from "../pose/geometry";
 import { SKILLS, evaluateSkill } from "./registry";
 import type { HoldMode } from "../hold/stateMachine";
 
@@ -57,24 +58,15 @@ interface PoseContext {
 function inferPoseContext(
   body: Record<string, Landmark | null>
 ): PoseContext {
+  const T = bodyUnit(body);
   const nose = body.nose;
-  const ankles = [body.leftAnkle, body.rightAnkle].filter(
-    (lm): lm is Landmark => !!lm
-  );
-  const shoulder = body.leftShoulder && body.rightShoulder
-    ? { x: (body.leftShoulder.x + body.rightShoulder.x) / 2, y: (body.leftShoulder.y + body.rightShoulder.y) / 2 }
-    : body.leftShoulder ?? body.rightShoulder;
-  const wrist = body.leftWrist && body.rightWrist
-    ? { x: (body.leftWrist.x + body.rightWrist.x) / 2, y: (body.leftWrist.y + body.rightWrist.y) / 2 }
-    : body.leftWrist ?? body.rightWrist;
+  const ankle = midpoint(body.leftAnkle, body.rightAnkle);
+  const shoulder = midpoint(body.leftShoulder, body.rightShoulder);
+  const wrist = midpoint(body.leftWrist, body.rightWrist);
 
-  const inverted =
-    !!nose && ankles.length > 0
-      ? Math.min(...ankles.map((a) => a.y)) < nose.y - 0.04
-      : false;
-
-  const hanging =
-    !!shoulder && !!wrist ? wrist.y < shoulder.y - 0.04 : false;
+  const inverted = !!nose && !!ankle ? ankle.y < nose.y - 0.15 * T : false;
+  // Wrists clearly above the shoulders — anything from a dead hang to a chin-over-bar top.
+  const hanging = !!shoulder && !!wrist ? wrist.y < shoulder.y - 0.2 * T : false;
 
   return { inverted, hanging };
 }

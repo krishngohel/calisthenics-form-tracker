@@ -22,10 +22,14 @@ export interface HoldMachineResult {
   criteriaMet: boolean;
 }
 
-/** Instant start/stop — timer tracks the skill hold frame-for-frame. */
+/**
+ * Short qualify / grace windows absorb single-frame pose glitches without
+ * costing any measured time: the hold start is backdated to the first
+ * qualifying frame and the hold end is the frame criteria were first lost.
+ */
 export const DEFAULT_HOLD_CONFIG: HoldMachineConfig = {
-  qualifyingMs: 0,
-  dropGraceMs: 0,
+  qualifyingMs: 120,
+  dropGraceMs: 200,
   resetDelayMs: 800,
   mode: "hold_only",
 };
