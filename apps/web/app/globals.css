@@ -193,3 +193,138 @@ html[data-native="true"] textarea {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   }
 }
+
+/* ------------------------------------------------------------------------
+ * App shell (native + phone-width web): bottom tabs, large-title screens.
+ * Desktop web keeps the top nav. Controlled by html[data-native] and the
+ * viewport width; the inline script in the layout sets data-native before
+ * first paint so there is no flash of the wrong chrome.
+ * --------------------------------------------------------------------- */
+:root {
+  --tab-bar-height: 56px;
+}
+
+.app-shell-only {
+  display: none;
+}
+@media (max-width: 640px) {
+  .app-shell-only {
+    display: block;
+  }
+  .web-only {
+    display: none;
+  }
+}
+html[data-native="true"] .app-shell-only {
+  display: block;
+}
+html[data-native="true"] .web-only {
+  display: none;
+}
+
+/* Reserve room for the tab bar on tabbed screens. */
+@media (max-width: 640px) {
+  main.with-tabs {
+    padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 1.5rem);
+  }
+}
+html[data-native="true"] main.with-tabs {
+  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 1.5rem);
+}
+
+@layer components {
+  .tab-bar {
+    @apply fixed inset-x-0 bottom-0 z-40 flex border-t border-border-subtle;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .tab-item {
+    @apply flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted transition active:opacity-60;
+  }
+
+  .tab-item-active {
+    @apply text-accent;
+  }
+
+  .screen {
+    @apply mx-auto max-w-2xl px-4 pb-8;
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+  @media (min-width: 641px) {
+    .screen {
+      @apply pt-8;
+    }
+  }
+
+  .screen-header {
+    @apply mb-5;
+  }
+
+  .screen-title {
+    @apply text-[2rem] font-extrabold leading-tight tracking-tight text-foreground;
+  }
+
+  .screen-back {
+    @apply mb-1 -ml-1 inline-flex min-h-10 items-center gap-0.5 text-base font-medium text-accent;
+  }
+
+  .list-group-title {
+    @apply mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted;
+  }
+
+  .list-group {
+    @apply overflow-hidden rounded-2xl border border-border-subtle bg-surface shadow-card;
+  }
+
+  .list-row {
+    @apply flex min-h-14 items-center gap-3 px-4 py-3 transition active:bg-surface-muted;
+  }
+  .list-row + .list-row {
+    @apply border-t border-border-subtle;
+  }
+
+  .toggle {
+    @apply relative h-8 w-[52px] shrink-0 rounded-full bg-border transition-colors;
+  }
+  .toggle-on {
+    @apply bg-accent;
+  }
+  .toggle-knob {
+    @apply absolute left-0.5 top-0.5 h-7 w-7 rounded-full bg-white shadow transition-transform;
+  }
+  .toggle-on .toggle-knob {
+    transform: translateX(20px);
+  }
+
+  .hero-card {
+    @apply relative overflow-hidden rounded-3xl p-5 text-white shadow-card;
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #2dd4bf 100%);
+  }
+
+  .stat-tile {
+    @apply rounded-2xl border border-border-subtle bg-surface p-4 shadow-card;
+  }
+
+  .segmented {
+    @apply flex rounded-xl bg-surface-muted p-1;
+  }
+  .segmented-btn {
+    @apply min-h-10 flex-1 rounded-lg px-3 text-sm font-medium text-muted transition;
+  }
+  .segmented-btn-active {
+    @apply bg-surface font-semibold text-foreground shadow-sm;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply mb-2 text-xs font-bold uppercase tracking-[0.2em] text-accent;
+  }
+  .onboarding-title {
+    @apply mb-3 text-[1.85rem] font-extrabold leading-tight tracking-tight text-foreground;
+  }
+}

@@ -15,14 +15,14 @@ const LABELS: Record<string, string> = {
 
 export function ModeToggle<T extends string>({ value, options, onChange, label }: ModeToggleProps<T>) {
   return (
-    <div className="mode-toggle" role="group" aria-label={label}>
+    <div className="segmented w-full sm:w-auto" role="group" aria-label={label}>
       {options.map((option) => (
         <button
           key={option}
           type="button"
           onClick={() => onChange(option)}
           aria-pressed={value === option}
-          className={`mode-toggle-btn ${value === option ? "mode-toggle-btn-active" : ""}`}
+          className={`segmented-btn whitespace-nowrap ${value === option ? "segmented-btn-active" : ""}`}
         >
           {LABELS[option] ?? option.replace("_", " ")}
         </button>

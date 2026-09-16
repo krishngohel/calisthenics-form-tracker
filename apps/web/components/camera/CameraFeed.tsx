@@ -16,6 +16,8 @@ interface CameraFeedProps {
   onFacingModeChange?: (mode: CameraFacingMode) => void;
   showFlipButton?: boolean;
   flipButtonClassName?: string;
+  /** Reports camera failures (and recovery) so the parent can hide overlays. */
+  onError?: (message: string | null) => void;
 }
 
 export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
@@ -29,6 +31,7 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
       onFacingModeChange,
       showFlipButton = false,
       flipButtonClassName = "absolute right-3 top-3 z-30 cam-btn",
+      onError,
     },
     ref
   ) {
@@ -57,9 +60,14 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
     });
 
     const onStreamReadyRef = useRef(onStreamReady);
+    const onErrorRef = useRef(onError);
     useEffect(() => {
       onStreamReadyRef.current = onStreamReady;
+      onErrorRef.current = onError;
     });
+    useEffect(() => {
+      onErrorRef.current?.(error);
+    }, [error]);
 
     useEffect(() => {
       const blocked = cameraUnavailableReason();
@@ -115,10 +123,13 @@ export const CameraFeed = forwardRef<HTMLVideoElement, CameraFeedProps>(
 
     if (error) {
       return (
-        <div className="flex h-full min-h-[16rem] w-full items-center justify-center bg-surface-muted p-4 text-center text-muted">
-          <div>
-            <p className="mb-1 font-medium text-foreground">Camera unavailable</p>
-            <p className="text-sm">{error}</p>
+        <div className="flex h-full min-h-[16rem] w-full items-center justify-center bg-black p-6 text-center text-white/80" role="alert">
+          <div className="max-w-sm">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white/10 text-2xl" aria-hidden>
+              📷
+            </div>
+            <p className="mb-1 text-lg font-bold text-white">Camera unavailable</p>
+            <p className="text-sm leading-relaxed">{error}</p>
           </div>
         </div>
       );

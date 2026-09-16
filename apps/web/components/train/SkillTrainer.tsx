@@ -24,8 +24,10 @@ import { PersistentCueOverlay } from "@/components/coaching/PersistentCueOverlay
 import { SessionProgressChart } from "@/components/coaching/SessionProgressChart";
 import { HoldSummaryCard } from "@/components/coaching/HoldSummaryCard";
 import { ModeToggle } from "@/components/ModeToggle";
+import { ChevronLeft } from "@/components/app/Screen";
 import { getStoredBodyProvider, usePoseDetection, type PoseFrameInfo } from "@/hooks/usePoseDetection";
 import { useHoldSession } from "@/hooks/useHoldSession";
+import { readPreferences } from "@/lib/preferences";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
 
 const TRAIN_MODES: readonly TrainMode[] = ["learn", "hold_only", "perfect"];
@@ -36,11 +38,12 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   const pathStep = getSkillPathStep(skillId);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
-  const [mode, setMode] = useState<TrainMode>("learn");
+  const [mode, setMode] = useState<TrainMode>("hold_only");
   const [bodyProvider, setBodyProvider] = useState<"movenet" | "mediapipe">("movenet");
 
   useEffect(() => {
     setBodyProvider(getStoredBodyProvider());
+    setMode(readPreferences().defaultMode);
   }, []);
 
   const framing = useAutoBackCameraFraming();
@@ -112,22 +115,23 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   const nextSkillId = pathStep && pathStep.step < pathStep.total ? pathStep.path.skillIds[pathStep.step] : null;
 
   return (
-    <div className="page pt-4 sm:pt-6">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <Link href="/skills" className="text-sm font-medium text-muted hover:text-accent">
-            ← Learning paths
-          </Link>
-          {pathStep && (
-            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-accent">
-              {pathStep.path.name} · Step {pathStep.step} of {pathStep.total}
+    <div className="screen max-w-6xl">
+      <header className="mb-3">
+        <Link href="/skills" className="screen-back">
+          <ChevronLeft />
+          {pathStep ? pathStep.path.name : "Paths"}
+        </Link>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-foreground">{skill.name}</h1>
+            <p className="mt-0.5 text-sm text-muted">
+              {pathStep ? `Step ${pathStep.step} of ${pathStep.total} · ` : ""}
+              {skill.cameraGuide}
             </p>
-          )}
-          <h1 className="page-title">{skill.name}</h1>
-          <p className="text-sm text-muted">{skill.cameraGuide}</p>
+          </div>
+          <ModeToggle value={mode} options={TRAIN_MODES} onChange={setMode} label="Training mode" />
         </div>
-        <ModeToggle value={mode} options={TRAIN_MODES} onChange={setMode} label="Training mode" />
-      </div>
+      </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">

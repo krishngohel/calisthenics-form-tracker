@@ -16,6 +16,7 @@ import { usePersistentCues } from "./usePersistentCues";
 import { useSessionProgress } from "./useSessionProgress";
 import { useSmoothedFormScore } from "./useSmoothedFormScore";
 import { saveCoachingPlan, saveHoldSession } from "@/lib/supabase/sessions";
+import { appendHold } from "@/lib/localHistory";
 
 export interface HoldView {
   state: HoldState;
@@ -142,6 +143,13 @@ export function useHoldSession(mode: HoldMode) {
         endedAt: new Date(),
       };
       const plan = generateCoachingPlan(skillId, summary.metrics);
+      appendHold({
+        skillId,
+        mode: holdMode,
+        durationMs: Math.round(durationMs),
+        formScore: summary.formScore,
+        endedAt: completed.endedAt.toISOString(),
+      });
       setLastHold(completed);
       setCoachingPlan(plan);
       setBestHoldMs((b) => Math.max(b, durationMs));

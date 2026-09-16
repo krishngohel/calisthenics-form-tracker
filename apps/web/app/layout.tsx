@@ -3,7 +3,10 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { NavBar } from "@/components/NavBar";
 import { NativeBridge } from "@/components/NativeBridge";
+import { TabBar } from "@/components/app/TabBar";
+import { OnboardingGate } from "@/components/app/OnboardingGate";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
+import { APP_SHELL_INIT_SCRIPT } from "@/lib/appShell";
 
 const sans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -48,12 +51,18 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT + APP_SHELL_INIT_SCRIPT }} />
       </head>
       <body className={`${sans.className} antialiased text-foreground`}>
         <NativeBridge />
-        <NavBar />
-        <main className="min-h-screen pb-12 safe-bottom safe-x">{children}</main>
+        <OnboardingGate />
+        <div className="web-only">
+          <NavBar />
+        </div>
+        <main className="with-tabs min-h-screen pb-12 safe-bottom safe-x">{children}</main>
+        <div className="app-shell-only">
+          <TabBar />
+        </div>
       </body>
     </html>
   );

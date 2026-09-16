@@ -19,6 +19,7 @@ Web-first calisthenics trainer with **live pose tracking**, **auto hold timers**
 - **Pose pipeline** — Web Worker, MoveNet (default) or MediaPipe, low-confidence keypoints filtered before any geometry runs, hand landmarks only for skills that need them
 - **Distance-aware tracking** — adapts when you step back for full-body framing; auto zoom / lens switching on devices that support it
 - **Device performance tiers** — auto-adjusts detection FPS and smoothing (low / medium / high)
+- **App shell** — on phones and in the iOS app: first-launch onboarding (camera permission, experience level, voice coach), a bottom tab bar (Home, Paths, Progress, Settings), on-device hold history with streaks and personal bests; desktop web keeps the top nav
 - **Training HUD** — timer, hold state, and form-score ring drawn over the camera, sized to read from across the room; a full-screen focus mode; the skeleton changes colour with hold state
 - **Voice coach** — opt-in spoken "hold", 5-second count-outs, hold time on drop, and form cues, so you never look at the screen mid-hold
 - **iOS app** — Capacitor shell with haptics on hold start / drop / new best, keep-awake, native status bar, dark mode
@@ -63,8 +64,8 @@ Use **Paths** to pick a move, or **Auto-detect** to let the app lock on after ~1
 ```
 calisthenics-form-tracker/
 ├── apps/web/              Next.js 14 + Tailwind UI (static-exportable)
-│   ├── app/               Routes (train, skills, dashboard, auth)
-│   ├── components/        Camera, HUD, coaching
+│   ├── app/               Routes (onboarding, home, skills, progress, settings, train, dashboard, auth)
+│   ├── components/        App shell (tabs, screens), camera, HUD, coaching
 │   ├── hooks/             Pose detection, hold session, voice coach, auth
 │   ├── lib/               Camera, overlay projection, native bridge, Supabase
 │   ├── ios/               Capacitor iOS project (open in Xcode)

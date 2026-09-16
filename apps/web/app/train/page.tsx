@@ -22,8 +22,10 @@ import { PersistentCueOverlay } from "@/components/coaching/PersistentCueOverlay
 import { SessionProgressChart } from "@/components/coaching/SessionProgressChart";
 import { HoldSummaryCard } from "@/components/coaching/HoldSummaryCard";
 import { ModeToggle } from "@/components/ModeToggle";
+import { ChevronLeft } from "@/components/app/Screen";
 import { getStoredBodyProvider, usePoseDetection, type PoseFrameInfo } from "@/hooks/usePoseDetection";
 import { useHoldSession } from "@/hooks/useHoldSession";
+import { readPreferences } from "@/lib/preferences";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
 
 const HOLD_MODES: readonly HoldMode[] = ["hold_only", "perfect"];
@@ -43,6 +45,7 @@ export default function AutoTrainPage() {
   const [bodyProvider, setBodyProvider] = useState<"movenet" | "mediapipe">("movenet");
   useEffect(() => {
     setBodyProvider(getStoredBodyProvider());
+    setMode(readPreferences().defaultMode);
   }, []);
 
   const [activeSkillId, setActiveSkillId] = useState<string | null>(null);
@@ -149,17 +152,20 @@ export default function AutoTrainPage() {
   const skillLabel = activeSkill?.name ?? detection?.skillName ?? null;
 
   return (
-    <div className="page pt-4 sm:pt-6">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-        <div>
-          <Link href="/skills" className="text-sm font-medium text-muted hover:text-accent">
-            ← Skills
-          </Link>
-          <h1 className="page-title">Auto-detect</h1>
-          <p className="text-sm text-muted">Strike a hold — the app picks the skill automatically.</p>
+    <div className="screen max-w-6xl">
+      <header className="mb-3">
+        <Link href="/skills" className="screen-back">
+          <ChevronLeft />
+          Paths
+        </Link>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-foreground">Auto-detect</h1>
+            <p className="mt-0.5 text-sm text-muted">Strike a hold — the app picks the skill.</p>
+          </div>
+          <ModeToggle value={mode} options={HOLD_MODES} onChange={setMode} label="Hold mode" />
         </div>
-        <ModeToggle value={mode} options={HOLD_MODES} onChange={setMode} label="Hold mode" />
-      </div>
+      </header>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
