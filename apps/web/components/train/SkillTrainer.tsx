@@ -17,6 +17,8 @@ import { CameraStatusBanner } from "@/components/camera/CameraStatusBanner";
 import { PoseOverlay, type SkeletonStatus } from "@/components/camera/PoseOverlay";
 import { LearnOverlay } from "@/components/camera/LearnOverlay";
 import { HoldHud } from "@/components/train/HoldHud";
+import { HoldResultToast } from "@/components/train/HoldResultToast";
+import { ReadyOverlay } from "@/components/train/ReadyOverlay";
 import { TrainingScreen } from "@/components/train/TrainingScreen";
 import { CoachingPanel } from "@/components/coaching/CoachingPanel";
 import { LearnMetricsPanel } from "@/components/coaching/LearnMetricsPanel";
@@ -29,6 +31,7 @@ import { getStoredBodyProvider, usePoseDetection, type PoseFrameInfo } from "@/h
 import { useHoldSession } from "@/hooks/useHoldSession";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
 import { useFrameHistory } from "@/hooks/useFrameHistory";
+import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { readPreferences } from "@/lib/preferences";
 
 const TRAIN_MODES: readonly TrainMode[] = ["learn", "hold_only", "perfect"];
@@ -52,8 +55,24 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   const holdMode: HoldMode = mode === "learn" ? "hold_only" : mode;
   const session = useHoldSession(holdMode);
   const { processHold, processLearn, resetLive, resetAll, holdView } = session;
-  const feedback = useTrainingFeedback(holdView, session.pinnedCues, session.bestHoldMs);
+  const { stats } = useLocalHistory();
+  const allTimeBestMs = stats.bestBySkill[skillId]?.durationMs ?? 0;
+  const feedback = useTrainingFeedback({
+    holdView,
+    cues: session.pinnedCues,
+    lastHold: session.lastHold,
+    allTimeBestMs,
+  });
   const history = useFrameHistory();
+
+  // Nothing is timed until the athlete taps Start on the setup card.
+  const [armed, setArmed] = useState(false);
+  const armedRef = useRef(false);
+  const start = useCallback(() => {
+    feedback.armAudio();
+    armedRef.current = true;
+    setArmed(true);
+  }, [feedback]);
 
   const modeRef = useRef(mode);
   useEffect(() => {
@@ -76,7 +95,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
 
       const now = performance.now();
       if (currentMode === "learn") processLearn(evaluation, now);
-      else processHold(skillId, evaluation, now);
+      else if (armedRef.current) processHold(skillId, evaluation, now);
     },
     [skill, skillId, history, processHold, processLearn]
   );
@@ -91,6 +110,8 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   useEffect(() => {
     history.clear();
     resetAll();
+    armedRef.current = false;
+    setArmed(false);
   }, [skillId, history, resetAll]);
 
   useEffect(() => {
@@ -136,8 +157,8 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
           onToggleVoice={feedback.voice.toggle}
           footer={
             <>
-              {profile.label}
-              {holdView.farCamera && " · Full-body mode (distance compensated)"}
+              Detecting at {profile.detectFps} fps
+              {holdView.farCamera && " · far-camera mode"}
             </>
           }
         >
@@ -162,16 +183,29 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
               )}
             </>
           )}
-          <HoldHud
-            state={holdView.state}
-            holdStartTime={holdView.holdStartTime}
-            lastHoldMs={holdView.lastHoldMs}
-            bestHoldMs={session.bestHoldMs}
-            formScore={holdView.formScore}
-            mode={mode}
-            large={feedback.focus}
-          />
-          <CameraStatusBanner ready={ready} error={error} videoReady={videoReady} visibilityWarning={!holdView.visibilityOk} />
+          {(armed || mode === "learn") && (
+            <HoldHud
+              state={holdView.state}
+              holdStartTime={holdView.holdStartTime}
+              lastHoldMs={holdView.lastHoldMs}
+              bestHoldMs={feedback.bestMs}
+              formScore={holdView.formScore}
+              mode={mode}
+              large={feedback.focus}
+            />
+          )}
+          {mode !== "learn" && !armed && (
+            <ReadyOverlay
+              title={skill.name}
+              guide={skill.cameraGuide}
+              cameraAngle={skill.cameraAngle}
+              bestMs={allTimeBestMs}
+              ready={videoReady && ready}
+              onStart={start}
+            />
+          )}
+          <HoldResultToast hold={session.lastHold} newBest={feedback.lastWasBest} />
+          <CameraStatusBanner ready={ready} error={error} videoReady={videoReady} visibilityWarning={armed && !holdView.visibilityOk} />
           <PersistentCueOverlay cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />
         </TrainCameraPanel>
       }

@@ -8,12 +8,15 @@ export interface Preferences {
   defaultMode: HoldMode;
   /** Skill to suggest on the home screen; set from experience or last trained. */
   focusSkillId: string | null;
+  /** Chimes on hold start, tick, drop, and new best (independent of the voice coach). */
+  sounds: boolean;
 }
 
 export const DEFAULT_PREFERENCES: Preferences = {
   experience: "beginner",
   defaultMode: "hold_only",
   focusSkillId: null,
+  sounds: true,
 };
 
 export const EXPERIENCE_LABELS: Record<ExperienceLevel, string> = {

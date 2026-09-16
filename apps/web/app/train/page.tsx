@@ -16,6 +16,8 @@ import { TrainCameraPanel } from "@/components/camera/TrainCameraPanel";
 import { CameraStatusBanner } from "@/components/camera/CameraStatusBanner";
 import { PoseOverlay, type SkeletonStatus } from "@/components/camera/PoseOverlay";
 import { HoldHud } from "@/components/train/HoldHud";
+import { HoldResultToast } from "@/components/train/HoldResultToast";
+import { ReadyOverlay } from "@/components/train/ReadyOverlay";
 import { TrainingScreen } from "@/components/train/TrainingScreen";
 import { CoachingPanel } from "@/components/coaching/CoachingPanel";
 import { PersistentCueOverlay } from "@/components/coaching/PersistentCueOverlay";
@@ -27,6 +29,7 @@ import { getStoredBodyProvider, usePoseDetection, type PoseFrameInfo } from "@/h
 import { useHoldSession } from "@/hooks/useHoldSession";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
 import { useFrameHistory } from "@/hooks/useFrameHistory";
+import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { readPreferences } from "@/lib/preferences";
 
 const HOLD_MODES: readonly HoldMode[] = ["hold_only", "perfect"];
@@ -56,8 +59,23 @@ export default function AutoTrainPage() {
   const mirrored = framing.facingMode === "user";
   const session = useHoldSession(mode);
   const { processHold, resetLive, resetAll, holdView } = session;
-  const feedback = useTrainingFeedback(holdView, session.pinnedCues, session.bestHoldMs);
+  const { stats } = useLocalHistory();
+  const allTimeBestMs = activeSkillId ? (stats.bestBySkill[activeSkillId]?.durationMs ?? 0) : 0;
+  const feedback = useTrainingFeedback({
+    holdView,
+    cues: session.pinnedCues,
+    lastHold: session.lastHold,
+    allTimeBestMs,
+  });
   const history = useFrameHistory();
+
+  const [armed, setArmed] = useState(false);
+  const armedRef = useRef(false);
+  const start = useCallback(() => {
+    feedback.armAudio();
+    armedRef.current = true;
+    setArmed(true);
+  }, [feedback]);
 
   const modeRef = useRef(mode);
   const activeSkillIdRef = useRef<string | null>(null);
@@ -94,6 +112,7 @@ export default function AutoTrainPage() {
       const frames = history.push(body);
       const now = performance.now();
       const currentMode = modeRef.current;
+      if (!armedRef.current) return;
 
       const guess = detectSkill(body, hands, frames, currentMode);
       if (guess) {
@@ -174,8 +193,8 @@ export default function AutoTrainPage() {
           onToggleVoice={feedback.voice.toggle}
           footer={
             <>
-              {profile.label}
-              {holdView.farCamera && " · Full-body mode (distance compensated)"}
+              Detecting at {profile.detectFps} fps
+              {holdView.farCamera && " · far-camera mode"}
             </>
           }
         >
@@ -188,22 +207,33 @@ export default function AutoTrainPage() {
               mirror={mirrored}
             />
           )}
-          <HoldHud
-            state={activeSkill ? holdView.state : "idle"}
-            holdStartTime={holdView.holdStartTime}
-            lastHoldMs={holdView.lastHoldMs}
-            bestHoldMs={session.bestHoldMs}
-            formScore={holdView.formScore}
-            mode={mode}
-            skillLabel={skillLabel}
-            large={feedback.focus}
-          />
+          {armed && (
+            <HoldHud
+              state={activeSkill ? holdView.state : "idle"}
+              holdStartTime={holdView.holdStartTime}
+              lastHoldMs={holdView.lastHoldMs}
+              bestHoldMs={feedback.bestMs}
+              formScore={holdView.formScore}
+              mode={mode}
+              skillLabel={skillLabel}
+              large={feedback.focus}
+            />
+          )}
+          {!armed && (
+            <ReadyOverlay
+              title="Auto-detect"
+              guide="Strike any hold. After about a second in a stable position the app locks onto the skill and starts timing."
+              ready={videoReady && ready}
+              onStart={start}
+            />
+          )}
+          <HoldResultToast hold={session.lastHold} newBest={feedback.lastWasBest} />
           <CameraStatusBanner
             ready={ready}
             error={error}
             videoReady={videoReady}
-            visibilityWarning={!!activeSkill && !holdView.visibilityOk}
-            hint={!activeSkill && session.pinnedCues.length === 0 ? "Get into position — detection locks in after about a second" : null}
+            visibilityWarning={armed && !!activeSkill && !holdView.visibilityOk}
+            hint={armed && !activeSkill && session.pinnedCues.length === 0 ? "Get into position — detection locks in after about a second" : null}
           />
           <PersistentCueOverlay cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />
         </TrainCameraPanel>

@@ -2,6 +2,8 @@
 
 import type { PersistedCue } from "@/hooks/usePersistentCues";
 
+const MAX_VISIBLE = 2;
+
 interface PersistentCueOverlayProps {
   cues: PersistedCue[];
   onDismiss: (id: string) => void;
@@ -18,6 +20,9 @@ export function PersistentCueOverlay({
   onDismissAll,
 }: PersistentCueOverlayProps) {
   if (cues.length === 0) return null;
+  // Show the newest few over the video; the full list lives in the coaching panel.
+  const visibleCues = cues.slice(-MAX_VISIBLE);
+  const hidden = cues.length - visibleCues.length;
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4">
@@ -30,7 +35,8 @@ export function PersistentCueOverlay({
           Dismiss all
         </button>
       )}
-      {cues.map((cue) => (
+      {hidden > 0 && <p className="text-right text-xs font-medium text-white/80">+{hidden} more below</p>}
+      {visibleCues.map((cue) => (
         <div
           key={cue.id}
           className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-emerald-300/50 bg-black/85 p-4 shadow-lg backdrop-blur-md sm:p-5"

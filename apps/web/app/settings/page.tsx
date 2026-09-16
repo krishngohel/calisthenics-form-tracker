@@ -10,6 +10,7 @@ import { clearHistory } from "@/lib/localHistory";
 import { applyThemePreference, readThemePreference, type ThemePreference } from "@/lib/theme";
 import { createClient } from "@/lib/supabase/client";
 import { isNativePlatform } from "@/lib/native";
+import { APP_VERSION } from "@/lib/version";
 import { EXPERIENCE_LABELS, readVoiceEnabled, writeVoiceEnabled, type ExperienceLevel } from "@/lib/preferences";
 import { readString, STORAGE_KEYS } from "@/lib/storage";
 
@@ -55,6 +56,7 @@ export default function SettingsPage() {
     <Screen title="Settings">
       <ListGroup title="Training">
         <ListRow label="Voice coach" detail="Spoken hold, count-outs, and cues" trailing={<Toggle checked={voice} onChange={setVoicePref} label="Voice coach" />} />
+        <ListRow label="Sounds" detail="Chimes on hold start, drop, and new best" trailing={<Toggle checked={prefs.sounds} onChange={(v) => update({ sounds: v })} label="Sounds" />} />
         <ListRow
           label="Default mode"
           detail={prefs.defaultMode === "perfect" ? "Perfect form — stricter criteria" : "Hold only — count any valid hold"}
@@ -101,9 +103,10 @@ export default function SettingsPage() {
         )}
       </ListGroup>
 
-      <p className="px-1 text-center text-xs text-muted">
-        CFT {isNativePlatform() ? "for iOS" : "web"} · Pose detection runs on this device. No video is uploaded.
-      </p>
+      <ListGroup title="About">
+        <ListRow label="Version" trailing={<span className="text-sm text-muted">{APP_VERSION}{isNativePlatform() ? " · iOS" : " · web"}</span>} />
+        <ListRow label="Privacy" detail="Pose detection runs on this device. No video is recorded or uploaded." />
+      </ListGroup>
     </Screen>
   );
 }
