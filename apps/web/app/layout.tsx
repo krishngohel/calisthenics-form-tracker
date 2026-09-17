@@ -5,6 +5,7 @@ import { NativeBridge } from "@/components/NativeBridge";
 import { TabBar } from "@/components/app/TabBar";
 import { OnboardingGate } from "@/components/app/OnboardingGate";
 import { PageTransition } from "@/components/app/PageTransition";
+import { ClientOnly } from "@/components/app/ClientOnly";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 import { APP_SHELL_INIT_SCRIPT } from "@/lib/appShell";
 
@@ -49,16 +50,18 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased text-foreground">
         <NativeBridge />
-        <OnboardingGate />
-        <div className="web-only">
-          <NavBar />
-        </div>
-        <main className="with-tabs min-h-screen pb-12 safe-bottom safe-x">
-          <PageTransition>{children}</PageTransition>
-        </main>
-        <div className="app-shell-only">
-          <TabBar />
-        </div>
+        <ClientOnly>
+          <OnboardingGate />
+          <div className="web-only">
+            <NavBar />
+          </div>
+          <main className="with-tabs min-h-screen pb-12 safe-bottom safe-x">
+            <PageTransition>{children}</PageTransition>
+          </main>
+          <div className="app-shell-only">
+            <TabBar />
+          </div>
+        </ClientOnly>
       </body>
     </html>
   );
