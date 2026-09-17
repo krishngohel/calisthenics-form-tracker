@@ -11,6 +11,7 @@ import { applyThemePreference, readThemePreference, type ThemePreference } from 
 import { createClient } from "@/lib/supabase/client";
 import { isNativePlatform } from "@/lib/native";
 import { APP_VERSION } from "@/lib/version";
+import { useMounted } from "@/hooks/useMounted";
 import { EXPERIENCE_LABELS, readVoiceEnabled, writeVoiceEnabled, type ExperienceLevel } from "@/lib/preferences";
 import { readString, STORAGE_KEYS } from "@/lib/storage";
 
@@ -23,6 +24,7 @@ export default function SettingsPage() {
   const [theme, setTheme] = useState<ThemePreference>("system");
   const [provider, setProvider] = useState("movenet");
   const [confirmClear, setConfirmClear] = useState(false);
+  const mounted = useMounted();
 
   useEffect(() => {
     setVoice(readVoiceEnabled());
@@ -104,7 +106,7 @@ export default function SettingsPage() {
       </ListGroup>
 
       <ListGroup title="About">
-        <ListRow label="Version" trailing={<span className="text-sm text-muted">{APP_VERSION}{isNativePlatform() ? " · iOS" : " · web"}</span>} />
+        <ListRow label="Version" trailing={<span className="text-sm text-muted">{APP_VERSION}{mounted ? (isNativePlatform() ? " · iOS" : " · web") : ""}</span>} />
         <ListRow label="Privacy" detail="Pose detection runs on this device. No video is recorded or uploaded." />
       </ListGroup>
     </Screen>

@@ -8,6 +8,7 @@ import { STARTER_SKILL, writePreferences, writeVoiceEnabled, type ExperienceLeve
 import { hapticImpact, hapticNotify } from "@/lib/native";
 import { openCameraStream } from "@/lib/camera/openCameraStream";
 import { cameraUnavailableReason } from "@/lib/camera/platform";
+import { AppMark } from "@/components/app/AppMark";
 
 type Step = "welcome" | "how" | "camera" | "level" | "voice" | "done";
 const STEPS: Step[] = ["welcome", "how", "camera", "level", "voice", "done"];
@@ -227,20 +228,6 @@ function ChoiceRow({ title, desc, selected, onSelect }: { title: string; desc: s
       <div className="text-base font-bold text-foreground">{title}</div>
       <div className="mt-0.5 text-sm text-muted">{desc}</div>
     </button>
-  );
-}
-
-function AppMark() {
-  return (
-    <svg viewBox="0 0 1024 1024" className="h-40 w-40" aria-hidden>
-      <rect width="1024" height="1024" rx="224" fill="#0b1512" />
-      <circle cx="512" cy="512" r="330" fill="none" stroke="#134e48" strokeWidth="56" />
-      <circle cx="512" cy="512" r="330" fill="none" stroke="#2dd4bf" strokeWidth="56" strokeLinecap="round" strokeDasharray="1555 2074" transform="rotate(-90 512 512)" />
-      <g stroke="#e8f4ee" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round" fill="none">
-        <circle cx="512" cy="300" r="52" fill="#e8f4ee" stroke="none" />
-        <path d="M512 370v250M512 620l-120 170M512 620l120 170M512 430l-160-110M512 430l160-110" />
-      </g>
-    </svg>
   );
 }
 

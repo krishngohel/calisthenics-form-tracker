@@ -5,6 +5,7 @@ import { LEARNING_PATHS, getSkill, getSkillPathStep } from "@cft/core";
 import { Screen } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { usePreferences } from "@/hooks/usePreferences";
+import { useMounted } from "@/hooks/useMounted";
 import { STARTER_SKILL } from "@/lib/preferences";
 import { formatSec } from "@/lib/format";
 
@@ -19,6 +20,7 @@ function greeting(): string {
 export default function HomePage() {
   const { stats, loaded } = useLocalHistory();
   const { prefs } = usePreferences();
+  const mounted = useMounted();
 
   const focusSkillId = stats.lastSkillId ?? prefs.focusSkillId ?? STARTER_SKILL[prefs.experience];
   const focusSkill = getSkill(focusSkillId) ?? getSkill("plank-hold")!;
@@ -30,7 +32,7 @@ export default function HomePage() {
   const maxDay = Math.max(1, ...stats.last7Days.map((d) => d.totalMs));
 
   return (
-    <Screen title={greeting()} subtitle={trainedToday ? "You've trained today. Nice." : "Ready when you are."}>
+    <Screen title={mounted ? greeting() : "Welcome"} subtitle={trainedToday ? "You've trained today. Nice." : "Ready when you are."}>
       <Link href={`/train/${focusSkill.id}`} className="hero-card mb-4 block active:scale-[0.99]">
         <div className="text-xs font-bold uppercase tracking-[0.18em] text-white/80">
           {stats.lastSkillId ? "Continue" : "Start here"}
@@ -71,7 +73,9 @@ export default function HomePage() {
                   style={{ height: `${Math.max(6, (d.totalMs / maxDay) * 100)}%` }}
                 />
               </div>
-              <span className="text-[10px] font-medium text-muted">{new Date(d.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "narrow" })}</span>
+              <span className="text-[10px] font-medium text-muted">
+                {mounted ? new Date(d.date + "T12:00:00").toLocaleDateString(undefined, { weekday: "narrow" }) : "\u00a0"}
+              </span>
             </div>
           ))}
         </div>
