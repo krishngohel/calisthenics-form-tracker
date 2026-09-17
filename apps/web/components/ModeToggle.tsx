@@ -1,5 +1,7 @@
 "use client";
 
+import { hapticImpact } from "@/lib/native";
+
 interface ModeToggleProps<T extends string> {
   value: T;
   options: readonly T[];
@@ -20,7 +22,10 @@ export function ModeToggle<T extends string>({ value, options, onChange, label }
         <button
           key={option}
           type="button"
-          onClick={() => onChange(option)}
+          onClick={() => {
+            if (value !== option) void hapticImpact("light");
+            onChange(option);
+          }}
           aria-pressed={value === option}
           className={`segmented-btn whitespace-nowrap ${value === option ? "segmented-btn-active" : ""}`}
         >

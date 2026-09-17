@@ -3,99 +3,107 @@
 @import "tailwindcss/utilities";
 
 /*
- * Design tokens. Light is the default; dark follows the OS unless the user
- * pins a theme via data-theme on <html>. Training surfaces (camera HUD) are
- * always dark so text stays legible over video.
+ * Design tokens follow the iOS system palette: grouped backgrounds, white
+ * (or #1C1C1E) cells, translucent separators and secondary labels. The
+ * brand tint is teal. Light is the default; dark follows the OS unless
+ * pinned via data-theme on <html>. Camera surfaces are always dark.
  */
 :root {
   color-scheme: light;
-  --bg: #f4faf7;
-  --bg-alt: #e6f4ee;
+  --bg: #f2f2f7;
+  --bg-alt: #f2f2f7;
   --surface: #ffffff;
-  --surface-muted: #eef6f2;
-  --border: #cfe4da;
-  --border-subtle: #e3efe9;
-  --accent: #0d9488;
-  --accent-hover: #0f766e;
-  --accent-soft: #ccfbf1;
-  --accent-muted: #99f6e4;
+  --surface-muted: #f2f2f7;
+  --fill: rgba(120, 120, 128, 0.16);
+  --border: rgba(60, 60, 67, 0.29);
+  --border-subtle: rgba(60, 60, 67, 0.16);
+  --accent: #0e9f8f;
+  --accent-hover: #0b8577;
+  --accent-soft: rgba(14, 159, 143, 0.14);
+  --accent-muted: rgba(14, 159, 143, 0.28);
   --accent-foreground: #ffffff;
-  --text: #14231e;
-  --muted: #55695f;
-  --danger: #e11d48;
-  --danger-soft: #fff1f2;
-  --warning: #c2410c;
-  --warning-soft: #fff7ed;
-  --shadow-color: 20 40 32;
+  --text: #000000;
+  --muted: rgba(60, 60, 67, 0.6);
+  --danger: #ff3b30;
+  --danger-soft: rgba(255, 59, 48, 0.12);
+  --warning: #ff9500;
+  --warning-soft: rgba(255, 149, 0, 0.14);
+  --success: #34c759;
+  --shadow-color: 0 0 0;
   --hud-bg: rgba(6, 14, 11, 0.72);
+  --tab-bar-height: 50px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #0b1512;
-    --bg-alt: #0f1d18;
-    --surface: #132119;
-    --surface-muted: #192c23;
-    --border: #244136;
-    --border-subtle: #1b3128;
+    --bg: #000000;
+    --bg-alt: #000000;
+    --surface: #1c1c1e;
+    --surface-muted: #2c2c2e;
+    --fill: rgba(120, 120, 128, 0.3);
+    --border: rgba(84, 84, 88, 0.65);
+    --border-subtle: rgba(84, 84, 88, 0.4);
     --accent: #2dd4bf;
     --accent-hover: #5eead4;
-    --accent-soft: #123f39;
-    --accent-muted: #0f5f57;
+    --accent-soft: rgba(45, 212, 191, 0.18);
+    --accent-muted: rgba(45, 212, 191, 0.32);
     --accent-foreground: #04201b;
-    --text: #e8f4ee;
-    --muted: #9fb8ad;
-    --danger: #fb7185;
-    --danger-soft: #3b1220;
-    --warning: #fbbf24;
-    --warning-soft: #3a2a06;
-    --shadow-color: 0 0 0;
+    --text: #ffffff;
+    --muted: rgba(235, 235, 245, 0.6);
+    --danger: #ff453a;
+    --danger-soft: rgba(255, 69, 58, 0.18);
+    --warning: #ff9f0a;
+    --warning-soft: rgba(255, 159, 10, 0.18);
+    --success: #30d158;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0b1512;
-  --bg-alt: #0f1d18;
-  --surface: #132119;
-  --surface-muted: #192c23;
-  --border: #244136;
-  --border-subtle: #1b3128;
+  --bg: #000000;
+  --bg-alt: #000000;
+  --surface: #1c1c1e;
+  --surface-muted: #2c2c2e;
+  --fill: rgba(120, 120, 128, 0.3);
+  --border: rgba(84, 84, 88, 0.65);
+  --border-subtle: rgba(84, 84, 88, 0.4);
   --accent: #2dd4bf;
   --accent-hover: #5eead4;
-  --accent-soft: #123f39;
-  --accent-muted: #0f5f57;
+  --accent-soft: rgba(45, 212, 191, 0.18);
+  --accent-muted: rgba(45, 212, 191, 0.32);
   --accent-foreground: #04201b;
-  --text: #e8f4ee;
-  --muted: #9fb8ad;
-  --danger: #fb7185;
-  --danger-soft: #3b1220;
-  --warning: #fbbf24;
-  --warning-soft: #3a2a06;
-  --shadow-color: 0 0 0;
+  --text: #ffffff;
+  --muted: rgba(235, 235, 245, 0.6);
+  --danger: #ff453a;
+  --danger-soft: rgba(255, 69, 58, 0.18);
+  --warning: #ff9f0a;
+  --warning-soft: rgba(255, 159, 10, 0.18);
+  --success: #30d158;
 }
 
 html {
   background: var(--bg);
   -webkit-text-size-adjust: 100%;
+  font-synthesis: none;
 }
 
 body {
-  background: linear-gradient(165deg, var(--bg) 0%, var(--bg-alt) 55%, var(--bg) 100%);
-  background-attachment: fixed;
+  background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   overscroll-behavior-y: none;
+  letter-spacing: -0.01em;
 }
 
-/* Native shell: no rubber-band, no text selection on controls. */
 html[data-native="true"] body {
   user-select: none;
   -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 html[data-native="true"] input,
 html[data-native="true"] textarea {
@@ -107,65 +115,107 @@ html[data-native="true"] textarea {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+html[data-native="true"] :focus-visible {
+  outline: none;
+}
 
 .safe-top {
   padding-top: env(safe-area-inset-top);
 }
-
 .safe-bottom {
   padding-bottom: max(3rem, env(safe-area-inset-bottom));
 }
-
 .safe-x {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
+}
+
+/* ------------------------------------------------------------------------
+ * App shell (native + phone-width web): bottom tabs, large-title screens.
+ * --------------------------------------------------------------------- */
+.app-shell-only {
+  display: none;
+}
+@media (max-width: 640px) {
+  .app-shell-only {
+    display: block;
+  }
+  .web-only {
+    display: none;
+  }
+  main.with-tabs {
+    padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 1.5rem);
+  }
+}
+html[data-native="true"] .app-shell-only {
+  display: block;
+}
+html[data-native="true"] .web-only {
+  display: none;
+}
+html[data-native="true"] main.with-tabs {
+  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 1.5rem);
+}
+
+/* Screen push transition. */
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.page-in {
+  animation: page-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-in {
+    animation: none;
+  }
 }
 
 @layer components {
   .page {
     @apply mx-auto max-w-6xl px-4 py-6 sm:py-8;
   }
-
   .page-title {
     @apply text-2xl font-bold tracking-tight text-foreground sm:text-3xl;
   }
-
   .section-title {
-    @apply mb-4 text-lg font-semibold text-foreground;
+    @apply mb-3 text-lg font-semibold text-foreground;
   }
 
+  /* Cells and cards are flat on the grouped background, like UIKit inset groups. */
   .card {
-    @apply rounded-2xl border border-border bg-surface shadow-card;
+    @apply rounded-2xl bg-surface;
   }
-
   .card-interactive {
-    @apply card transition hover:border-accent hover:shadow-card-hover active:scale-[0.99];
+    @apply card transition active:opacity-70;
   }
 
   .input-field {
-    @apply w-full rounded-xl border border-border bg-surface px-4 py-3 text-base text-foreground outline-none transition placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent-soft;
+    @apply w-full rounded-xl bg-surface-muted px-4 py-3 text-base text-foreground outline-none placeholder:text-muted focus:ring-2 focus:ring-accent-soft;
   }
 
   .btn-primary {
-    @apply inline-flex min-h-12 items-center justify-center rounded-xl bg-accent px-6 py-3 font-semibold text-accent-foreground shadow-sm transition hover:bg-accent-hover hover:shadow-md active:scale-[0.98];
+    @apply inline-flex min-h-[50px] items-center justify-center rounded-2xl bg-accent px-6 text-base font-semibold text-accent-foreground transition active:opacity-80;
   }
-
   .btn-secondary {
-    @apply inline-flex min-h-12 items-center justify-center rounded-xl border border-border bg-surface px-6 py-3 font-semibold text-foreground shadow-sm transition hover:border-accent hover:bg-surface-muted active:scale-[0.98];
+    @apply inline-flex min-h-[50px] items-center justify-center rounded-2xl bg-accent-soft px-6 text-base font-semibold text-accent transition active:opacity-70;
   }
-
   .btn-ghost {
-    @apply inline-flex min-h-11 items-center justify-center rounded-xl px-3 py-2 text-sm font-medium text-muted transition hover:bg-surface-muted hover:text-accent;
+    @apply inline-flex min-h-11 items-center justify-center rounded-xl px-3 text-base font-medium text-accent transition active:opacity-60;
   }
 
   .chip {
-    @apply inline-flex items-center rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent-hover;
+    @apply inline-flex items-center rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-semibold text-accent;
   }
-
   .chip-muted {
-    @apply inline-flex items-center rounded-full bg-surface-muted px-2.5 py-0.5 text-xs font-medium text-muted;
+    @apply inline-flex items-center rounded-full bg-fill px-2.5 py-0.5 text-xs font-medium text-muted;
   }
-
 
   /* Camera controls: round, high contrast, large tap targets. */
   .cam-btn {
@@ -181,139 +231,104 @@ html[data-native="true"] textarea {
     background: var(--hud-bg);
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
   }
-}
 
-/* ------------------------------------------------------------------------
- * App shell (native + phone-width web): bottom tabs, large-title screens.
- * Desktop web keeps the top nav. Controlled by html[data-native] and the
- * viewport width; the inline script in the layout sets data-native before
- * first paint so there is no flash of the wrong chrome.
- * --------------------------------------------------------------------- */
-:root {
-  --tab-bar-height: 56px;
-}
-
-.app-shell-only {
-  display: none;
-}
-@media (max-width: 640px) {
-  .app-shell-only {
-    display: block;
-  }
-  .web-only {
-    display: none;
-  }
-}
-html[data-native="true"] .app-shell-only {
-  display: block;
-}
-html[data-native="true"] .web-only {
-  display: none;
-}
-
-/* Reserve room for the tab bar on tabbed screens. */
-@media (max-width: 640px) {
-  main.with-tabs {
-    padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 1.5rem);
-  }
-}
-html[data-native="true"] main.with-tabs {
-  padding-bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom) + 1.5rem);
-}
-
-@layer components {
+  /* Tab bar: UITabBar metrics (49pt + safe area, 10pt labels). */
   .tab-bar {
     @apply fixed inset-x-0 bottom-0 z-40 flex border-t border-border-subtle;
-    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
   }
-
   .tab-item {
-    @apply flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium text-muted transition active:opacity-60;
+    @apply flex flex-1 flex-col items-center justify-center gap-[3px] text-[10px] font-medium text-muted transition active:opacity-60;
   }
-
   .tab-item-active {
     @apply text-accent;
   }
 
+  /* Screens: large title with an optional back control above it. */
   .screen {
     @apply mx-auto max-w-2xl px-4 pb-8;
-    padding-top: max(0.75rem, env(safe-area-inset-top));
+    padding-top: max(0.5rem, env(safe-area-inset-top));
   }
   @media (min-width: 641px) {
     .screen {
       @apply pt-8;
     }
   }
-
   .screen-header {
-    @apply mb-5;
+    @apply mb-4 pt-2;
   }
-
   .screen-title {
-    @apply text-[2rem] font-extrabold leading-tight tracking-tight text-foreground;
+    @apply text-3xl font-bold tracking-tight text-foreground;
   }
-
   .screen-back {
-    @apply mb-1 -ml-1 inline-flex min-h-10 items-center gap-0.5 text-base font-medium text-accent;
+    @apply -ml-1.5 mb-1 inline-flex min-h-11 items-center text-base font-normal text-accent transition active:opacity-60;
   }
 
+  /* Inset grouped list. Separators are inset to the text edge like UITableView. */
   .list-group-title {
-    @apply mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-muted;
+    @apply mb-2 px-4 text-xs font-normal uppercase tracking-normal text-muted;
   }
-
   .list-group {
-    @apply overflow-hidden rounded-2xl border border-border-subtle bg-surface shadow-card;
+    @apply overflow-hidden rounded-2xl bg-surface;
   }
-
   .list-row {
-    @apply flex min-h-14 items-center gap-3 px-4 py-3 transition active:bg-surface-muted;
+    @apply relative flex min-h-11 items-center gap-3 px-4 py-2.5 transition active:bg-surface-muted;
   }
-  .list-row + .list-row {
-    @apply border-t border-border-subtle;
+  .list-row + .list-row::before {
+    content: "";
+    position: absolute;
+    left: 1rem;
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: var(--border-subtle);
   }
 
+  /* UISwitch. */
   .toggle {
-    @apply relative h-8 w-[52px] shrink-0 rounded-full bg-border transition-colors;
+    @apply relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors duration-200 ease-ios;
+    background: var(--fill);
   }
   .toggle-on {
-    @apply bg-accent;
+    background: var(--success);
   }
   .toggle-knob {
-    @apply absolute left-0.5 top-0.5 h-7 w-7 rounded-full bg-white shadow transition-transform;
+    @apply absolute left-[2px] top-[2px] h-[27px] w-[27px] rounded-full bg-white transition-transform duration-200 ease-ios;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.16);
   }
   .toggle-on .toggle-knob {
     transform: translateX(20px);
   }
 
-  .hero-card {
-    @apply relative overflow-hidden rounded-3xl p-5 text-white shadow-card;
-    background: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #2dd4bf 100%);
-  }
-
-  .stat-tile {
-    @apply rounded-2xl border border-border-subtle bg-surface p-4 shadow-card;
-  }
-
+  /* UISegmentedControl. */
   .segmented {
-    @apply flex rounded-xl bg-surface-muted p-1;
+    @apply flex rounded-[9px] p-[2px];
+    background: var(--fill);
   }
   .segmented-btn {
-    @apply min-h-10 flex-1 rounded-lg px-3 text-sm font-medium text-muted transition;
+    @apply min-h-[28px] flex-1 rounded-[7px] px-3 text-xs font-medium text-foreground transition active:opacity-60;
   }
   .segmented-btn-active {
-    @apply bg-surface font-semibold text-foreground shadow-sm;
+    @apply bg-surface font-semibold;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04);
   }
-}
 
-@layer components {
+  .hero-card {
+    @apply relative overflow-hidden rounded-3xl p-5 text-white;
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #2dd4bf 100%);
+  }
+  .stat-tile {
+    @apply rounded-2xl bg-surface p-4;
+  }
+
   .eyebrow {
-    @apply mb-2 text-xs font-bold uppercase tracking-[0.2em] text-accent;
+    @apply mb-1.5 text-xs font-semibold uppercase tracking-wide text-accent;
   }
   .onboarding-title {
-    @apply mb-3 text-[1.85rem] font-extrabold leading-tight tracking-tight text-foreground;
+    @apply mb-3 text-2xl font-bold leading-tight tracking-tight text-foreground;
   }
 }
