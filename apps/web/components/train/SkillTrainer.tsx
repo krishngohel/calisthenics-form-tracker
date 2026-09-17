@@ -17,14 +17,13 @@ import { CameraStatusBanner } from "@/components/camera/CameraStatusBanner";
 import { PoseOverlay, type SkeletonStatus } from "@/components/camera/PoseOverlay";
 import { LearnOverlay } from "@/components/camera/LearnOverlay";
 import { HoldHud } from "@/components/train/HoldHud";
-import { HoldResultToast } from "@/components/train/HoldResultToast";
 import { ReadyOverlay } from "@/components/train/ReadyOverlay";
-import { TrainingScreen } from "@/components/train/TrainingScreen";
+import { PostHoldSheet } from "@/components/train/PostHoldSheet";
+import { TrainingStage } from "@/components/train/TrainingStage";
 import { CoachingPanel } from "@/components/coaching/CoachingPanel";
 import { LearnMetricsPanel } from "@/components/coaching/LearnMetricsPanel";
 import { PersistentCueOverlay } from "@/components/coaching/PersistentCueOverlay";
 import { SessionProgressChart } from "@/components/coaching/SessionProgressChart";
-import { HoldSummaryCard } from "@/components/coaching/HoldSummaryCard";
 import { ModeToggle } from "@/components/ModeToggle";
 import { useAutoBackCameraFraming } from "@/hooks/useAutoBackCameraFraming";
 import { getStoredBodyProvider, usePoseDetection, type PoseFrameInfo } from "@/hooks/usePoseDetection";
@@ -68,11 +67,17 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   // Nothing is timed until the athlete taps Start on the setup card.
   const [armed, setArmed] = useState(false);
   const armedRef = useRef(false);
+  const { armAudio } = feedback;
   const start = useCallback(() => {
-    feedback.armAudio();
+    armAudio();
     armedRef.current = true;
     setArmed(true);
-  }, [feedback]);
+  }, [armAudio]);
+
+  // The result sheet stays until dismissed; a new hold replaces it.
+  const [dismissedHoldAt, setDismissedHoldAt] = useState(0);
+  const lastHoldAt = session.lastHold?.endedAt.getTime() ?? 0;
+  const showResult = !!session.lastHold && lastHoldAt !== dismissedHoldAt;
 
   const modeRef = useRef(mode);
   useEffect(() => {
@@ -85,7 +90,6 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   const onFrame = useCallback(
     (raw: Record<string, Landmark | null>, hands: HandLandmarks, frame: PoseFrameInfo) => {
       if (!skill) return;
-      // Rules measure angles and distances, so they need x and y in the same units.
       const body = toIsotropic(raw, frame.aspect);
       const frames = history.push(body);
       const currentMode = modeRef.current;
@@ -100,7 +104,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
     [skill, skillId, history, processHold, processLearn]
   );
 
-  const { getRenderLandmarks, getRenderHands, ready, error, profile } = usePoseDetection(videoRef, {
+  const { getRenderLandmarks, getRenderHands, ready, error } = usePoseDetection(videoRef, {
     bodyProvider,
     trackHands: skill?.needsHands ?? true,
     onFrame,
@@ -112,6 +116,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
     resetAll();
     armedRef.current = false;
     setArmed(false);
+    setDismissedHoldAt(0);
   }, [skillId, history, resetAll]);
 
   useEffect(() => {
@@ -129,38 +134,28 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
     );
   }
 
-  const prevSkillId = pathStep && pathStep.step > 1 ? pathStep.path.skillIds[pathStep.step - 2] : null;
   const nextSkillId = pathStep && pathStep.step < pathStep.total ? pathStep.path.skillIds[pathStep.step] : null;
+  const nextSkill = nextSkillId ? getSkill(nextSkillId) : null;
 
   return (
-    <TrainingScreen
-      back={{ href: "/skills", label: pathStep ? pathStep.path.name : "Paths" }}
+    <TrainingStage
+      back={{ href: "/skills", label: "Paths" }}
       title={skill.name}
-      subtitle={`${pathStep ? `Step ${pathStep.step} of ${pathStep.total} · ` : ""}${skill.cameraGuide}`}
-      modeControl={<ModeToggle value={mode} options={TRAIN_MODES} onChange={setMode} label="Training mode" />}
+      modeControl={<ModeToggle value={mode} options={TRAIN_MODES} onChange={setMode} label="Training mode" compact />}
       camera={
         <TrainCameraPanel
+          stage
           videoRef={videoRef}
           onVideoReady={() => setVideoReady(true)}
           onStreamReady={framing.onStreamReady}
           facingMode={framing.facingMode}
           deviceId={framing.deviceId}
           onFacingModeChange={framing.onFacingModeChange}
-          framingLabel={framing.framingLabel}
           framingGuidance={framing.framingGuidance}
           isManualFraming={framing.isManualFraming}
-          onEnableAutoFraming={framing.enableAutoFraming}
-          focus={feedback.focus}
-          onToggleFocus={feedback.toggleFocus}
           voiceEnabled={feedback.voice.enabled}
           voiceSupported={feedback.voice.supported}
           onToggleVoice={feedback.voice.toggle}
-          footer={
-            <>
-              Detecting at {profile.detectFps} fps
-              {holdView.farCamera && " · far-camera mode"}
-            </>
-          }
         >
           {videoReady && ready && (
             <>
@@ -185,13 +180,13 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
           )}
           {(armed || mode === "learn") && (
             <HoldHud
+              stage
               state={holdView.state}
               holdStartTime={holdView.holdStartTime}
               lastHoldMs={holdView.lastHoldMs}
               bestHoldMs={feedback.bestMs}
               formScore={holdView.formScore}
               mode={mode}
-              large={feedback.focus}
             />
           )}
           {mode !== "learn" && !armed && (
@@ -204,46 +199,39 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
               onStart={start}
             />
           )}
-          <HoldResultToast hold={session.lastHold} newBest={feedback.lastWasBest} />
-          <CameraStatusBanner ready={ready} error={error} videoReady={videoReady} visibilityWarning={armed && !holdView.visibilityOk} />
-          <PersistentCueOverlay cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />
+          <CameraStatusBanner stage ready={ready} error={error} videoReady={videoReady} visibilityWarning={armed && !holdView.visibilityOk} />
+          {!showResult && (
+            <PersistentCueOverlay stage cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />
+          )}
         </TrainCameraPanel>
       }
-      belowCamera={
-        (prevSkillId || nextSkillId) && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-            {prevSkillId && (
-              <Link href={`/train/${prevSkillId}`} className="btn-ghost">
-                ← {getSkill(prevSkillId)?.name}
-              </Link>
-            )}
-            {nextSkillId && (
-              <Link href={`/train/${nextSkillId}`} className="btn-ghost ml-auto text-accent">
-                {getSkill(nextSkillId)?.name} →
-              </Link>
-            )}
-          </div>
-        )
+      sheet={
+        showResult && session.lastHold ? (
+          <PostHoldSheet
+            hold={session.lastHold}
+            newBest={feedback.lastWasBest}
+            plan={session.coachingPlan}
+            saveState={session.saveState}
+            next={nextSkill ? { href: `/train/${nextSkill.id}`, label: `Next: ${nextSkill.name}` } : null}
+            skillName={skill.name}
+            onAgain={() => setDismissedHoldAt(lastHoldAt)}
+          />
+        ) : null
       }
-      side={
+      details={
         <>
-          {mode !== "learn" && session.lastHold && (
-            <HoldSummaryCard
-              hold={session.lastHold}
-              saveState={session.saveState}
-              cloudConfigured={session.cloudConfigured}
-              signedIn={session.signedIn}
-              onClear={resetAll}
-            />
-          )}
-          {mode === "learn" && <LearnMetricsPanel metrics={session.learnMetrics} />}
-          {mode !== "learn" && <SessionProgressChart points={session.progressPoints} />}
+          {mode === "learn" ? <LearnMetricsPanel metrics={session.learnMetrics} /> : <SessionProgressChart points={session.progressPoints} />}
           <CoachingPanel
             pinnedCues={session.pinnedCues}
             onDismissCue={session.dismissCue}
             drills={session.coachingPlan?.recommendedDrills}
             weakPoints={session.coachingPlan?.weakPoints}
           />
+          {pathStep && (
+            <p className="text-xs text-muted">
+              {pathStep.path.name} · step {pathStep.step} of {pathStep.total}
+            </p>
+          )}
         </>
       }
     />

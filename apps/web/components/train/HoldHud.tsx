@@ -15,6 +15,8 @@ interface HoldHudProps {
   skillLabel?: string | null;
   /** Bigger type for focus mode. */
   large?: boolean;
+  /** Offset below the stage top bar. */
+  stage?: boolean;
 }
 
 const STATE_LABELS: Record<HoldState, string> = {
@@ -45,6 +47,7 @@ export function HoldHud({
   mode,
   skillLabel,
   large = false,
+  stage = false,
 }: HoldHudProps) {
   const clockRef = useRef<HTMLDivElement>(null);
   const isLearn = mode === "learn";
@@ -72,7 +75,11 @@ export function HoldHud({
   const circumference = 2 * Math.PI * radius;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-3 pr-16 pt-[max(0.75rem,env(safe-area-inset-top))]">
+    <div
+      className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-3 ${
+        stage ? "pt-[calc(max(0.75rem,env(safe-area-inset-top))+3.75rem)]" : "pr-16 pt-[max(0.75rem,env(safe-area-inset-top))]"
+      }`}
+    >
       <div className="hud-panel min-w-0" aria-live="polite">
         {skillLabel !== undefined && (
           <div className="truncate text-xs font-semibold uppercase tracking-widest text-white/80">
