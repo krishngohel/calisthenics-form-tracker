@@ -13,7 +13,8 @@ import { isNativePlatform } from "@/lib/native";
 import { APP_VERSION } from "@/lib/version";
 import { useMounted } from "@/hooks/useMounted";
 import { EXPERIENCE_LABELS, readVoiceEnabled, writeVoiceEnabled, type ExperienceLevel } from "@/lib/preferences";
-import { readString, STORAGE_KEYS } from "@/lib/storage";
+import { BODY_PROVIDER_LABELS, type BodyProviderId } from "@cft/core";
+import { getStoredBodyProvider, setStoredBodyProvider } from "@/hooks/usePoseDetection";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -22,13 +23,13 @@ export default function SettingsPage() {
   const { history } = useLocalHistory();
   const [voice, setVoice] = useState(false);
   const [theme, setTheme] = useState<ThemePreference>("system");
-  const [provider, setProvider] = useState("movenet");
+  const [provider, setProvider] = useState<BodyProviderId>("movenet");
   const [confirmClear, setConfirmClear] = useState(false);
   const mounted = useMounted();
 
   useEffect(() => {
     setVoice(readVoiceEnabled());
-    setProvider(readString(STORAGE_KEYS.bodyProvider) ?? "movenet");
+    setProvider(getStoredBodyProvider());
     setTheme(readThemePreference());
   }, []);
 
@@ -73,7 +74,18 @@ export default function SettingsPage() {
       </ListGroup>
 
       <ListGroup title="Detection">
-        <ListRow label="Pose model" detail={provider === "mediapipe" ? "MediaPipe Pose Lite" : "MoveNet Lightning"} href="/dev/pose-benchmark" />
+        <ListRow
+          label="Pose model"
+          detail={BODY_PROVIDER_LABELS[provider]}
+          onClick={() => {
+            const order: BodyProviderId[] = ["movenet", "movenet-thunder", "mediapipe"];
+            const next = order[(order.indexOf(provider) + 1) % order.length];
+            setStoredBodyProvider(next);
+            setProvider(next);
+          }}
+          trailing={<span className="text-sm font-medium text-accent">Change</span>}
+        />
+        <ListRow label="Diagnostics & benchmark" detail="Live inference stats; compare models on this device" href="/dev/pose-benchmark" />
         <ListRow label="Replay onboarding" detail="Camera permission, level, and voice setup" href="/onboarding" />
       </ListGroup>
 

@@ -9,6 +9,7 @@ import {
   toIsotropic,
   type HoldMode,
   type TrainMode,
+  type BodyProviderId,
   type HandLandmarks,
   type Landmark,
 } from "@cft/core";
@@ -41,7 +42,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [mode, setMode] = useState<TrainMode>("hold_only");
-  const [bodyProvider, setBodyProvider] = useState<"movenet" | "mediapipe">("movenet");
+  const [bodyProvider, setBodyProvider] = useState<BodyProviderId>("movenet");
 
   useEffect(() => {
     setBodyProvider(getStoredBodyProvider());
@@ -220,7 +221,14 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
       }
       details={
         <>
-          {mode === "learn" ? <LearnMetricsPanel metrics={session.learnMetrics} /> : <SessionProgressChart points={session.progressPoints} />}
+          {mode === "learn" ? (
+            <LearnMetricsPanel metrics={session.learnMetrics} />
+          ) : (
+            <>
+              <LearnMetricsPanel metrics={session.liveMetrics} title="Live rule checks" footer="Score next to each rule; ✓ means it currently passes." />
+              <SessionProgressChart points={session.progressPoints} />
+            </>
+          )}
           <CoachingPanel
             pinnedCues={session.pinnedCues}
             onDismissCue={session.dismissCue}

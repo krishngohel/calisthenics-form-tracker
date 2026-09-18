@@ -4,15 +4,17 @@ import type { FormMetric } from "@cft/core";
 
 interface LearnMetricsPanelProps {
   metrics: FormMetric[];
+  title?: string;
+  footer?: string | null;
 }
 
-export function LearnMetricsPanel({ metrics }: LearnMetricsPanelProps) {
+export function LearnMetricsPanel({ metrics, title = "Form checklist", footer = "White outline = target position. Yellow arrows show what to move." }: LearnMetricsPanelProps) {
   if (metrics.length === 0) return null;
 
   return (
     <div className="card border-accent/20 p-4">
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-hover">
-        Form checklist
+        {title}
       </h3>
       <ul className="space-y-2">
         {metrics.map((m) => (
@@ -33,6 +35,7 @@ export function LearnMetricsPanel({ metrics }: LearnMetricsPanelProps) {
             </span>
             <span>
               <span className="font-medium">{m.label}</span>
+              <span className="ml-1 text-xs text-muted">{m.score}</span>
               {!m.passed && m.cue && (
                 <span className="mt-0.5 block text-muted">{m.cue}</span>
               )}
@@ -40,9 +43,7 @@ export function LearnMetricsPanel({ metrics }: LearnMetricsPanelProps) {
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-xs leading-relaxed text-muted">
-        White outline = target position. Yellow arrows show what to move.
-      </p>
+      {footer && <p className="mt-3 text-xs leading-relaxed text-muted">{footer}</p>}
     </div>
   );
 }

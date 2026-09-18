@@ -21,13 +21,21 @@ import {
   OVERLAY_SMOOTHING,
   HOLD_SMOOTHING,
 } from "@cft/core";
-import { isIOS } from "@/lib/camera/platform";
 import { readString, STORAGE_KEYS, writeString } from "@/lib/storage";
 import { createMainThreadEndpoint, createWorkerEndpoint, type PoseEndpoint } from "@/lib/pose/endpoint";
 
 export interface PoseDetectionState {
+  /** Smoothed model inference time. */
   inferenceMs: number;
+  /** Achieved detection rate over the last second. */
+  detectFps: number;
   provider: BodyProviderId;
+  /** What ran the model: webgl / cpu (MoveNet), wasm-gpu / wasm-cpu (MediaPipe). */
+  backend: string;
+  /** Model load time. */
+  initMs: number;
+  /** Captured frame size sent to the model, e.g. "640×360". */
+  captureSize: string;
   ready: boolean;
   error: string | null;
   /** Where inference runs; "main-thread" means the worker was unavailable. */
@@ -63,7 +71,9 @@ const STATS_UPDATE_INTERVAL_MS = 500;
 /** Hard timeout per provider benchmark to avoid hanging UI forever. */
 const BENCHMARK_TIMEOUT_MS = 45_000;
 /** Predict skeleton slightly ahead of the last detection frame. */
-const EXTRAPOLATE_MS = 40;
+const EXTRAPOLATE_MS = 30;
+/** Console diagnostics cadence (readable from the native app's log). */
+const DIAG_LOG_INTERVAL_MS = 5000;
 
 /** If the worker has not reported ready by then, run the engine in-page instead. */
 const WORKER_READY_TIMEOUT_MS = 25_000;
@@ -123,6 +133,10 @@ export function usePoseDetection(
   const lastDetectRef = useRef(0);
   const captureEdgeRef = useRef(DEFAULT_CAPTURE_EDGE);
   const lastStatsUpdateRef = useRef(0);
+  const inferenceEmaRef = useRef(0);
+  const frameTimesRef = useRef<number[]>([]);
+  const lastDiagLogRef = useRef(0);
+  const captureSizeRef = useRef("");
   const isPageVisibleRef = useRef(true);
   const trackHandsRef = useRef(trackHands);
 
@@ -139,7 +153,8 @@ export function usePoseDetection(
   const profile = PERFORMANCE_PROFILES[tier];
 
   useEffect(() => {
-    setTier(isIOS() ? "low" : detectPerformanceTier());
+    // Modern iPhones handle 30–45 fps detection; only older ones need the low tier.
+    setTier(detectPerformanceTier());
   }, []);
 
   // Re-tune smoothing when the tier resolves — without tearing down the worker.
@@ -155,7 +170,11 @@ export function usePoseDetection(
 
   const [state, setState] = useState<PoseDetectionState>({
     inferenceMs: 0,
+    detectFps: 0,
     provider: bodyProvider,
+    backend: "unknown",
+    initMs: 0,
+    captureSize: "",
     ready: false,
     error: null,
     engine: "worker",
@@ -187,6 +206,8 @@ export function usePoseDetection(
     rejectCountRef.current = 0;
     busyRef.current = false;
     lastDetectRef.current = 0;
+    inferenceEmaRef.current = 0;
+    frameTimesRef.current = [];
 
     /** Swap to the in-page engine when the worker cannot come up. */
     const fallBack = (reason: string) => {
@@ -222,6 +243,8 @@ export function usePoseDetection(
           ready: true,
           error: null,
           provider: data.bodyProvider,
+          backend: data.backend ?? "unknown",
+          initMs: data.initMs ?? 0,
         }));
       } else if (data.type === "skipped") {
         busyRef.current = false;
@@ -269,13 +292,30 @@ export function usePoseDetection(
         });
 
         const now = performance.now();
+        inferenceEmaRef.current = inferenceEmaRef.current
+          ? inferenceEmaRef.current * 0.85 + data.inferenceMs * 0.15
+          : data.inferenceMs;
+        const times = frameTimesRef.current;
+        times.push(now);
+        while (times.length && now - times[0] > 1000) times.shift();
+        const captureSize = `${data.frameWidth}×${data.frameHeight}`;
+        captureSizeRef.current = captureSize;
         if (now - lastStatsUpdateRef.current > STATS_UPDATE_INTERVAL_MS) {
           lastStatsUpdateRef.current = now;
           setState((s) => ({
             ...s,
-            inferenceMs: data.inferenceMs,
+            inferenceMs: Math.round(inferenceEmaRef.current),
+            detectFps: times.length,
             provider: data.provider,
+            captureSize,
           }));
+        }
+        if (now - lastDiagLogRef.current > DIAG_LOG_INTERVAL_MS) {
+          lastDiagLogRef.current = now;
+          const video = videoRef.current;
+          console.log(
+            `[pose] engine=${workerRef.current?.kind} provider=${data.provider} infer=${Math.round(inferenceEmaRef.current)}ms fps=${times.length} capture=${captureSize} video=${video?.videoWidth ?? 0}×${video?.videoHeight ?? 0} far=${distanceCtx.isFar}`
+          );
         }
       } else if (data.type === "error") {
         if (target.kind === "worker" && !readyRef.current) {
@@ -457,7 +497,7 @@ export function usePoseBenchmark(
 
     const collected = {} as Record<BodyProviderId, BenchmarkProviderResult>;
 
-    for (const provider of ["movenet", "mediapipe"] as const) {
+    for (const provider of ["movenet", "movenet-thunder", "mediapipe"] as const) {
       try {
         collected[provider] = await runProviderBenchmark(provider);
       } catch {
@@ -474,10 +514,9 @@ export function usePoseBenchmark(
     setResults(collected);
     const score = (r: BenchmarkProviderResult) =>
       r.avgFps * 2 - r.avgInferenceMs - r.droppedFrames * 5;
-    const winner: BodyProviderId =
-      score(collected.movenet) >= score(collected.mediapipe)
-        ? "movenet"
-        : "mediapipe";
+    const winner = (Object.keys(collected) as BodyProviderId[]).reduce((best, p) =>
+      score(collected[p]) > score(collected[best]) ? p : best
+    );
     setRecommendation(winner);
     writeString(STORAGE_KEYS.bodyProvider, winner);
     setRunning(false);
@@ -489,6 +528,12 @@ export function usePoseBenchmark(
 export function getStoredBodyProvider(): BodyProviderId {
   if (typeof window === "undefined") return "movenet";
   const stored = readString(STORAGE_KEYS.bodyProvider);
-  if (stored === "mediapipe" || stored === "movenet") return stored;
-  return isIOS() ? "mediapipe" : "movenet";
+  if (stored === "mediapipe" || stored === "movenet" || stored === "movenet-thunder") return stored;
+  // MoveNet on WebGL is the reliable fast path everywhere, including WKWebView
+  // workers where MediaPipe's GPU delegate is not dependable.
+  return "movenet";
+}
+
+export function setStoredBodyProvider(provider: BodyProviderId): void {
+  writeString(STORAGE_KEYS.bodyProvider, provider);
 }

@@ -7,7 +7,10 @@ import {
   PoseLandmarker,
 } from "@mediapipe/tasks-vision";
 
-export type WorkerBodyProvider = "movenet" | "mediapipe";
+export type WorkerBodyProvider = "movenet" | "movenet-thunder" | "mediapipe";
+
+/** What actually ran the model, for diagnostics. */
+export type EngineBackend = "webgl" | "cpu" | "wasm-gpu" | "wasm-cpu" | "unknown";
 
 type Point = { x: number; y: number; z?: number; visibility?: number };
 type Body = Record<string, Point | null>;
@@ -38,7 +41,7 @@ export type WorkerIn = WorkerInit | WorkerDetect | WorkerBenchmark | { type: "di
 
 /** Events the engine emits (mirrors the worker message protocol). */
 export type EngineEvent =
-  | { type: "ready"; bodyProvider: WorkerBodyProvider }
+  | { type: "ready"; bodyProvider: WorkerBodyProvider; backend: EngineBackend; initMs: number }
   | { type: "skipped"; timestamp: number }
   | {
       type: "result";
@@ -68,12 +71,14 @@ const MP_HAND_MODEL =
   "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
 
 let moveNetDetector: poseDetection.PoseDetector | null = null;
+let moveNetModelType: string | null = null;
 let mpPose: PoseLandmarker | null = null;
 let handLandmarker: HandLandmarker | null = null;
 let bodyProvider: WorkerBodyProvider = "movenet";
 let canvas: Surface | null = null;
 let ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null;
 let tfReady = false;
+let backend: EngineBackend = "unknown";
 let visionFileset: Awaited<ReturnType<typeof FilesetResolver.forVisionTasks>> | null = null;
 
 /**
@@ -111,14 +116,18 @@ async function initMoveNet(): Promise<void> {
     }
     tfReady = true;
   }
-  if (moveNetDetector) return;
-  moveNetDetector = await poseDetection.createDetector(
-    poseDetection.SupportedModels.MoveNet,
-    {
-      modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
-      enableSmoothing: false,
-    }
-  );
+  backend = tf.getBackend() === "webgl" ? "webgl" : "cpu";
+  const wanted =
+    bodyProvider === "movenet-thunder"
+      ? poseDetection.movenet.modelType.SINGLEPOSE_THUNDER
+      : poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING;
+  if (moveNetDetector && moveNetModelType === wanted) return;
+  moveNetDetector?.dispose();
+  moveNetDetector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+    modelType: wanted,
+    enableSmoothing: false,
+  });
+  moveNetModelType = wanted;
 }
 
 async function getVisionFileset() {
@@ -133,8 +142,11 @@ async function withDelegateFallback<T>(
   create: (delegate: "GPU" | "CPU") => Promise<T>
 ): Promise<T> {
   try {
-    return await create("GPU");
+    const made = await create("GPU");
+    backend = "wasm-gpu";
+    return made;
   } catch {
+    backend = "wasm-cpu";
     return create("CPU");
   }
 }
@@ -172,8 +184,8 @@ function ensureInitialized(
   initKey = key;
   initPromise = (async () => {
     bodyProvider = provider;
-    if (provider === "movenet") await initMoveNet();
-    else await initMediaPipePose();
+    if (provider === "mediapipe") await initMediaPipePose();
+    else await initMoveNet();
     if (enableHands) await initHands();
   })().catch((err) => {
     initPromise = null;
@@ -214,7 +226,7 @@ async function detectBody(source: Surface, timestamp: number): Promise<Body> {
   const body: Body = {};
   const image = source as unknown as HTMLCanvasElement;
 
-  if (bodyProvider === "movenet" && moveNetDetector) {
+  if (bodyProvider !== "mediapipe" && moveNetDetector) {
     const poses = await moveNetDetector.estimatePoses(image, { flipHorizontal: false });
     const keypoints = poses[0]?.keypoints;
     if (keypoints) {
@@ -299,8 +311,11 @@ export function createPoseEngine(post: (event: EngineEvent) => void) {
   return async function handle(msg: WorkerIn): Promise<void> {
     try {
       if (msg.type === "init") {
+        const t0 = performance.now();
         await ensureInitialized(msg.bodyProvider, msg.enableHands);
-        post({ type: "ready", bodyProvider });
+        const initMs = Math.round(performance.now() - t0);
+        console.log(`[pose] ready provider=${bodyProvider} backend=${backend} init=${initMs}ms`);
+        post({ type: "ready", bodyProvider, backend, initMs });
       } else if (msg.type === "detect") {
         try {
           if (!initPromise) {

@@ -6,6 +6,7 @@ import {
   evaluateSkill,
   getSkill,
   toIsotropic,
+  type BodyProviderId,
   type HandLandmarks,
   type HoldMode,
   type Landmark,
@@ -19,6 +20,7 @@ import { ReadyOverlay } from "@/components/train/ReadyOverlay";
 import { PostHoldSheet } from "@/components/train/PostHoldSheet";
 import { TrainingStage } from "@/components/train/TrainingStage";
 import { CoachingPanel } from "@/components/coaching/CoachingPanel";
+import { LearnMetricsPanel } from "@/components/coaching/LearnMetricsPanel";
 import { PersistentCueOverlay } from "@/components/coaching/PersistentCueOverlay";
 import { SessionProgressChart } from "@/components/coaching/SessionProgressChart";
 import { ModeToggle } from "@/components/ModeToggle";
@@ -40,7 +42,7 @@ export default function AutoTrainPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [mode, setMode] = useState<HoldMode>("hold_only");
-  const [bodyProvider, setBodyProvider] = useState<"movenet" | "mediapipe">("movenet");
+  const [bodyProvider, setBodyProvider] = useState<BodyProviderId>("movenet");
   useEffect(() => {
     setBodyProvider(getStoredBodyProvider());
     setMode(readPreferences().defaultMode);
@@ -247,6 +249,7 @@ export default function AutoTrainPage() {
       }
       details={
         <>
+          <LearnMetricsPanel metrics={session.liveMetrics} title="Live rule checks" footer="Score next to each rule; ✓ means it currently passes." />
           <SessionProgressChart points={session.progressPoints} />
           <CoachingPanel
             pinnedCues={session.pinnedCues}
