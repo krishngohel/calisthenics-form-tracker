@@ -8,6 +8,7 @@ import { STARTER_SKILL, writePreferences, writeVoiceEnabled, type ExperienceLeve
 import { hapticImpact, hapticNotify } from "@/lib/native";
 import { openCameraStream } from "@/lib/camera/openCameraStream";
 import { cameraUnavailableReason } from "@/lib/camera/platform";
+import { AppMark } from "@/components/app/AppMark";
 
 type Step = "welcome" | "how" | "camera" | "level" | "voice" | "done";
 const STEPS: Step[] = ["welcome", "how", "camera", "level", "voice", "done"];
@@ -81,7 +82,7 @@ export default function OnboardingPage() {
           )}
           <ol className="flex gap-1.5" aria-label={`Step ${index + 1} of ${STEPS.length}`}>
             {STEPS.map((s, i) => (
-              <li key={s} className={`h-1.5 rounded-full transition-all ${i <= index ? "w-6 bg-accent" : "w-1.5 bg-border"}`} />
+              <li key={s} className={`h-1.5 rounded-full transition-all ${i <= index ? "w-6 bg-accent" : "w-1.5 bg-fill"}`} />
             ))}
           </ol>
         </div>
@@ -134,12 +135,13 @@ export default function OnboardingPage() {
                       void hapticImpact("light");
                     }}
                     aria-pressed={level === l.id}
-                    className={`w-full rounded-2xl border-2 p-4 text-left transition ${
-                      level === l.id ? "border-accent bg-accent-soft/60" : "border-border bg-surface"
-                    }`}
+                    className="flex w-full items-center gap-3 rounded-2xl bg-surface p-4 text-left transition active:opacity-70"
                   >
-                    <div className="text-base font-bold text-foreground">{l.title}</div>
-                    <div className="mt-0.5 text-sm text-muted">{l.desc}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-base font-semibold text-foreground">{l.title}</div>
+                      <div className="mt-0.5 text-xs text-muted">{l.desc}</div>
+                    </div>
+                    <Check selected={level === l.id} />
                   </button>
                 ))}
               </div>
@@ -205,6 +207,23 @@ export default function OnboardingPage() {
   );
 }
 
+function Check({ selected }: { selected: boolean }) {
+  return (
+    <span
+      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${
+        selected ? "border-accent bg-accent text-accent-foreground" : "border-border"
+      }`}
+      aria-hidden
+    >
+      {selected && (
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m5 12.5 4.5 4.5L19 7.5" />
+        </svg>
+      )}
+    </span>
+  );
+}
+
 function Slide({ art, eyebrow, title, body }: { art: React.ReactNode; eyebrow: string; title: string; body: string }) {
   return (
     <div>
@@ -222,25 +241,14 @@ function ChoiceRow({ title, desc, selected, onSelect }: { title: string; desc: s
       type="button"
       onClick={onSelect}
       aria-pressed={selected}
-      className={`w-full rounded-2xl border-2 p-4 text-left transition ${selected ? "border-accent bg-accent-soft/60" : "border-border bg-surface"}`}
+      className="flex w-full items-center gap-3 rounded-2xl bg-surface p-4 text-left transition active:opacity-70"
     >
-      <div className="text-base font-bold text-foreground">{title}</div>
-      <div className="mt-0.5 text-sm text-muted">{desc}</div>
+      <div className="min-w-0 flex-1">
+        <div className="text-base font-semibold text-foreground">{title}</div>
+        <div className="mt-0.5 text-xs text-muted">{desc}</div>
+      </div>
+      <Check selected={selected} />
     </button>
-  );
-}
-
-function AppMark() {
-  return (
-    <svg viewBox="0 0 1024 1024" className="h-40 w-40" aria-hidden>
-      <rect width="1024" height="1024" rx="224" fill="#0b1512" />
-      <circle cx="512" cy="512" r="330" fill="none" stroke="#134e48" strokeWidth="56" />
-      <circle cx="512" cy="512" r="330" fill="none" stroke="#2dd4bf" strokeWidth="56" strokeLinecap="round" strokeDasharray="1555 2074" transform="rotate(-90 512 512)" />
-      <g stroke="#e8f4ee" strokeWidth="44" strokeLinecap="round" strokeLinejoin="round" fill="none">
-        <circle cx="512" cy="300" r="52" fill="#e8f4ee" stroke="none" />
-        <path d="M512 370v250M512 620l-120 170M512 620l120 170M512 430l-160-110M512 430l160-110" />
-      </g>
-    </svg>
   );
 }
 

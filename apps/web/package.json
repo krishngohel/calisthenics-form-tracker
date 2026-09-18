@@ -12,7 +12,10 @@
     "build:ios": "CAPACITOR_BUILD=1 next build && cap sync ios",
     "ios": "cap open ios",
     "ios:add": "cap add ios",
-    "test": "vitest run"
+    "test": "vitest run",
+    "preview": "node scripts/serve-out.mjs",
+    "test:e2e": "playwright test",
+    "build:export": "CAPACITOR_BUILD=1 next build"
   },
   "dependencies": {
     "@capacitor/core": "^6.2.2",
@@ -46,6 +49,7 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5",
-    "vitest": "^2.1.0"
+    "vitest": "^2.1.0",
+    "@playwright/test": "^1.47.0"
   }
 }

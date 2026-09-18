@@ -21,3 +21,17 @@ jobs:
       - run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+      - name: Static export (what the iOS app ships)
+        run: npm run build:export -w apps/web
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+      - name: End-to-end (iPhone viewport, fake camera)
+        run: npm run test:e2e -w apps/web
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: apps/web/test-results/
+          retention-days: 7

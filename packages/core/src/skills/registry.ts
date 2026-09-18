@@ -47,6 +47,41 @@ export interface SkillEvaluation {
   visibilityOk: boolean;
   /** Present when the athlete is small in frame (stepped back for FOV). */
   farCamera?: boolean;
+  /** Raw geometry behind the rules, for tuning against real footage. */
+  measures?: RuleMeasures;
+}
+
+export interface RuleMeasures {
+  /** Torso length in frame units (the body unit every threshold uses). */
+  T: number;
+  elbow: number;
+  knee: number;
+  hip: number;
+  bodyLine: number;
+  horizontal: number;
+  hangDepth: number;
+  lean: number;
+  inverted: boolean;
+  support: boolean;
+  visibility: number;
+}
+
+const MEASURE_KEYS = ["nose", "leftShoulder", "rightShoulder", "leftElbow", "rightElbow", "leftWrist", "rightWrist", "leftHip", "rightHip", "leftKnee", "rightKnee", "leftAnkle", "rightAnkle"];
+
+export function measureBody(body: Body): RuleMeasures {
+  return {
+    T: Math.round(bodyUnit(body) * 1000) / 1000,
+    elbow: Math.round(elbowAngle(body)),
+    knee: Math.round(kneeAngle(body)),
+    hip: Math.round(hipAngle(body)),
+    bodyLine: Math.round(bodyLineDeviation(body)),
+    horizontal: Math.round(horizontalBodyScore(body) * 100) / 100,
+    hangDepth: Math.round(hangDepth(body) * 100) / 100,
+    lean: Math.round(shoulderLeanOverWrists(body) * 100) / 100,
+    inverted: isInverted(body),
+    support: inWeightSupportPosition(body),
+    visibility: Math.round(visibilityScore(body, MEASURE_KEYS) * 100) / 100,
+  };
 }
 
 export interface SkillDefinition {
@@ -999,5 +1034,5 @@ export function evaluateSkill(
   if (!skill) return null;
   const evaluation = skill.evaluate(body, hands, history, mode);
   const ctx = getDistanceContext(body);
-  return { ...evaluation, farCamera: ctx.isFar };
+  return { ...evaluation, farCamera: ctx.isFar, measures: measureBody(body) };
 }

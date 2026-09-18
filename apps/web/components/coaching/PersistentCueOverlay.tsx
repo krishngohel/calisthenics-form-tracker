@@ -8,6 +8,8 @@ interface PersistentCueOverlayProps {
   cues: PersistedCue[];
   onDismiss: (id: string) => void;
   onDismissAll?: () => void;
+  /** Full-screen stage: leave room for the mode pill at the bottom. */
+  stage?: boolean;
 }
 
 /**
@@ -18,6 +20,7 @@ export function PersistentCueOverlay({
   cues,
   onDismiss,
   onDismissAll,
+  stage = false,
 }: PersistentCueOverlayProps) {
   if (cues.length === 0) return null;
   // Show the newest few over the video; the full list lives in the coaching panel.
@@ -25,7 +28,11 @@ export function PersistentCueOverlay({
   const hidden = cues.length - visibleCues.length;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4">
+    <div
+      className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-2 p-3 sm:p-4 ${
+        stage ? "pb-[calc(max(1rem,env(safe-area-inset-bottom))+3rem)]" : "pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      }`}
+    >
       {cues.length > 1 && onDismissAll && (
         <button
           type="button"

@@ -17,3 +17,5 @@ apps/web/ios/App/App/capacitor.config.json
 apps/web/ios/App/App/config.xml
 apps/web/ios/DerivedData/
 **/xcuserdata/
+apps/web/test-results/
+apps/web/playwright-report/

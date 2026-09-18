@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { hapticImpact } from "@/lib/native";
 
 interface ScreenProps {
   title: string;
@@ -39,7 +40,7 @@ export function Screen({ title, subtitle, back, action, children, className = ""
 
 export function ChevronLeft() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="m15 5-7 7 7 7" />
     </svg>
   );
@@ -47,7 +48,7 @@ export function ChevronLeft() {
 
 export function ChevronRight() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 text-muted" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted/70" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="m9 5 7 7-7 7" />
     </svg>
   );
@@ -77,7 +78,7 @@ export function ListRow({ label, detail, href, onClick, trailing, destructive }:
     <>
       <div className="min-w-0 flex-1">
         <div className={`text-base ${destructive ? "text-danger" : "text-foreground"}`}>{label}</div>
-        {detail && <div className="mt-0.5 text-sm text-muted">{detail}</div>}
+        {detail && <div className="mt-0.5 text-xs text-muted">{detail}</div>}
       </div>
       {trailing ?? (href ? <ChevronRight /> : null)}
     </>
@@ -106,7 +107,10 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
       role="switch"
       aria-checked={checked}
       aria-label={label}
-      onClick={() => onChange(!checked)}
+      onClick={() => {
+        void hapticImpact("light");
+        onChange(!checked);
+      }}
       className={`toggle ${checked ? "toggle-on" : ""}`}
     >
       <span className="toggle-knob" />
