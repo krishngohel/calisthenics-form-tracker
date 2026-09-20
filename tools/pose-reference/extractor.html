@@ -1,0 +1,33 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>pose extractor</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+</head><body>
+<script>
+  // MoveNet Thunder (highest-accuracy MoveNet) run on still images. The runner
+  // calls window.extract(dataUrl) and gets normalized keypoints back.
+  let detector = null;
+  window.ready = (async () => {
+    await tf.setBackend("webgl").catch(() => tf.setBackend("cpu"));
+    await tf.ready();
+    detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {
+      modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER,
+      enableSmoothing: false,
+    });
+    return tf.getBackend();
+  })();
+  window.extract = async (dataUrl) => {
+    await window.ready;
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = dataUrl; });
+    const poses = await detector.estimatePoses(img, { flipHorizontal: false });
+    const kp = poses[0]?.keypoints ?? [];
+    const body = {};
+    for (const k of kp) {
+      const key = k.name.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+      body[key] = { x: k.x / img.naturalWidth, y: k.y / img.naturalHeight, visibility: k.score };
+    }
+    return { width: img.naturalWidth, height: img.naturalHeight, body, score: poses[0]?.score ?? 0 };
+  };
+</script>
+</body></html>

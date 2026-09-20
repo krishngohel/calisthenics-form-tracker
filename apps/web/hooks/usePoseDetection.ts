@@ -529,9 +529,11 @@ export function getStoredBodyProvider(): BodyProviderId {
   if (typeof window === "undefined") return "movenet";
   const stored = readString(STORAGE_KEYS.bodyProvider);
   if (stored === "mediapipe" || stored === "movenet" || stored === "movenet-thunder") return stored;
-  // MoveNet on WebGL is the reliable fast path everywhere, including WKWebView
-  // workers where MediaPipe's GPU delegate is not dependable.
-  return "movenet";
+  // MoveNet on WebGL is the reliable path everywhere, including WKWebView
+  // workers where MediaPipe's GPU delegate is not dependable. Thunder is
+  // noticeably more precise and recent phones run it at a usable rate.
+  const cores = navigator.hardwareConcurrency ?? 4;
+  return cores >= 6 ? "movenet-thunder" : "movenet";
 }
 
 export function setStoredBodyProvider(provider: BodyProviderId): void {

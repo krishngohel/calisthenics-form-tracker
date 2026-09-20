@@ -19,3 +19,5 @@ apps/web/ios/DerivedData/
 **/xcuserdata/
 apps/web/test-results/
 apps/web/playwright-report/
+tools/pose-reference/landmarks.json
+tools/pose-reference/kept.json
