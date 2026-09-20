@@ -21,9 +21,7 @@ export function CoachingPanel({
     <div className="space-y-4">
       {pinnedCues.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Active cues
-          </p>
+          <p className="text-sm font-semibold text-foreground">Cues</p>
           {pinnedCues.map((cue) => (
             <div
               key={cue.id}
@@ -46,7 +44,7 @@ export function CoachingPanel({
 
       {weakPoints && weakPoints.length > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-muted">Focus areas</h3>
+          <h3 className="mb-2 text-sm font-semibold text-foreground">Work on</h3>
           <ul className="space-y-1 text-sm">
             {weakPoints.map((w) => (
               <li key={w} className="flex items-center gap-2">
@@ -60,7 +58,7 @@ export function CoachingPanel({
 
       {drills && drills.length > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-muted">Recommended drills</h3>
+          <h3 className="mb-2 text-sm font-semibold text-foreground">Drills</h3>
           <div className="space-y-2">
             {drills.map((d) => (
               <div

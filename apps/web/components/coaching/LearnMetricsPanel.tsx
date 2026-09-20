@@ -13,9 +13,7 @@ export function LearnMetricsPanel({ metrics, title = "Form checklist", footer = 
 
   return (
     <div className="card border-accent/20 p-4">
-      <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-accent-hover">
-        {title}
-      </h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">{title}</h3>
       <ul className="space-y-2">
         {metrics.map((m) => (
           <li
@@ -31,7 +29,7 @@ export function LearnMetricsPanel({ metrics, title = "Form checklist", footer = 
                   : "bg-warning-soft text-warning"
               }`}
             >
-              {m.passed ? "✓" : "→"}
+              {m.passed ? "✓" : "·"}
             </span>
             <span>
               <span className="font-medium">{m.label}</span>

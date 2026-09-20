@@ -46,9 +46,9 @@ export function ChevronLeft() {
   );
 }
 
-export function ChevronRight() {
+export function ChevronRight({ className = "text-muted/70" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-muted/70" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg viewBox="0 0 24 24" className={`h-4 w-4 shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="m9 5 7 7-7 7" />
     </svg>
   );

@@ -270,7 +270,10 @@ html[data-native="true"] main.with-tabs {
 
   /* Inset grouped list. Separators are inset to the text edge like UITableView. */
   .list-group-title {
-    @apply mb-2 px-4 text-xs font-normal uppercase tracking-normal text-muted;
+    @apply mb-2 px-4 text-xs text-muted;
+  }
+  .primary-row {
+    @apply flex items-center gap-3 rounded-2xl bg-accent px-4 py-3 text-accent-foreground transition active:opacity-80;
   }
   .list-group {
     @apply overflow-hidden rounded-2xl bg-surface;
@@ -317,20 +320,7 @@ html[data-native="true"] main.with-tabs {
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 3px 1px rgba(0, 0, 0, 0.04);
   }
 
-  .hero-card {
-    @apply relative overflow-hidden rounded-3xl p-5 text-white;
-    background: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #2dd4bf 100%);
-  }
-  .stat-tile {
-    @apply rounded-2xl bg-surface p-4;
-  }
 
-  .eyebrow {
-    @apply mb-1.5 text-xs font-semibold uppercase tracking-wide text-accent;
-  }
-  .onboarding-title {
-    @apply mb-3 text-2xl font-bold leading-tight tracking-tight text-foreground;
-  }
 }
 
 /* ------------------------------------------------------------------------

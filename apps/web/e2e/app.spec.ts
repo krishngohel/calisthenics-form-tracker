@@ -14,18 +14,13 @@ test.describe("first launch", () => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/onboarding\/?$/);
     await page.getByRole("button", { name: "Get started" }).tap();
-    await expect(page.getByRole("heading", { name: /Prop the phone up/ })).toBeVisible();
-    await page.getByRole("button", { name: "Continue" }).tap();
-    await expect(page.getByRole("heading", { name: /needs the camera/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Camera" })).toBeVisible();
     await page.getByRole("button", { name: "Allow camera access" }).tap();
     await expect(page.getByText("Camera access is on")).toBeVisible();
     await page.getByRole("button", { name: "Continue" }).tap();
+    await expect(page.getByRole("heading", { name: /Where are you now/ })).toBeVisible();
     await page.getByRole("button", { name: /Advanced holds/ }).tap();
-    await page.getByRole("button", { name: "Continue" }).tap();
-    await page.getByRole("button", { name: /Silent/ }).tap();
-    await page.getByRole("button", { name: "Continue" }).tap();
-    await expect(page.getByRole("heading", { name: /Start with Tuck Planche/ })).toBeVisible();
-    await page.getByRole("button", { name: "Start training" }).tap();
+    await page.getByRole("button", { name: "Start with Tuck Planche" }).tap();
     await expect(page).toHaveURL(/\/train\/tuck-planche\/?$/);
     await expect(page.getByRole("button", { name: "Start" })).toBeEnabled({ timeout: 60_000 });
     check();
@@ -38,8 +33,8 @@ test.describe("app shell", () => {
   test("home renders and the tab bar navigates", async ({ page }) => {
     const check = await noPageErrors(page);
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    await expect(page.getByText("Start here")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Train" })).toBeVisible();
+    await expect(page.getByText("Suggested")).toBeVisible();
     await page.getByRole("link", { name: "Paths" }).tap();
     await expect(page).toHaveURL(/\/skills\/?$/);
     await expect(page.getByRole("heading", { name: "Paths" })).toBeVisible();
@@ -69,7 +64,7 @@ test.describe("app shell", () => {
     const start = page.getByRole("button", { name: "Start" });
     await expect(start).toBeVisible();
     await expect(start).toBeEnabled({ timeout: 60_000 });
-    await expect(page.getByText("Your best")).toBeHidden(); // no history yet
+    await expect(page.getByText(/^Best /)).toBeHidden(); // no history yet
     await start.tap();
     await expect(start).toBeHidden();
     await expect(page.getByRole("meter", { name: "Form score" })).toBeVisible();
@@ -113,11 +108,11 @@ test.describe("history", () => {
   test("progress and home reflect stored holds", async ({ page }) => {
     await page.goto("/progress/");
     await expect(page.getByText("42.30s").first()).toBeVisible();
-    await expect(page.getByText("Personal bests · 1 skill")).toBeVisible();
+    await expect(page.getByText("Personal bests")).toBeVisible();
     await page.goto("/");
     await expect(page.getByText("Continue")).toBeVisible();
     await expect(page.getByText("Best 42.3s")).toBeVisible();
     await page.goto("/train/plank-hold/");
-    await expect(page.getByText("Your best: 42.30s")).toBeVisible();
+    await expect(page.getByText("Best 42.30s")).toBeVisible();
   });
 });

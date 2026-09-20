@@ -28,11 +28,7 @@ export function PostHoldSheet({ hold, newBest, plan, saveState, next, skillName,
       <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-fill" aria-hidden />
       <div className="flex items-end justify-between gap-3">
         <div>
-          {newBest ? (
-            <div className="text-xs font-semibold uppercase tracking-wide text-success">New personal best</div>
-          ) : (
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted">{skillName ?? "Hold"} complete</div>
-          )}
+          <div className={`text-sm ${newBest ? "font-semibold text-success" : "text-muted"}`}>{newBest ? "Personal best" : skillName ?? "Hold"}</div>
           <div className="font-mono text-4xl font-bold tabular-nums leading-none text-foreground">{formatMs(hold.durationMs)}</div>
         </div>
         <div className="text-right">

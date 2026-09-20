@@ -21,8 +21,8 @@ interface HoldHudProps {
 
 const STATE_LABELS: Record<HoldState, string> = {
   idle: "Ready",
-  qualifying: "Hold steady",
-  holding: "Hold",
+  qualifying: "Steady…",
+  holding: "Holding",
   dropped: "Dropped",
 };
 
@@ -82,13 +82,11 @@ export function HoldHud({
     >
       <div className="hud-panel min-w-0" aria-live="polite">
         {skillLabel !== undefined && (
-          <div className="truncate text-xs font-semibold uppercase tracking-widest text-white/80">
-            {skillLabel ?? "Scanning…"}
-          </div>
+          <div className="truncate text-xs text-white/80">{skillLabel ?? "Scanning…"}</div>
         )}
         <div className="flex items-center gap-2">
           <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-widest ${
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
               isLearn ? "bg-amber-400 text-black" : STATE_COLORS[state]
             }`}
           >
@@ -99,9 +97,7 @@ export function HoldHud({
           )}
         </div>
         {isLearn ? (
-          <div className={`mt-1 font-semibold leading-snug text-white ${large ? "text-lg" : "text-sm"}`}>
-            Match the ghost pose
-          </div>
+          <div className={`mt-1 text-white ${large ? "text-lg" : "text-sm"}`}>Match the outline</div>
         ) : (
           <div
             ref={clockRef}
@@ -141,7 +137,7 @@ export function HoldHud({
             {ring}
           </text>
         </svg>
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-white/80">Form</span>
+        <span className="text-[11px] text-white/80">Form</span>
       </div>
     </div>
   );

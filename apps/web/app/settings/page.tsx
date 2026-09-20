@@ -64,13 +64,13 @@ export default function SettingsPage() {
           label="Default mode"
           detail={prefs.defaultMode === "perfect" ? "Perfect form — stricter criteria" : "Hold only — count any valid hold"}
           onClick={() => update({ defaultMode: prefs.defaultMode === "perfect" ? "hold_only" : "perfect" })}
-          trailing={<span className="text-sm font-medium text-accent">{prefs.defaultMode === "perfect" ? "Perfect" : "Hold only"}</span>}
+          trailing={<span className="text-sm text-muted">{prefs.defaultMode === "perfect" ? "Perfect" : "Hold"}</span>}
         />
-        <ListRow label="Experience level" detail="Sets the suggested skill on Home" onClick={cycleLevel} trailing={<span className="text-sm font-medium text-accent">{EXPERIENCE_LABELS[prefs.experience]}</span>} />
+        <ListRow label="Experience level" detail="Sets the suggested skill on Home" onClick={cycleLevel} trailing={<span className="text-sm text-muted">{EXPERIENCE_LABELS[prefs.experience]}</span>} />
       </ListGroup>
 
       <ListGroup title="Appearance">
-        <ListRow label="Theme" onClick={cycleTheme} trailing={<span className="text-sm font-medium text-accent capitalize">{theme}</span>} />
+        <ListRow label="Theme" onClick={cycleTheme} trailing={<span className="text-sm capitalize text-muted">{theme}</span>} />
       </ListGroup>
 
       <ListGroup title="Detection">
@@ -83,10 +83,10 @@ export default function SettingsPage() {
             setStoredBodyProvider(next);
             setProvider(next);
           }}
-          trailing={<span className="text-sm font-medium text-accent">Change</span>}
+          trailing={<span className="text-sm text-muted">{provider === "movenet" ? "Fast" : provider === "movenet-thunder" ? "Accurate" : "MediaPipe"}</span>}
         />
-        <ListRow label="Diagnostics & benchmark" detail="Live inference stats; compare models on this device" href="/dev/pose-benchmark" />
-        <ListRow label="Replay onboarding" detail="Camera permission, level, and voice setup" href="/onboarding" />
+        <ListRow label="Diagnostics" detail="Inference stats and model comparison" href="/dev/pose-benchmark" />
+        <ListRow label="Replay onboarding" detail="Camera permission and starting level" href="/onboarding" />
       </ListGroup>
 
       <ListGroup title={configured ? "Account" : "Cloud sync"}>

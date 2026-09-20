@@ -37,29 +37,24 @@ export function PersistentCueOverlay({
         <button
           type="button"
           onClick={onDismissAll}
-          className="pointer-events-auto ml-auto rounded-lg bg-black/70 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-sm hover:bg-black/85"
+          className="pointer-events-auto ml-auto rounded-full bg-black/70 px-3 py-1.5 text-xs text-white/90 backdrop-blur-sm"
         >
           Dismiss all
         </button>
       )}
-      {hidden > 0 && <p className="text-right text-xs font-medium text-white/80">+{hidden} more below</p>}
+      {hidden > 0 && <p className="text-right text-xs text-white/70">+{hidden} more</p>}
       {visibleCues.map((cue) => (
         <div
           key={cue.id}
-          className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-emerald-300/50 bg-black/85 p-4 shadow-lg backdrop-blur-md sm:p-5"
+          className="pointer-events-auto flex items-center gap-3 rounded-2xl bg-black/80 px-4 py-3 backdrop-blur-md"
         >
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300">
-              Form cue
-            </p>
-            <p className="mt-1 text-lg font-semibold leading-snug text-white sm:text-xl">
-              {cue.text}
-            </p>
+            <p className="text-base font-medium leading-snug text-white">{cue.text}</p>
           </div>
           <button
             type="button"
             onClick={() => onDismiss(cue.id)}
-            className="shrink-0 rounded-xl bg-emerald-400 px-4 py-3 text-sm font-bold text-black shadow-sm hover:bg-emerald-300"
+            className="shrink-0 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-white"
             aria-label={`Dismiss cue: ${cue.text}`}
           >
             Got it
