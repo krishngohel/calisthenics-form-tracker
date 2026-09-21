@@ -3,8 +3,21 @@ import { getSkill, SKILL_MAP } from "./registry";
 export interface PathGoal {
   /** Hold this long (seconds) before moving to the next step. */
   holdSec?: number;
-  /** Rep-based standard, for skills trained as reps outside the app. */
+  /** Rep-based standard: log `sets` × `reps` in one session. Derived from `note` when it starts with "N×M" or "N reps". */
+  sets?: number;
+  reps?: number;
+  /** Rep-based standard or extra guidance. */
   note?: string;
+}
+
+/** Pull "3×8" or "3 strict reps" out of a goal note into a structured rep standard. */
+export function parseRepGoal(note: string | undefined): { sets: number; reps: number } | null {
+  if (!note) return null;
+  const setsReps = /(\d+)\s*[×x]\s*(\d+)/.exec(note);
+  if (setsReps) return { sets: Number(setsReps[1]), reps: Number(setsReps[2]) };
+  const repsOnly = /^(\d+)\s+(?:strict|clean|slow)?\s*reps?\b/.exec(note);
+  if (repsOnly) return { sets: 1, reps: Number(repsOnly[1]) };
+  return null;
 }
 
 /**
@@ -50,7 +63,10 @@ function path(id: string, name: string, description: string, sources: string[], 
     name,
     description,
     sources,
-    steps: steps.map(([skillId, level, goal, extra]) => ({ skillId, level, goal, ...extra })),
+    steps: steps.map(([skillId, level, goal, extra]) => {
+      const rep = goal.holdSec ? null : parseRepGoal(goal.note);
+      return { skillId, level, goal: rep ? { ...rep, ...goal } : goal, ...extra };
+    }),
     skillIds: steps.map(([skillId]) => skillId),
   };
 }
@@ -346,24 +362,36 @@ export function validateLearningPaths(): string[] {
   return errors;
 }
 
-/** Best hold per skill in milliseconds; rep-based goals are tracked outside the app. */
+/** Best hold per skill in milliseconds. */
 export type BestHolds = Record<string, number | undefined>;
+/** Best logged rep set per skill: the entry with the most reps at the highest set count. */
+export type BestReps = Record<string, { sets: number; reps: number } | undefined>;
 
-/** A hold goal is met when the best logged hold reaches it. Rep goals never count as met here. */
-export function isGoalMet(skillId: string, bests: BestHolds): boolean {
+/** A hold goal is met by the best logged hold; a rep goal by a logged session of at least sets × reps. */
+export function isGoalMet(skillId: string, bests: BestHolds, reps: BestReps = {}): boolean {
   const step = getSkillPathStep(skillId);
-  const best = bests[skillId];
-  return !!step?.goal.holdSec && !!best && best >= step.goal.holdSec * 1000;
+  if (!step) return false;
+  const { goal } = step;
+  if (goal.holdSec) {
+    const best = bests[skillId];
+    return !!best && best >= goal.holdSec * 1000;
+  }
+  if (goal.sets && goal.reps) {
+    const r = reps[skillId];
+    return !!r && r.sets >= goal.sets && r.reps >= goal.reps;
+  }
+  return false;
 }
 
-/** Only hold goals can be verified by the app; rep goals are advisory. */
+/** Whether the app can verify the goal: holds via the camera, rep standards via the rep log. */
 export function isGoalTracked(skillId: string): boolean {
-  return !!getSkillPathStep(skillId)?.goal.holdSec;
+  const goal = getSkillPathStep(skillId)?.goal;
+  return !!goal && (!!goal.holdSec || (!!goal.sets && !!goal.reps));
 }
 
-/** Prerequisites with a tracked (hold) goal that has not been met. Rep-based prerequisites never block. */
-export function unmetPrerequisites(skillId: string, bests: BestHolds): string[] {
-  return (getSkillPathStep(skillId)?.prerequisites ?? []).filter((id) => isGoalTracked(id) && !isGoalMet(id, bests));
+/** Prerequisites with a tracked goal that has not been met. Untracked prerequisites never block. */
+export function unmetPrerequisites(skillId: string, bests: BestHolds, reps: BestReps = {}): string[] {
+  return (getSkillPathStep(skillId)?.prerequisites ?? []).filter((id) => isGoalTracked(id) && !isGoalMet(id, bests, reps));
 }
 
 export interface PathProgress {
@@ -372,27 +400,27 @@ export interface PathProgress {
   level: number;
   /** Steps with a met goal. */
   completed: number;
-  /** First tracked (hold) step whose goal is unmet, with all prerequisites met; null when the path is done or blocked. Rep-only steps are skipped. */
+  /** First tracked step whose goal is unmet, with all prerequisites met; null when the path is done or blocked. */
   next: PathStep | null;
   /** First unmet step that is blocked by prerequisites (when `next` is null because of that). */
   blocked: PathStep | null;
 }
 
-/** Where the athlete stands on each path, from logged bests. */
-export function evaluatePathProgress(bests: BestHolds): PathProgress[] {
+/** Where the athlete stands on each path, from logged holds and reps. */
+export function evaluatePathProgress(bests: BestHolds, reps: BestReps = {}): PathProgress[] {
   return LEARNING_PATHS.map((path) => {
     let level = 0;
     let completed = 0;
     let next: PathStep | null = null;
     let blocked: PathStep | null = null;
     for (const step of path.steps) {
-      if (isGoalMet(step.skillId, bests)) {
+      if (isGoalMet(step.skillId, bests, reps)) {
         level = Math.max(level, step.level);
         completed++;
         continue;
       }
-      if (next || blocked || !step.goal.holdSec) continue;
-      if (unmetPrerequisites(step.skillId, bests).length === 0) next = step;
+      if (next || blocked || !isGoalTracked(step.skillId)) continue;
+      if (unmetPrerequisites(step.skillId, bests, reps).length === 0) next = step;
       else blocked = step;
     }
     return { path, level, completed, next, blocked };
@@ -400,12 +428,48 @@ export function evaluatePathProgress(bests: BestHolds): PathProgress[] {
 }
 
 /**
- * Suggested next holds across all paths: the unblocked next step of every
+ * Suggested next steps across all paths: the unblocked next step of every
  * path, lowest level first so beginners are not sent to a planche.
  */
-export function suggestNextSteps(bests: BestHolds, limit = 3): PathStep[] {
-  return evaluatePathProgress(bests)
+export function suggestNextSteps(bests: BestHolds, reps: BestReps = {}, limit = 3): PathStep[] {
+  return evaluatePathProgress(bests, reps)
     .flatMap((p) => (p.next ? [p.next] : []))
     .sort((a, b) => a.level - b.level)
     .slice(0, limit);
+}
+
+/** Overall level: the highest level goal met on any path (0 when nothing is met yet). */
+export function athleteLevel(bests: BestHolds, reps: BestReps = {}): { level: number; band: Band; metCount: number } {
+  const progress = evaluatePathProgress(bests, reps);
+  const level = Math.max(0, ...progress.map((p) => p.level));
+  return { level, band: bandForLevel(Math.max(1, level)), metCount: progress.reduce((n, p) => n + p.completed, 0) };
+}
+
+export interface SessionItem {
+  step: PathStep;
+  /** What to do today, e.g. "4 × 12–15 s" or "3 × 8" or "Test a max hold". */
+  prescription: string;
+  /** True when there is no best yet and the first job is to find one. */
+  isTest: boolean;
+}
+
+/**
+ * Today's plan: the next steps from the tree with working sets built from
+ * the athlete's bests. Holds use 60–75% of the best for 3–5 sets so the
+ * session lands in the 30–60 s total the guide asks for; rep steps use the
+ * step's standard.
+ */
+export function buildSessionPlan(bests: BestHolds, reps: BestReps = {}, limit = 4): SessionItem[] {
+  return suggestNextSteps(bests, reps, limit).map((step) => {
+    if (step.goal.holdSec) {
+      const best = bests[step.skillId];
+      if (!best) return { step, prescription: "Max test", isTest: true };
+      const [lo, hi] = workingHoldSec(best / 1000);
+      const target = PROGRESSION_GUIDE.totalHoldSecPerSession[1];
+      const sets = Math.min(PROGRESSION_GUIDE.setsPerSession[1], Math.max(PROGRESSION_GUIDE.setsPerSession[0], Math.round(target / Math.max(hi, 1))));
+      return { step, prescription: `${sets} × ${lo}–${hi} s`, isTest: false };
+    }
+    if (step.goal.sets && step.goal.reps) return { step, prescription: `${step.goal.sets} × ${step.goal.reps}`, isTest: false };
+    return { step, prescription: step.goal.note ?? "", isTest: false };
+  });
 }

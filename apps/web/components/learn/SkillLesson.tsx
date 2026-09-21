@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   EQUIPMENT_LABEL,
   PROGRESSIONS,
@@ -19,6 +19,8 @@ import {
 import { Screen, ChevronRight, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { formatSec } from "@/lib/format";
+import { PoseFigure } from "./PoseFigure";
+import { RepLogSheet } from "./RepLogSheet";
 
 const BAND_LABEL = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", elite: "Elite" } as const;
 
@@ -37,8 +39,8 @@ export function SkillLesson({ skillId }: { skillId: string }) {
   const skill = getSkill(skillId);
   const lesson = getLesson(skillId);
   const step = getSkillPathStep(skillId);
-  const { stats } = useLocalHistory();
-  const bests = useMemo(() => Object.fromEntries(Object.entries(stats.bestBySkill).map(([id, h]) => [id, h.durationMs])), [stats.bestBySkill]);
+  const { stats, bests, reps } = useLocalHistory();
+  const [logOpen, setLogOpen] = useState(false);
 
   /** Metric labels the evaluator scores, read off the target pose so the list matches the rules exactly. */
   const checks = useMemo(() => {
@@ -61,8 +63,10 @@ export function SkillLesson({ skillId }: { skillId: string }) {
   }
 
   const best = stats.bestBySkill[skill.id];
-  const met = isGoalMet(skill.id, bests);
-  const unmet = unmetPrerequisites(skill.id, bests);
+  const bestReps = stats.bestRepsBySkill[skill.id];
+  const met = isGoalMet(skill.id, bests, reps);
+  const unmet = unmetPrerequisites(skill.id, bests, reps);
+  const repGoal = step?.goal.sets && step.goal.reps ? { sets: step.goal.sets, reps: step.goal.reps } : null;
   const prereqs = step?.prerequisites ?? [];
   const drills = PROGRESSIONS[skill.id] ?? [];
   const nextId = step && step.step < step.total ? step.path.skillIds[step.step] : null;
@@ -74,7 +78,12 @@ export function SkillLesson({ skillId }: { skillId: string }) {
       subtitle={step ? `${step.path.name} · step ${step.step} of ${step.total}` : undefined}
       back={{ href: "/skills", label: "Paths" }}
     >
-      <p className="mb-4 px-1 text-base leading-relaxed text-foreground">{lesson.summary}</p>
+      <div className="mb-4 flex items-start gap-4 px-1">
+        <p className="min-w-0 flex-1 text-base leading-relaxed text-foreground">{lesson.summary}</p>
+        <div className="h-24 w-24 shrink-0 rounded-2xl bg-surface-muted p-2 text-accent">
+          <PoseFigure skillId={skill.id} className="h-full w-full" />
+        </div>
+      </div>
 
       <div className="mb-5 flex flex-wrap gap-1.5 px-1">
         {step && <span className={bandForLevel(step.level) === "beginner" || bandForLevel(step.level) === "intermediate" ? "chip-muted" : "chip"}>L{step.level} · {BAND_LABEL[bandForLevel(step.level)]}</span>}
@@ -96,6 +105,18 @@ export function SkillLesson({ skillId }: { skillId: string }) {
         </div>
         <ChevronRight className="text-white/70" />
       </Link>
+
+      {repGoal && (
+        <ListGroup title="Rep standard">
+          <ListRow
+            onClick={() => setLogOpen(true)}
+            label="Log a session"
+            detail={bestReps ? `Best logged ${bestReps.sets}×${bestReps.reps} · ${new Date(bestReps.endedAt).toLocaleDateString()}` : `Reach ${repGoal.sets}×${repGoal.reps} clean reps to complete this step`}
+            trailing={<span className={`text-sm font-semibold ${met ? "text-success" : "text-accent"}`}>{met ? "✓" : "Log"}</span>}
+          />
+          <RepLogSheet open={logOpen} onClose={() => setLogOpen(false)} skillId={skill.id} skillName={skill.name} defaultSets={repGoal.sets} defaultReps={repGoal.reps} />
+        </ListGroup>
+      )}
 
       {step && (prereqs.length > 0 || step.focus) && (
         <ListGroup title="Before you start">

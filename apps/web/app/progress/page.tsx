@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { SKILLS, evaluatePathProgress, getSkill } from "@cft/core";
+import { SKILLS, athleteLevel, evaluatePathProgress, getSkill } from "@cft/core";
 import { Screen, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { useAuthUser } from "@/hooks/useAuthUser";
@@ -12,7 +12,7 @@ import type { LocalHold } from "@/lib/localHistory";
 type Range = "7d" | "30d" | "all";
 
 export default function ProgressPage() {
-  const { history, stats, loaded } = useLocalHistory();
+  const { history, stats, loaded, bests: bestMs, reps } = useLocalHistory();
   const { user, configured } = useAuthUser();
   const [range, setRange] = useState<Range>("7d");
 
@@ -23,14 +23,15 @@ export default function ProgressPage() {
     return history.filter((h) => new Date(h.endedAt).getTime() >= cutoff);
   }, [history, range]);
 
-  const totalMs = filtered.reduce((s, h) => s + h.durationMs, 0);
-  const avgForm = filtered.length ? Math.round(filtered.reduce((s, h) => s + h.formScore, 0) / filtered.length) : 0;
+  const holdsOnly = filtered.filter((h) => h.kind !== "reps");
+  const totalMs = holdsOnly.reduce((s, h) => s + h.durationMs, 0);
+  const avgForm = holdsOnly.length ? Math.round(holdsOnly.reduce((s, h) => s + h.formScore, 0) / holdsOnly.length) : 0;
   const bests = SKILLS.filter((s) => stats.bestBySkill[s.id]).sort(
     (a, b) => stats.bestBySkill[b.id].durationMs - stats.bestBySkill[a.id].durationMs
   );
   const grouped = groupByDay(filtered);
-  const bestMs = useMemo(() => Object.fromEntries(Object.entries(stats.bestBySkill).map(([id, h]) => [id, h.durationMs])), [stats.bestBySkill]);
-  const pathProgress = useMemo(() => evaluatePathProgress(bestMs).filter((p) => p.completed > 0), [bestMs]);
+  const pathProgress = useMemo(() => evaluatePathProgress(bestMs, reps).filter((p) => p.completed > 0), [bestMs, reps]);
+  const level = useMemo(() => athleteLevel(bestMs, reps), [bestMs, reps]);
 
   return (
     <Screen title="Progress">
@@ -50,8 +51,10 @@ export default function ProgressPage() {
       ) : (
         <ListGroup>
           <ListRow label="Hold time" trailing={<Value>{formatSec(totalMs)}</Value>} />
-          <ListRow label="Holds" trailing={<Value>{String(filtered.length)}</Value>} />
-          <ListRow label="Average form" trailing={<Value>{filtered.length ? `${avgForm}%` : "–"}</Value>} />
+          <ListRow label="Holds" trailing={<Value>{String(holdsOnly.length)}</Value>} />
+          <ListRow label="Rep sessions" trailing={<Value>{String(filtered.length - holdsOnly.length)}</Value>} />
+          <ListRow label="Average form" trailing={<Value>{holdsOnly.length ? `${avgForm}%` : "–"}</Value>} />
+          <ListRow label="Level" trailing={<Value>{level.level > 0 ? `${level.level} · ${level.metCount} goal${level.metCount === 1 ? "" : "s"} met` : "–"}</Value>} />
           <ListRow label="Streak" trailing={<Value>{`${stats.streakDays} day${stats.streakDays === 1 ? "" : "s"}`}</Value>} />
         </ListGroup>
       )}
@@ -93,8 +96,8 @@ export default function ProgressPage() {
             <ListRow
               key={h.id}
               label={getSkill(h.skillId)?.name ?? h.skillId}
-              detail={`${new Date(h.endedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · ${h.mode === "perfect" ? "Perfect form" : "Hold"} · form ${h.formScore}%`}
-              trailing={<Value mono>{formatMs(h.durationMs)}</Value>}
+              detail={`${new Date(h.endedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · ${h.kind === "reps" ? "Reps logged" : `${h.mode === "perfect" ? "Perfect form" : "Hold"} · form ${h.formScore}%`}`}
+              trailing={<Value mono>{h.kind === "reps" ? `${h.sets}×${h.reps}` : formatMs(h.durationMs)}</Value>}
             />
           ))}
         </ListGroup>

@@ -119,6 +119,34 @@ describe("lessons", () => {
   });
 });
 
+describe("rep goals and session plans", () => {
+  it("parses rep standards out of notes and marks them met from the rep log", async () => {
+    const { parseRepGoal, getSkillPathStep, isGoalMet, isGoalTracked, athleteLevel, buildSessionPlan } = await import("../skills/learningPaths");
+    expect(parseRepGoal("3×8 clean reps")).toEqual({ sets: 3, reps: 8 });
+    expect(parseRepGoal("3 strict reps")).toEqual({ sets: 1, reps: 3 });
+    expect(parseRepGoal("chest-to-wall first, then free")).toBeNull();
+    expect(getSkillPathStep("push-ups")?.goal).toMatchObject({ sets: 3, reps: 8 });
+    expect(isGoalTracked("push-ups")).toBe(true);
+    expect(isGoalMet("push-ups", {}, { "push-ups": { sets: 3, reps: 7 } })).toBe(false);
+    expect(isGoalMet("push-ups", {}, { "push-ups": { sets: 3, reps: 8 } })).toBe(true);
+    expect(isGoalMet("one-arm-pull-ups", {}, { "one-arm-pull-ups": { sets: 1, reps: 1 } })).toBe(true);
+
+    expect(athleteLevel({}).level).toBe(0);
+    const lvl = athleteLevel({ handstand: 31_000 }, { "archer-push-ups": { sets: 3, reps: 6 } });
+    expect(lvl.level).toBe(6);
+    expect(lvl.band).toBe("intermediate");
+
+    const plan = buildSessionPlan({ "plank-hold": 40_000 }, {}, 4);
+    expect(plan.length).toBe(4);
+    const plank = plan.find((i) => i.step.skillId === "plank-hold");
+    expect(plank?.prescription).toBe("3 × 24–30 s");
+    const untested = plan.find((i) => i.step.goal.holdSec && i.step.skillId !== "plank-hold");
+    expect(untested?.isTest).toBe(true);
+    const repItem = plan.find((i) => i.step.goal.sets);
+    expect(repItem?.prescription).toMatch(/^\d+ × \d+$/);
+  });
+});
+
 describe("path progress", () => {
   it("tracks level, next step and blocked steps from bests", async () => {
     const { evaluatePathProgress, suggestNextSteps, isGoalMet, unmetPrerequisites } = await import("../skills/learningPaths");
@@ -127,22 +155,25 @@ describe("path progress", () => {
     expect(press.level).toBe(0);
     expect(press.next).toBeNull();
     expect(press.blocked?.skillId).toBe("bent-arm-press");
-    expect(unmetPrerequisites("bent-arm-press", {})).toEqual(["handstand"]);
+    expect(unmetPrerequisites("bent-arm-press", {})).toEqual(["handstand", "pike-push-ups"]);
+    expect(unmetPrerequisites("bent-arm-press", { handstand: 31_000 }, { "pike-push-ups": { sets: 3, reps: 8 } })).toEqual([]);
 
     const bests = { handstand: 31_000, "plank-hold": 60_000, "l-sit": 30_000 };
     expect(isGoalMet("handstand", bests)).toBe(true);
     expect(isGoalMet("pike-push-ups", bests)).toBe(false); // rep goal
     const withHs = evaluatePathProgress(bests);
     expect(withHs.find((p) => p.path.id === "handstand")!.level).toBe(4);
-    expect(withHs.find((p) => p.path.id === "press")!.next?.skillId).toBe("bent-arm-press");
-    const next = suggestNextSteps(bests, 3);
+    expect(withHs.find((p) => p.path.id === "press")!.blocked?.skillId).toBe("bent-arm-press"); // still needs pike push-ups logged
+    const next = suggestNextSteps(bests, {}, 3);
     expect(next.length).toBe(3);
     expect(next[0].level).toBeLessThanOrEqual(next[2].level);
     expect(next.some((s) => s.skillId === "handstand")).toBe(false);
-    expect(next.every((s) => !!s.goal.holdSec)).toBe(true); // only camera-trackable holds are suggested
     const push = withHs.find((p) => p.path.id === "push")!;
-    expect(push.next).toBeNull(); // rep steps skipped; maltese is the only hold left and it is blocked
-    expect(push.blocked?.skillId).toBe("maltese");
+    expect(push.next?.skillId).toBe("knee-push-ups"); // rep steps count now that reps can be logged
+    const pushDone = evaluatePathProgress(bests, { "knee-push-ups": { sets: 3, reps: 8 }, "push-ups": { sets: 3, reps: 8 }, "diamond-push-ups": { sets: 3, reps: 8 }, "archer-push-ups": { sets: 3, reps: 6 } }).find((p) => p.path.id === "push")!;
+    expect(pushDone.level).toBe(6);
+    expect(pushDone.next).toBeNull();
+    expect(pushDone.blocked?.skillId).toBe("pseudo-planche-push-ups"); // needs the planche lean hold first
 
   });
 });

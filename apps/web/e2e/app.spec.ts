@@ -78,6 +78,25 @@ test.describe("app shell", () => {
     check();
   });
 
+  test("rep-based steps can be logged and complete the step", async ({ page }) => {
+    const check = await noPageErrors(page);
+    await page.goto("/learn/push-ups/");
+    await expect(page.getByRole("img", { name: "Target position" })).toBeVisible();
+    await page.getByRole("button", { name: "Log a session" }).tap();
+    await expect(page.getByRole("dialog", { name: "Log Push-Ups" })).toBeVisible();
+    await page.getByRole("button", { name: "Save 3×8" }).tap();
+    await expect(page.getByRole("dialog")).toBeHidden();
+    await expect(page.getByText("Best logged 3×8")).toBeVisible();
+    await page.goto("/skills/");
+    await page.getByRole("searchbox", { name: "Search skills" }).fill("push-up");
+    await expect(page.getByRole("link", { name: /Push-Ups/ }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /Dead Hang/ })).toBeHidden();
+    await page.goto("/progress/");
+    await expect(page.getByText("Rep sessions")).toBeVisible();
+    await expect(page.getByText("3×8").first()).toBeVisible();
+    check();
+  });
+
   test("training stage: model loads, Start arms the HUD, mode and back work", async ({ page }) => {
     const check = await noPageErrors(page);
     await page.goto("/train/plank-hold/");

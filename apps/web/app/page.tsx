@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LEARNING_PATHS, describeGoal, getSkill, getSkillPathStep, suggestNextSteps } from "@cft/core";
+import { LEARNING_PATHS, athleteLevel, buildSessionPlan, describeGoal, getSkill, getSkillPathStep } from "@cft/core";
 import { useMemo } from "react";
 import { Screen, ChevronRight, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
@@ -10,7 +10,7 @@ import { STARTER_SKILL } from "@/lib/preferences";
 import { formatSec } from "@/lib/format";
 
 export default function HomePage() {
-  const { stats, loaded } = useLocalHistory();
+  const { stats, loaded, bests, reps } = useLocalHistory();
   const { prefs } = usePreferences();
 
   const focusSkillId = stats.lastSkillId ?? prefs.focusSkillId ?? STARTER_SKILL[prefs.experience];
@@ -19,8 +19,9 @@ export default function HomePage() {
   const best = stats.bestBySkill[focusSkill.id];
   const weekMs = stats.last7Days.reduce((s, d) => s + d.totalMs, 0);
   const hasHistory = loaded && stats.totalHolds > 0;
-  const bests = useMemo(() => Object.fromEntries(Object.entries(stats.bestBySkill).map(([id, h]) => [id, h.durationMs])), [stats.bestBySkill]);
-  const upNext = useMemo(() => suggestNextSteps(bests, 3).filter((s) => s.skillId !== focusSkill.id), [bests, focusSkill.id]);
+  const plan = useMemo(() => buildSessionPlan(bests, reps, 4), [bests, reps]);
+  const level = useMemo(() => athleteLevel(bests, reps), [bests, reps]);
+  const BAND = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", elite: "Elite" } as const;
 
   return (
     <Screen title="Train">
@@ -39,18 +40,28 @@ export default function HomePage() {
 
       {hasHistory && (
         <p className="mb-6 px-1 text-sm text-muted">
-          {stats.streakDays > 0 ? `${stats.streakDays}-day streak` : "No streak yet"} · {formatSec(weekMs)} this week · {stats.totalHolds} hold
-          {stats.totalHolds === 1 ? "" : "s"}
+          {level.level > 0 ? `Level ${level.level} · ${BAND[level.band]}` : "No goals met yet"} · {stats.streakDays > 0 ? `${stats.streakDays}-day streak` : "no streak yet"} · {formatSec(weekMs)} this week
         </p>
       )}
 
-      {upNext.length > 0 && (
-        <ListGroup title="Up next">
-          {upNext.map((s) => {
-            const sk = getSkill(s.skillId);
-            const st = getSkillPathStep(s.skillId);
-            return sk && st ? <ListRow key={s.skillId} href={`/learn/${s.skillId}`} label={sk.name} detail={`${st.path.name} · L${s.level} · ${describeGoal(s.goal)}`} /> : null;
+      {plan.length > 0 && (
+        <ListGroup title="Today's plan">
+          {plan.map(({ step, prescription, isTest }) => {
+            const sk = getSkill(step.skillId);
+            const st = getSkillPathStep(step.skillId);
+            if (!sk || !st) return null;
+            const isRep = !!step.goal.sets;
+            return (
+              <ListRow
+                key={step.skillId}
+                href={isRep || isTest ? `/learn/${step.skillId}` : `/train/${step.skillId}`}
+                label={sk.name}
+                detail={`${st.path.name} · L${step.level} · ${isRep ? "log reps" : isTest ? "find your max" : `working sets, goal ${describeGoal(step.goal)}`}`}
+                trailing={<span className="font-mono text-sm tabular-nums text-muted">{prescription}</span>}
+              />
+            );
           })}
+          <ListRow href="/skills/guide" label="Why these numbers" />
         </ListGroup>
       )}
 
