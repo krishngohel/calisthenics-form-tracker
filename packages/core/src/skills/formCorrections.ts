@@ -37,6 +37,12 @@ const METRIC_JOINTS: Record<string, string[]> = {
   stack: ["leftKnee", "rightKnee"],
   transition: ["leftShoulder", "rightShoulder"],
   lowering: ["leftShoulder", "rightShoulder", "leftHip", "rightHip"],
+  hands: ["leftWrist", "rightWrist"],
+  pike: ["leftHip", "rightHip"],
+  arms: ["leftElbow", "rightElbow"],
+  hollow_body: ["leftShoulder", "rightShoulder", "leftAnkle", "rightAnkle"],
+  arch: ["leftHip", "rightHip"],
+  hips: ["leftHip", "rightHip"],
 };
 
 /**

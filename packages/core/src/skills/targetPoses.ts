@@ -227,7 +227,80 @@ function buildNordic(): Record<string, Landmark> {
   });
 }
 
+
+function buildHollow(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.28, 0.5), leftShoulder: lm(0.34, 0.54), leftElbow: lm(0.26, 0.5), leftWrist: lm(0.18, 0.46), leftHip: lm(0.5, 0.6), leftKnee: lm(0.66, 0.56), leftAnkle: lm(0.82, 0.5) });
+}
+function buildTuckSit(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.44, 0.3), leftShoulder: lm(0.42, 0.36), leftElbow: lm(0.42, 0.46), leftWrist: lm(0.42, 0.56), leftHip: lm(0.46, 0.52), leftKnee: lm(0.58, 0.44), leftAnkle: lm(0.6, 0.56) });
+}
+function buildVSit(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.4, 0.34), leftShoulder: lm(0.4, 0.4), leftElbow: lm(0.4, 0.5), leftWrist: lm(0.4, 0.6), leftHip: lm(0.46, 0.56), leftKnee: lm(0.58, 0.4), leftAnkle: lm(0.68, 0.24) });
+}
+function buildHangingRaise(straight: boolean): Record<string, Landmark> {
+  return sideView({ nose: lm(0.46, 0.2), leftShoulder: lm(0.44, 0.24), leftElbow: lm(0.42, 0.34), leftWrist: lm(0.4, 0.1), leftHip: lm(0.44, 0.48), leftKnee: straight ? lm(0.62, 0.44) : lm(0.58, 0.4), leftAnkle: straight ? lm(0.8, 0.4) : lm(0.6, 0.52) });
+}
+function buildDragonFlag(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.28, 0.6), leftShoulder: lm(0.34, 0.66), leftElbow: lm(0.28, 0.6), leftWrist: lm(0.22, 0.56), leftHip: lm(0.5, 0.5), leftKnee: lm(0.62, 0.38), leftAnkle: lm(0.74, 0.26) });
+}
+function buildBridge(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.3, 0.62), leftShoulder: lm(0.36, 0.56), leftElbow: lm(0.3, 0.64), leftWrist: lm(0.26, 0.74), leftHip: lm(0.54, 0.4), leftKnee: lm(0.7, 0.5), leftAnkle: lm(0.72, 0.74) });
+}
+function buildGluteBridge(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.26, 0.64), leftShoulder: lm(0.32, 0.66), leftElbow: lm(0.3, 0.72), leftWrist: lm(0.28, 0.76), leftHip: lm(0.5, 0.56), leftKnee: lm(0.68, 0.52), leftAnkle: lm(0.7, 0.74) });
+}
+function buildSquat(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.5, 0.3), leftShoulder: lm(0.46, 0.36), leftElbow: lm(0.52, 0.44), leftWrist: lm(0.58, 0.44), leftHip: lm(0.38, 0.58), leftKnee: lm(0.56, 0.6), leftAnkle: lm(0.5, 0.78) });
+}
+function buildWallSit(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.4, 0.26), leftShoulder: lm(0.38, 0.32), leftElbow: lm(0.38, 0.42), leftWrist: lm(0.4, 0.5), leftHip: lm(0.38, 0.54), leftKnee: lm(0.58, 0.54), leftAnkle: lm(0.58, 0.76) });
+}
+function buildTuckLever(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.34, 0.46), leftShoulder: lm(0.4, 0.48), leftElbow: lm(0.4, 0.36), leftWrist: lm(0.4, 0.24), leftHip: lm(0.58, 0.48), leftKnee: lm(0.56, 0.36), leftAnkle: lm(0.62, 0.42) });
+}
+function buildPike(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.4, 0.62), leftShoulder: lm(0.42, 0.54), leftElbow: lm(0.38, 0.64), leftWrist: lm(0.36, 0.76), leftHip: lm(0.56, 0.36), leftKnee: lm(0.66, 0.54), leftAnkle: lm(0.72, 0.76) });
+}
+function buildSupport(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.5, 0.26), leftShoulder: lm(0.48, 0.32), leftElbow: lm(0.48, 0.42), leftWrist: lm(0.48, 0.52), leftHip: lm(0.5, 0.54), leftKnee: lm(0.52, 0.7), leftAnkle: lm(0.52, 0.86) });
+}
+function buildFlag(): Record<string, Landmark> {
+  return frontView({ nose: lm(0.34, 0.44), leftShoulder: lm(0.4, 0.46), leftElbow: lm(0.34, 0.3), leftWrist: lm(0.3, 0.16), leftHip: lm(0.58, 0.46), leftKnee: lm(0.7, 0.46), leftAnkle: lm(0.82, 0.46) }, 0.5);
+}
+
 const TARGET_POSES: Record<string, Record<string, Landmark>> = {
+  "knee-push-ups": buildSidePlank(),
+  "diamond-push-ups": buildSidePlank(),
+  "archer-push-ups": buildSidePlank(),
+  "pike-push-ups": buildPike(),
+  "support-hold": buildSupport(),
+  "negative-pull-ups": buildSideHang(false),
+  "l-sit-pull-ups": buildSideHang(true),
+  "archer-pull-ups": buildSideHang(true),
+  "one-arm-pull-ups": buildSideHang(true),
+  "human-flag": buildFlag(),
+  "tuck-front-lever": buildTuckLever(),
+  "advanced-tuck-front-lever": buildTuckLever(),
+  "one-leg-front-lever": buildHorizontalLever(),
+  "straddle-front-lever": buildHorizontalLever(),
+  "german-hang": buildSideHang(false),
+  "tuck-back-lever": buildTuckLever(),
+  "advanced-tuck-back-lever": buildTuckLever(),
+  "straddle-back-lever": buildHorizontalLever(),
+  "back-lever": buildHorizontalLever(),
+  "hollow-body-hold": buildHollow(),
+  "tuck-sit": buildTuckSit(),
+  "one-leg-l-sit": buildLSit(),
+  "v-sit": buildVSit(),
+  "hanging-knee-raises": buildHangingRaise(false),
+  "hanging-leg-raises": buildHangingRaise(true),
+  "dragon-flag": buildDragonFlag(),
+  bridge: buildBridge(),
+  "glute-bridge": buildGluteBridge(),
+  squats: buildSquat(),
+  "wall-sit": buildWallSit(),
+  "bulgarian-split-squats": buildSquatDeep(),
+  "single-leg-glute-bridge": buildGluteBridge(),
   "dead-hang": buildSideHang(false),
   "scapular-pulls": buildSideHang(false),
   "chin-ups": buildSideHang(true),

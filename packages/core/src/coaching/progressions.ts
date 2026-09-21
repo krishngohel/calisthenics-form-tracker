@@ -146,6 +146,133 @@ export const PROGRESSIONS: Record<string, ProgressionDrill[]> = {
     { id: "band_assist", name: "Band-Assisted Nordics", description: "Full ROM with band", sets: 3, reps: 6 },
     { id: "iso_hold", name: "Isometric Hold", description: "Hold at mid-lowering", targetHoldSec: 10, sets: 5 },
   ],
+  "knee-push-ups": [
+    { id: "incline_pushups", name: "Incline Push-Ups", description: "Hands on a bench, full range", sets: 3, reps: 10 },
+    { id: "knee_negatives", name: "Knee Push-Up Negatives", description: "4 s lowering from the knees", sets: 3, reps: 6 },
+  ],
+  "diamond-push-ups": [
+    { id: "close_pushups", name: "Close-Grip Push-Ups", description: "Hands shoulder-width, elbows tucked", sets: 3, reps: 8 },
+    { id: "eccentrics", name: "Diamond Negatives", description: "Slow lowering with hands together", sets: 3, reps: 5 },
+  ],
+  "archer-push-ups": [
+    { id: "wide_pushups", name: "Wide Push-Ups", description: "Build the wide-hand base", sets: 3, reps: 10 },
+    { id: "typewriter", name: "Typewriter Push-Ups", description: "Shift side to side at the bottom", sets: 3, reps: 6 },
+  ],
+  "pike-push-ups": [
+    { id: "pike_hold", name: "Pike Hold", description: "Hips high, arms straight", targetHoldSec: 30, sets: 3 },
+    { id: "pike_negatives", name: "Pike Negatives", description: "Slow lowering of the head", sets: 3, reps: 6 },
+  ],
+  "support-hold": [
+    { id: "bench_support", name: "Bench Support", description: "Straight-arm support on a bench", targetHoldSec: 20, sets: 3 },
+    { id: "scap_pushups", name: "Scapular Push-Ups", description: "Protract and depress in support", sets: 3, reps: 10 },
+  ],
+  "negative-pull-ups": [
+    { id: "dead_hang", name: "Dead Hang", description: "Grip and shoulder base", targetHoldSec: 30, sets: 3 },
+    { id: "band_assisted", name: "Band-Assisted Pull-Ups", description: "Full range with help", sets: 3, reps: 6 },
+  ],
+  "l-sit-pull-ups": [
+    { id: "hanging_l", name: "Hanging L Hold", description: "Legs level from the bar", targetHoldSec: 15, sets: 3 },
+    { id: "negatives", name: "Pull-Up Negatives", description: "Slow lowering", sets: 3, reps: 5 },
+  ],
+  "archer-pull-ups": [
+    { id: "wide_pullups", name: "Wide Pull-Ups", description: "Build the wide base", sets: 3, reps: 6 },
+    { id: "typewriter_pullups", name: "Typewriter Pull-Ups", description: "Shift across the bar at the top", sets: 3, reps: 4 },
+  ],
+  "one-arm-pull-ups": [
+    { id: "archer", name: "Archer Pull-Ups", description: "Deep, slow, each side", sets: 4, reps: 4 },
+    { id: "assisted_oap", name: "Assisted One-Arm", description: "Towel or band assist", sets: 4, reps: 3 },
+    { id: "oap_negatives", name: "One-Arm Negatives", description: "8 s lowering", sets: 4, reps: 2 },
+  ],
+  "human-flag": [
+    { id: "vertical_flag", name: "Vertical Flag", description: "Kick up to a vertical hold", targetHoldSec: 10, sets: 4 },
+    { id: "tuck_flag", name: "Tuck Flag", description: "Knees tucked, hips level", targetHoldSec: 8, sets: 4 },
+    { id: "flag_negatives", name: "Flag Negatives", description: "Lower slowly from vertical", sets: 4, reps: 3 },
+  ],
+  "tuck-front-lever": [
+    { id: "hanging_knee", name: "Hanging Knee Raises", description: "Compression from the bar", sets: 3, reps: 10 },
+    { id: "tuck_fl_negatives", name: "Tuck FL Negatives", description: "Lower slowly from inverted", sets: 4, reps: 4 },
+  ],
+  "advanced-tuck-front-lever": [
+    { id: "tuck_fl", name: "Tuck Front Lever", description: "Solid 30 s tuck first", targetHoldSec: 30, sets: 4 },
+    { id: "fl_rows", name: "Tuck FL Rows", description: "Row while holding the tuck", sets: 3, reps: 6 },
+  ],
+  "one-leg-front-lever": [
+    { id: "adv_tuck", name: "Advanced Tuck", description: "Flat back, hips open", targetHoldSec: 20, sets: 4 },
+    { id: "one_leg_negatives", name: "One-Leg Negatives", description: "Lower slowly with one leg out", sets: 4, reps: 3 },
+  ],
+  "straddle-front-lever": [
+    { id: "one_leg_fl", name: "One-Leg Front Lever", description: "Both sides", targetHoldSec: 15, sets: 4 },
+    { id: "straddle_fl_negatives", name: "Straddle Negatives", description: "Lower slowly in straddle", sets: 4, reps: 3 },
+  ],
+  "german-hang": [
+    { id: "shoulder_ext", name: "Shoulder Extension Stretch", description: "Hands behind on a bench", targetHoldSec: 30, sets: 3 },
+    { id: "assisted_german", name: "Assisted German Hang", description: "Feet lightly on the floor", targetHoldSec: 15, sets: 3 },
+  ],
+  "tuck-back-lever": [
+    { id: "german", name: "German Hang", description: "Comfortable 15 s hang", targetHoldSec: 15, sets: 3 },
+    { id: "skin_cat", name: "Skin the Cat", description: "Slow rotations", sets: 3, reps: 3 },
+  ],
+  "advanced-tuck-back-lever": [
+    { id: "tuck_bl", name: "Tuck Back Lever", description: "Level tuck holds", targetHoldSec: 20, sets: 4 },
+    { id: "adv_bl_drill", name: "Hip Extension Drills", description: "Open the hips slowly", sets: 4, reps: 5 },
+  ],
+  "straddle-back-lever": [
+    { id: "adv_tuck_bl", name: "Advanced Tuck Back Lever", description: "Flat back holds", targetHoldSec: 15, sets: 4 },
+    { id: "straddle_bl_negatives", name: "Straddle Negatives", description: "Lower slowly", sets: 4, reps: 3 },
+  ],
+  "back-lever": [
+    { id: "straddle_bl", name: "Straddle Back Lever", description: "Solid straddle first", targetHoldSec: 10, sets: 4 },
+    { id: "one_leg_bl", name: "One-Leg Back Lever", description: "One leg at a time", targetHoldSec: 8, sets: 4 },
+  ],
+  "hollow-body-hold": [
+    { id: "dead_bug", name: "Dead Bug", description: "Lower back pressed down", sets: 3, reps: 10 },
+    { id: "tuck_hollow", name: "Tuck Hollow", description: "Knees bent, shoulders up", targetHoldSec: 20, sets: 3 },
+  ],
+  "tuck-sit": [
+    { id: "foot_support", name: "Foot-Supported Tuck", description: "One foot down at a time", targetHoldSec: 15, sets: 4 },
+    { id: "support_hold_drill", name: "Support Hold", description: "Straight arms, feet down", targetHoldSec: 20, sets: 3 },
+  ],
+  "one-leg-l-sit": [
+    { id: "tuck", name: "Tuck Sit", description: "Solid 30 s tuck", targetHoldSec: 30, sets: 4 },
+    { id: "leg_extensions", name: "Seated Leg Lifts", description: "Straight-leg lifts from the floor", sets: 3, reps: 8 },
+  ],
+  "v-sit": [
+    { id: "l_sit", name: "L-Sit", description: "Solid 30 s L first", targetHoldSec: 30, sets: 4 },
+    { id: "compression", name: "Pike Compression", description: "Lift straight legs from a pike", sets: 3, reps: 10 },
+  ],
+  "hanging-knee-raises": [
+    { id: "dead_hang", name: "Dead Hang", description: "Grip base", targetHoldSec: 30, sets: 3 },
+    { id: "lying_knee", name: "Lying Knee Tucks", description: "Compression on the floor", sets: 3, reps: 12 },
+  ],
+  "hanging-leg-raises": [
+    { id: "hanging_knee", name: "Hanging Knee Raises", description: "Knees past hips", sets: 3, reps: 10 },
+    { id: "compression", name: "Pike Compression", description: "Straight-leg lifts", sets: 3, reps: 10 },
+  ],
+  "dragon-flag": [
+    { id: "hollow", name: "Hollow Body Hold", description: "The shape of the flag", targetHoldSec: 30, sets: 3 },
+    { id: "tuck_flag_drill", name: "Tuck Dragon Flag", description: "Knees bent, lower slowly", sets: 3, reps: 5 },
+    { id: "flag_negatives", name: "Dragon Flag Negatives", description: "Straight body, slow lowering", sets: 3, reps: 4 },
+  ],
+  bridge: [
+    { id: "glute_bridge", name: "Glute Bridge", description: "Hip extension base", targetHoldSec: 30, sets: 3 },
+    { id: "wall_walks", name: "Wall Walks", description: "Walk the hands down the wall", sets: 3, reps: 4 },
+  ],
+  "glute-bridge": [
+    { id: "hip_thrust", name: "Bodyweight Hip Thrusts", description: "Shoulders on a bench", sets: 3, reps: 12 },
+  ],
+  squats: [
+    { id: "assisted_squat", name: "Assisted Squat", description: "Hold a post for balance", sets: 3, reps: 10 },
+    { id: "deep_squat_hold", name: "Deep Squat Hold", description: "Heels down, chest up", targetHoldSec: 30, sets: 3 },
+  ],
+  "wall-sit": [
+    { id: "partial_wall_sit", name: "Partial Wall Sit", description: "Above parallel", targetHoldSec: 30, sets: 3 },
+  ],
+  "bulgarian-split-squats": [
+    { id: "split_squat", name: "Split Squat", description: "Both feet on the floor", sets: 3, reps: 10 },
+  ],
+  "single-leg-glute-bridge": [
+    { id: "glute_bridge", name: "Glute Bridge", description: "Two-leg base", targetHoldSec: 30, sets: 3 },
+  ],
 };
 
 export const METRIC_TO_DRILL: Record<string, string> = {
@@ -187,4 +314,8 @@ export const METRIC_TO_DRILL: Record<string, string> = {
   hips: "iso_hold",
   line: "shoulder_stack",
   position: "negatives",
+  hands: "wide_pushups",
+  pike: "pike_hold",
+  hollow_body: "dead_bug",
+  arch: "glute_bridge",
 };

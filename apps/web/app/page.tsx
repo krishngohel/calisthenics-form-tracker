@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LEARNING_PATHS, getSkill, getSkillPathStep } from "@cft/core";
+import { LEARNING_PATHS, describeGoal, getSkill, getSkillPathStep } from "@cft/core";
 import { Screen, ChevronRight, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { usePreferences } from "@/hooks/usePreferences";
@@ -26,7 +26,9 @@ export default function HomePage() {
           <div className="text-xs text-white/70">{stats.lastSkillId ? "Continue" : "Suggested"}</div>
           <div className="truncate text-xl font-semibold">{focusSkill.name}</div>
           <div className="text-sm text-white/80">
-            {best ? `Best ${formatSec(best.durationMs)}` : step ? `${step.path.name}, step ${step.step} of ${step.total}` : ""}
+            {[step ? `${step.path.name} ${step.step}/${step.total}` : null, step ? describeGoal(step.goal) : null, best ? `best ${formatSec(best.durationMs)}` : null]
+              .filter(Boolean)
+              .join(" · ")}
           </div>
         </div>
         <ChevronRight className="text-white/70" />

@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   getSkill,
   getSkillPathStep,
+  describeGoal,
   evaluateSkill,
   toIsotropic,
   orientToGravity,
@@ -202,6 +203,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
               guide={skill.cameraGuide}
               cameraAngle={skill.cameraAngle}
               bestMs={allTimeBestMs}
+              goal={pathStep ? describeGoal(pathStep.goal) : undefined}
               ready={videoReady && ready}
               onStart={start}
             />
@@ -250,7 +252,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
           />
           {pathStep && (
             <p className="text-xs text-muted">
-              {pathStep.path.name} · step {pathStep.step} of {pathStep.total}
+              {pathStep.path.name} · step {pathStep.step} of {pathStep.total} · {describeGoal(pathStep.goal)}
             </p>
           )}
         </>
