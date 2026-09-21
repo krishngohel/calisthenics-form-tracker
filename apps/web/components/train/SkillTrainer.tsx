@@ -255,7 +255,8 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
           />
           {pathStep && (
             <p className="text-xs text-muted">
-              {pathStep.path.name} · step {pathStep.step} of {pathStep.total} · {describeGoal(pathStep.goal)}
+              {pathStep.path.name} · step {pathStep.step} of {pathStep.total} · level {pathStep.level} · {describeGoal(pathStep.goal)}
+              {pathStep.focus ? ` · ${pathStep.focus}` : ""}
             </p>
           )}
         </>

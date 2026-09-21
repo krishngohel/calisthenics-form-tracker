@@ -273,6 +273,78 @@ export const PROGRESSIONS: Record<string, ProgressionDrill[]> = {
   "single-leg-glute-bridge": [
     { id: "glute_bridge", name: "Glute Bridge", description: "Two-leg base", targetHoldSec: 30, sets: 3 },
   ],
+  "elevated-pike-push-ups": [
+    { id: "pike_pushups", name: "Pike Push-Ups", description: "Feet on the floor first", sets: 3, reps: 8 },
+    { id: "wall_walks", name: "Wall Walks", description: "Walk up to a vertical line", sets: 3, reps: 4 },
+  ],
+  "deficit-handstand-push-ups": [
+    { id: "hspu_wall", name: "Wall HSPU", description: "Full range on the flat floor first", sets: 4, reps: 5 },
+    { id: "deficit_negatives", name: "Deficit Negatives", description: "5 s lowering past the hands", sets: 4, reps: 3 },
+  ],
+  "one-arm-push-ups": [
+    { id: "archer", name: "Archer Push-Ups", description: "Deep, slow, each side", sets: 4, reps: 5 },
+    { id: "oa_incline", name: "One-Arm Incline Push-Ups", description: "Hands on a bench", sets: 3, reps: 5 },
+    { id: "oa_negatives", name: "One-Arm Negatives", description: "6 s lowering", sets: 3, reps: 3 },
+  ],
+  "l-dips": [
+    { id: "l_sit", name: "L-Sit", description: "Legs level for 20 s", targetHoldSec: 20, sets: 3 },
+    { id: "dip_negatives", name: "Dip Negatives", description: "Slow lowering", sets: 3, reps: 5 },
+  ],
+  "korean-dips": [
+    { id: "german", name: "German Hang", description: "Shoulder extension mobility", targetHoldSec: 15, sets: 3 },
+    { id: "korean_negatives", name: "Korean Dip Negatives", description: "Slow lowering with a band", sets: 3, reps: 4 },
+  ],
+  "elbow-lever": [
+    { id: "elbow_lever_knees", name: "Knee Elbow Lever", description: "Knees on the floor, lean forward", targetHoldSec: 15, sets: 4 },
+    { id: "elbow_lever_straddle", name: "Straddle Elbow Lever", description: "Lighter lever with legs wide", targetHoldSec: 10, sets: 4 },
+  ],
+  maltese: [
+    { id: "band_maltese", name: "Band-Assisted Maltese", description: "Bands at the hips", targetHoldSec: 5, sets: 4 },
+    { id: "wall_maltese", name: "Wall Maltese", description: "Feet on the wall, arms wide", targetHoldSec: 8, sets: 4 },
+  ],
+  "iron-cross": [
+    { id: "cross_pulls", name: "Cross Pulls", description: "Band-assisted lowering into the cross", sets: 4, reps: 4 },
+    { id: "cross_negatives", name: "Cross Negatives", description: "Slow lowering from support", sets: 4, reps: 3 },
+  ],
+  "tuck-flag": [
+    { id: "vertical_flag", name: "Vertical Flag", description: "Kick up to vertical", targetHoldSec: 10, sets: 4 },
+    { id: "flag_negatives", name: "Flag Negatives", description: "Lower slowly", sets: 4, reps: 3 },
+  ],
+  "straddle-flag": [
+    { id: "tuck_flag_drill", name: "Tuck Flag", description: "Solid 10 s tuck", targetHoldSec: 10, sets: 4 },
+    { id: "one_leg_flag", name: "One-Leg Flag", description: "Extend one leg at a time", targetHoldSec: 6, sets: 4 },
+  ],
+  "straddle-press": [
+    { id: "straddle_l", name: "Straddle L-Sit", description: "Compression base", targetHoldSec: 20, sets: 3 },
+    { id: "wall_press_ecc", name: "Wall Press Eccentrics", description: "Lower slowly from a wall handstand into a straddle", sets: 4, reps: 3 },
+    { id: "elevated_press", name: "Elevated Straddle Press", description: "Hands on blocks", sets: 4, reps: 3 },
+  ],
+  "pike-press": [
+    { id: "pike_compression", name: "Pike Compression", description: "Lift straight legs from a pike", sets: 3, reps: 10 },
+    { id: "straddle_press_drill", name: "Straddle Presses", description: "Full straddle presses", sets: 4, reps: 3 },
+    { id: "pike_negatives", name: "Pike Press Negatives", description: "Lower slowly with legs together", sets: 4, reps: 3 },
+  ],
+  "bent-arm-press": [
+    { id: "headstand_tuck", name: "Tuck Headstand", description: "Hips over shoulders, feet off", targetHoldSec: 15, sets: 3 },
+    { id: "pike_pushups", name: "Pike Push-Ups", description: "Shoulder pressing strength", sets: 3, reps: 8 },
+    { id: "ba_press_negatives", name: "Bent-Arm Press Negatives", description: "Lower from a handstand into the tuck", sets: 4, reps: 3 },
+  ],
+  "tuck-planche-push-ups": [
+    { id: "tuck_hold", name: "Tuck Planche", description: "Solid 20 s tuck first", targetHoldSec: 20, sets: 4 },
+    { id: "pseudo_planche", name: "Pseudo Planche Push-Ups", description: "Deep lean", sets: 4, reps: 6 },
+  ],
+  "straddle-planche-push-ups": [
+    { id: "straddle_open", name: "Straddle Planche", description: "Solid 10 s straddle", targetHoldSec: 10, sets: 4 },
+    { id: "adv_tuck_pu", name: "Advanced Tuck Planche Push-Ups", description: "Full range", sets: 4, reps: 4 },
+  ],
+  "planche-push-ups": [
+    { id: "full_planche", name: "Full Planche", description: "5 s clean holds", targetHoldSec: 5, sets: 5 },
+    { id: "straddle_pu", name: "Straddle Planche Push-Ups", description: "Full range", sets: 4, reps: 3 },
+  ],
+  manna: [
+    { id: "v_sit", name: "V-Sit", description: "150°+ V-sit", targetHoldSec: 10, sets: 4 },
+    { id: "manna_rocks", name: "Manna Rocks", description: "Rock the hips up from a V-sit", sets: 4, reps: 5 },
+  ],
 };
 
 export const METRIC_TO_DRILL: Record<string, string> = {

@@ -42,6 +42,7 @@ import {
   plancheHold,
   above,
   elbowPair,
+  wristSpread,
 } from "../helpers";
 
 export const PULL_SKILLS: SkillDefinition[] = [
@@ -332,6 +333,91 @@ export const PULL_SKILLS: SkillDefinition[] = [
         metrics.push(metric("straight", "Straight body", straight, ramp(line, 120, 155), "Squeeze glutes and legs together"));
       }
       return baseEval(holdMet, holdMet && straight, metrics, ok);
+    },
+  },
+  {
+    id: "iron-cross",
+    name: "Iron Cross",
+    category: "static",
+    cameraAngle: "front",
+    cameraGuide: "Front view on rings; arms straight out to the sides at shoulder height.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "rightShoulder", "leftWrist", "rightWrist", "leftHip"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "rightShoulder", "leftWrist", "rightWrist", "leftHip"]);
+      const T = bodyUnit(body);
+      const spread = wristSpread(body);
+      const wide = spread > 1.8;
+      const sh = midpoint(body.leftShoulder, body.rightShoulder);
+      const wrist = midpoint(body.leftWrist, body.rightWrist);
+      const atShoulderHeight = wrist && sh ? Math.abs(wrist.y - sh.y) / T < 0.35 : false;
+      const vertical = horizontalBodyScore(body) < 0.3;
+      const angle = elbow(body, history);
+      const locked = angle > 150;
+      const holdMet = wide && atShoulderHeight && vertical && locked;
+      const metrics: FormMetric[] = [
+        metric("hands", "Arms out at shoulder height", wide && atShoulderHeight, Math.min(ramp(spread, 0.8, 1.8), atShoulderHeight ? 100 : 40), "Arms level with the shoulders, palms down"),
+        metric("elbows", "Locked arms", locked, ramp(angle, 110, 150), "Lock the elbows; press the rings down"),
+        metric("straight", "Body vertical", vertical, ramp(horizontalBodyScore(body), 0.7, 0.3), "Hang straight; hollow body"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
+    },
+  },
+  {
+    id: "tuck-flag",
+    name: "Tuck Flag",
+    category: "static",
+    cameraAngle: "front",
+    cameraGuide: "Face the pole side-on to the camera; hips level with knees tucked.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftWrist", "rightWrist", "leftHip", "leftKnee"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftWrist", "rightWrist", "leftHip", "leftKnee"]);
+      const T = bodyUnit(body);
+      const lw = body.leftWrist;
+      const rw = body.rightWrist;
+      const gap = lw && rw ? Math.abs(lw.y - rw.y) / T : 0;
+      const stacked = gap > 0.9;
+      const sh = midpoint(body.leftShoulder, body.rightShoulder);
+      const hip = midpoint(body.leftHip, body.rightHip);
+      const level = sh && hip ? Math.abs(sh.y - hip.y) / T < 0.5 : false;
+      const kneeAng = knee(body, history);
+      const tucked = kneeAng < 110;
+      const holdMet = stacked && level && tucked;
+      const metrics: FormMetric[] = [
+        metric("hands", "Hands stacked on the pole", stacked, ramp(gap, 0.2, 0.9), "One hand high, one low, arms locked"),
+        metric("horizontal", "Hips level", level, level ? 100 : 40, "Drive the hips up level with the shoulders"),
+        metric("depth", "Knees tucked", tucked, ramp(kneeAng, 170, 110), "Pull the knees in tight"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
+    },
+  },
+  {
+    id: "straddle-flag",
+    name: "Straddle Flag",
+    category: "static",
+    cameraAngle: "front",
+    cameraGuide: "Face the pole side-on to the camera; body level, legs straight and wide.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftWrist", "rightWrist", "leftHip", "leftAnkle", "rightAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftWrist", "rightWrist", "leftHip", "leftAnkle", "rightAnkle"]);
+      const T = bodyUnit(body);
+      const lw = body.leftWrist;
+      const rw = body.rightWrist;
+      const gap = lw && rw ? Math.abs(lw.y - rw.y) / T : 0;
+      const stacked = gap > 0.9;
+      const level = horizontalBodyScore(body) > 0.6;
+      const spread = ankleSpread(body);
+      const kneeAng = knee(body, history);
+      const straddle = spread > 0.5 && kneeAng > 140;
+      const holdMet = stacked && level && straddle;
+      const metrics: FormMetric[] = [
+        metric("hands", "Hands stacked on the pole", stacked, ramp(gap, 0.2, 0.9), "One hand high, one low, arms locked"),
+        metric("horizontal", "Body level", level, ramp(horizontalBodyScore(body), 0.3, 0.6), "Drive the hips up until the body is level"),
+        metric("leg_extension", "Straddle", straddle, Math.min(ramp(spread, 0, 0.5), ramp(kneeAng, 90, 140)), "Legs straight and wide"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
     },
   },
 ];

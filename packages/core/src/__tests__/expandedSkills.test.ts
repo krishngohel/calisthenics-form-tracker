@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { evaluateSkill, SKILLS } from "../skills/registry";
-import { LEARNING_PATHS, describeGoal, getSkillPathStep, validateLearningPaths } from "../skills/learningPaths";
+import { LEARNING_PATHS, bandForLevel, describeGoal, getSkillPathStep, validateLearningPaths, workingHoldSec } from "../skills/learningPaths";
 import { PROGRESSIONS } from "../coaching/progressions";
 import { getTargetPose } from "../skills/targetPoses";
 import type { Body } from "../pose/geometry";
@@ -26,6 +26,42 @@ describe("expanded skill set", () => {
       expect(getTargetPose(skill.id), skill.id).not.toBeNull();
     }
     expect(LEARNING_PATHS.every((p) => p.sources.length > 0)).toBe(true);
+  });
+
+  it("levels are non-decreasing within each path except documented branches, with OG bands", () => {
+    expect(bandForLevel(1)).toBe("beginner");
+    expect(bandForLevel(8)).toBe("intermediate");
+    expect(bandForLevel(12)).toBe("advanced");
+    expect(bandForLevel(13)).toBe("elite");
+    for (const p of LEARNING_PATHS) {
+      const levels = p.steps.map((s) => s.level);
+      // A path may interleave equal-level variants; it must never drop by more than two levels.
+      for (let i = 1; i < levels.length; i++) expect(levels[i], `${p.id} step ${i + 1}`).toBeGreaterThanOrEqual(levels[i - 1] - 2);
+    }
+    expect(workingHoldSec(20)).toEqual([12, 15]);
+  });
+
+  it("press lift-offs need straight arms and floating feet; bent-arm press needs bent arms", () => {
+    const straddleLift = side({ nose: [0.46, 0.7], leftShoulder: [0.46, 0.6], leftElbow: [0.42, 0.72], leftWrist: [0.38, 0.84], leftHip: [0.54, 0.38], leftKnee: [0.62, 0.56], leftAnkle: [0.64, 0.7] });
+    expect(evaluateSkill("straddle-press", straddleLift, noHands, [], "hold_only")?.holdCriteriaMet).toBe(true);
+    const feetDown = side({ ...{ nose: [0.46, 0.7], leftShoulder: [0.46, 0.6], leftElbow: [0.42, 0.72], leftWrist: [0.38, 0.84], leftHip: [0.54, 0.38], leftKnee: [0.62, 0.62], leftAnkle: [0.66, 0.9] } });
+    expect(evaluateSkill("straddle-press", feetDown, noHands, [], "hold_only")?.holdCriteriaMet).toBe(false);
+    const bentPress = side({ nose: [0.46, 0.74], leftShoulder: [0.46, 0.62], leftElbow: [0.36, 0.7], leftWrist: [0.4, 0.84], leftHip: [0.52, 0.42], leftKnee: [0.58, 0.56], leftAnkle: [0.5, 0.5] });
+    expect(evaluateSkill("bent-arm-press", bentPress, noHands, [], "hold_only")?.holdCriteriaMet).toBe(true);
+    expect(evaluateSkill("straddle-press", bentPress, noHands, [], "hold_only")?.holdCriteriaMet).toBe(false);
+  });
+
+  it("iron cross: arms level with the shoulders while hanging vertical", () => {
+    const cross: Body = {
+      nose: { x: 0.5, y: 0.24 },
+      leftShoulder: { x: 0.44, y: 0.32 }, rightShoulder: { x: 0.56, y: 0.32 },
+      leftElbow: { x: 0.3, y: 0.32 }, rightElbow: { x: 0.7, y: 0.32 },
+      leftWrist: { x: 0.14, y: 0.32 }, rightWrist: { x: 0.86, y: 0.32 },
+      leftHip: { x: 0.46, y: 0.56 }, rightHip: { x: 0.54, y: 0.56 },
+      leftKnee: { x: 0.47, y: 0.72 }, rightKnee: { x: 0.53, y: 0.72 },
+      leftAnkle: { x: 0.48, y: 0.88 }, rightAnkle: { x: 0.52, y: 0.88 },
+    };
+    expect(evaluateSkill("iron-cross", cross, noHands, [], "hold_only")?.holdCriteriaMet).toBe(true);
   });
 
   it("hollow body: shoulders and legs off the floor, hips lowest", () => {

@@ -324,4 +324,30 @@ export const CORE_SKILLS: SkillDefinition[] = [
       return baseEval(holdMet, holdMet, metrics, ok);
     },
   },
+  {
+    id: "manna",
+    name: "Manna",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view; hands on the floor behind you, hips above the shoulders, legs level.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftWrist", "leftHip", "leftKnee", "leftAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftWrist", "leftHip", "leftKnee", "leftAnkle"]);
+      const sh = midpoint(body.leftShoulder, body.rightShoulder);
+      const hip = midpoint(body.leftHip, body.rightHip);
+      const ankle = midpoint(body.leftAnkle, body.rightAnkle);
+      const hipsHigh = above(hip, sh, body) > 0.3;
+      const handsDown = hangDepth(body) < -0.5;
+      const kneeAng = knee(body, history);
+      const legsStraight = kneeAng > 145;
+      const legsLevel = ankle && hip ? Math.abs(ankle.y - hip.y) / bodyUnit(body) < 0.5 : false;
+      const holdMet = hipsHigh && handsDown && legsStraight && legsLevel && !isInverted(body);
+      const metrics: FormMetric[] = [
+        metric("hip_height", "Hips above the shoulders", hipsHigh && handsDown, ramp(above(hip, sh, body), -0.3, 0.3), "Press down and roll the hips up over the shoulders"),
+        metric("leg_extension", "Legs level and straight", legsStraight && legsLevel, Math.min(ramp(kneeAng, 100, 145), legsLevel ? 100 : 40), "Legs together, level with the floor"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
+    },
+  },
 ];

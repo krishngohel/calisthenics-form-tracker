@@ -191,9 +191,9 @@ describe("distance context", () => {
 });
 
 describe("skills registry", () => {
-  it("has all 61 skills with unique ids", () => {
-    expect(SKILLS.length).toBe(61);
-    expect(new Set(SKILLS.map((s) => s.id)).size).toBe(61);
+  it("has all 78 skills with unique ids", () => {
+    expect(SKILLS.length).toBe(78);
+    expect(new Set(SKILLS.map((s) => s.id)).size).toBe(78);
   });
 
   it("assigns every skill to exactly one learning path in order", () => {

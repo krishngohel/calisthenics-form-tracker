@@ -40,6 +40,8 @@ import {
   scapularLift,
   pressingHold,
   plancheHold,
+  above,
+  hipsOverShoulders,
 } from "../helpers";
 
 export const HANDSTAND_SKILLS: SkillDefinition[] = [
@@ -219,6 +221,93 @@ export const HANDSTAND_SKILLS: SkillDefinition[] = [
         metrics.push(metric("line", "Stacked line", straight, ramp(line, 125, 160), CUES.oneArmHandstand.bodyLine));
       }
       return baseEval(holdMet, holdMet && straight, metrics, ok);
+    },
+  },
+  {
+    id: "straddle-press",
+    name: "Straddle Press Lift-Off",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view; hands on the floor, shoulders forward, feet lifted in a straddle before the legs rise.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftAnkle"]);
+      const angle = elbow(body, history);
+      const straightArms = angle > LOCKED_ELBOW;
+      const stacked = hipsOverShoulders(body) > 0.5;
+      const lean = shoulderLeanOverWrists(body);
+      const leaning = lean > 0.1;
+      const wrist = midpoint(body.leftWrist, body.rightWrist);
+      const ankle = midpoint(body.leftAnkle, body.rightAnkle);
+      const feetOff = above(ankle, wrist, body) > 0.15;
+      const hip = midpoint(body.leftHip, body.rightHip);
+      const legsLow = ankle && hip ? above(ankle, hip, body) < 0.4 : false; // not yet a handstand
+      const holdMet = straightArms && stacked && leaning && feetOff && legsLow;
+      const metrics: FormMetric[] = [
+        metric("elbow_bend", "Straight arms", straightArms, ramp(angle, 120, LOCKED_ELBOW), "Arms locked; press the floor away"),
+        metric("lean", "Shoulders over the fingertips", leaning && stacked, Math.min(ramp(lean, 0, 0.1), ramp(hipsOverShoulders(body), 0, 0.5)), "Lean the shoulders forward and stack the hips high"),
+        metric("hip_height", "Feet off the floor", feetOff, ramp(above(ankle, wrist, body), -0.3, 0.15), "Compress and float the feet up"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
+    },
+  },
+  {
+    id: "pike-press",
+    name: "Pike Press Lift-Off",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view; legs together and straight, feet floating off the floor with the hips over the hands.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee", "leftAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee", "leftAnkle"]);
+      const angle = elbow(body, history);
+      const straightArms = angle > LOCKED_ELBOW;
+      const stacked = hipsOverShoulders(body) > 0.5;
+      const lean = shoulderLeanOverWrists(body) > 0.1;
+      const wrist = midpoint(body.leftWrist, body.rightWrist);
+      const ankle = midpoint(body.leftAnkle, body.rightAnkle);
+      const feetOff = above(ankle, wrist, body) > 0.15;
+      const kneeAng = knee(body, history);
+      const legsStraight = kneeAng > 150;
+      const hipAng = hipAngle(body);
+      const compressed = hipAng < 80;
+      const holdMet = straightArms && stacked && lean && feetOff && legsStraight && compressed;
+      const metrics: FormMetric[] = [
+        metric("elbow_bend", "Straight arms", straightArms, ramp(angle, 120, LOCKED_ELBOW), "Arms locked; press the floor away"),
+        metric("lean", "Hips stacked, shoulders forward", stacked && lean, Math.min(ramp(hipsOverShoulders(body), 0, 0.5), lean ? 100 : 50), "Lean forward until the hips sit over the hands"),
+        metric("hip_angle", "Pike compression, legs straight", compressed && legsStraight && feetOff, Math.min(ramp(hipAng, 130, 80), ramp(kneeAng, 100, 150), ramp(above(ankle, wrist, body), -0.3, 0.15)), "Fold at the hips with straight legs; float the feet"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
+    },
+  },
+  {
+    id: "bent-arm-press",
+    name: "Bent-Arm Press (Tuck)",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view; elbows bent, hips stacked over the shoulders, knees tucked, feet off the floor.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"]);
+      const angle = elbow(body, history);
+      const bent = angle > 60 && angle < 130;
+      const stacked = hipsOverShoulders(body) > 0.6;
+      const handsDown = hangDepth(body) < -0.4;
+      const wrist = midpoint(body.leftWrist, body.rightWrist);
+      const ankle = midpoint(body.leftAnkle, body.rightAnkle);
+      const feetOff = above(ankle, wrist, body) > 0.15;
+      const kneeAng = knee(body, history);
+      const tucked = kneeAng < 110;
+      const holdMet = bent && stacked && handsDown && feetOff && tucked;
+      const metrics: FormMetric[] = [
+        metric("elbow_bend", "Bent-arm support", bent && handsDown, bent ? 100 : ramp(Math.abs(angle - 95), 80, 35), "Bend the elbows and load the shoulders"),
+        metric("hip_height", "Hips over the shoulders, feet up", stacked && feetOff, Math.min(ramp(hipsOverShoulders(body), 0, 0.6), ramp(above(ankle, wrist, body), -0.3, 0.15)), "Lean forward, stack the hips, lift the feet"),
+        metric("depth", "Knees tucked", tucked, ramp(kneeAng, 170, 110), "Keep the knees in tight"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
     },
   },
 ];

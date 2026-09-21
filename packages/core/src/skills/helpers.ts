@@ -267,3 +267,19 @@ export function elbowPair(body: Body): [number, number] {
   const r = elbowFlexion(body, "right");
   return l <= r ? [l, r] : [r, l];
 }
+
+
+/** Midpoint distance between two joint pairs, in body units. */
+export function jointGap(body: Body, a: [string, string], b: [string, string]): number {
+  const pa = midpoint(body[a[0]], body[a[1]]);
+  const pb = midpoint(body[b[0]], body[b[1]]);
+  if (!pa || !pb) return Infinity;
+  return Math.hypot(pa.x - pb.x, pa.y - pb.y) / bodyUnit(body);
+}
+
+/** Hands on the floor with the hips stacked above the shoulders (press / inversion base). */
+export function hipsOverShoulders(body: Body): number {
+  const sh = midpoint(body.leftShoulder, body.rightShoulder);
+  const hip = midpoint(body.leftHip, body.rightHip);
+  return above(hip, sh, body);
+}

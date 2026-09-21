@@ -10,6 +10,16 @@ export interface FormCorrection {
 
 /** Which joints to nudge toward the target pose when a metric fails. */
 const METRIC_JOINTS: Record<string, string[]> = {
+  arc: ["leftHip", "rightHip", "leftShoulder", "rightShoulder"],
+  balance: ["leftHip", "rightHip", "leftAnkle", "rightAnkle"],
+  control: ["leftHip", "rightHip"],
+  hand_off: ["leftWrist", "rightWrist"],
+  knees_locked: ["leftKnee", "rightKnee"],
+  line: ["leftShoulder", "rightShoulder", "leftHip", "rightHip", "leftAnkle", "rightAnkle"],
+  no_swing: ["leftHip", "rightHip", "leftAnkle", "rightAnkle"],
+  single_leg: ["leftKnee", "rightKnee", "leftAnkle", "rightAnkle"],
+  stability: ["leftHip", "rightHip"],
+  upright: ["leftShoulder", "rightShoulder", "leftHip", "rightHip"],
   chin_height: ["nose", "leftShoulder", "rightShoulder"],
   top_position: ["nose"],
   elbow_bend: ["leftElbow", "rightElbow"],

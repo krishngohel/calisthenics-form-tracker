@@ -44,6 +44,8 @@ import {
   wristSpread,
   elbowPair,
   torsoLevelOffset,
+  hipsOverShoulders,
+  jointGap,
 } from "../helpers";
 
 export const PUSH_SKILLS: SkillDefinition[] = [
@@ -271,6 +273,218 @@ export const PUSH_SKILLS: SkillDefinition[] = [
         metrics.push(flag("scap_depression", "Shoulders down", depressed, CUES.lSit.scapDepression));
       }
       return baseEval(holdMet, holdMet && depressed, metrics, ok);
+    },
+  },
+  {
+    id: "elevated-pike-push-ups",
+    name: "Elevated Pike Push-Ups",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Side view; feet on a box, hips stacked over the hands, head lowering.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftAnkle"]);
+      const angle = elbow(body, history);
+      const hip = midpoint(body.leftHip, body.rightHip);
+      const ankle = midpoint(body.leftAnkle, body.rightAnkle);
+      const stacked = hipsOverShoulders(body) > 0.6;
+      const feetHigh = above(ankle, hip, body) > -0.6;
+      const handsDown = hangDepth(body) < -0.5;
+      const positioned = stacked && feetHigh && handsDown;
+      const atBottom = positioned && angle < DEEP_ELBOW;
+      const atTop = positioned && angle > TOP_ELBOW;
+      const holdMet = atBottom || atTop;
+      const metrics: FormMetric[] = [
+        metric("pike", "Hips over hands, feet elevated", positioned, positioned ? 100 : Math.min(ramp(hipsOverShoulders(body), 0, 0.6), ramp(above(ankle, hip, body), -1.4, -0.6)), "Walk the feet up until the hips sit over the hands"),
+        metric("position", "Press position", holdMet, holdMet ? (atBottom ? 95 : 85) : 30, atTop ? CUES.pushUps.topLockout : "Lower the head between the hands"),
+      ];
+      if (mode === "perfect") {
+        metrics.push(metric("depth", "Bottom depth", angle < DEEP_ELBOW, atTop ? 70 : ramp(angle, 150, DEEP_ELBOW), "Head all the way to the floor"));
+      }
+      return baseEval(holdMet, holdMet, metrics, ok);
+    },
+  },
+  {
+    id: "deficit-handstand-push-ups",
+    name: "Deficit Handstand Push-Ups",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view; hands on parallettes or blocks, head lowering below the hands.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftAnkle", "nose"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftAnkle", "nose"]);
+      const inverted = isInverted(body);
+      const angle = elbow(body, history);
+      const nose = body.nose;
+      const wrist = midpoint(body.leftWrist, body.rightWrist);
+      const headBelowHands = nose && wrist ? (nose.y - wrist.y) / bodyUnit(body) > 0.05 : false;
+      const atBottom = angle < DEEP_ELBOW && headBelowHands;
+      const atTop = angle > 155;
+      const holdMet = inverted && (atBottom || atTop);
+      const line = bodyLineDeviation(body);
+      const metrics: FormMetric[] = [
+        flag("inverted", "Inverted", inverted, CUES.hspu.inverted, 20),
+        metric("depth", "Head below the hands", atBottom || atTop, atBottom ? 100 : atTop ? 85 : 30, "Lower the head past the hands"),
+      ];
+      if (mode === "perfect") {
+        metrics.push(metric("body_line", "Stacked line", line > 155, ramp(line, 120, 155), CUES.hspu.bodyLine));
+      }
+      return baseEval(holdMet, holdMet && line > 155, metrics, ok);
+    },
+  },
+  {
+    id: "one-arm-push-ups",
+    name: "One-Arm Push-Up",
+    category: "upper",
+    cameraAngle: "front",
+    cameraGuide: "Front-diagonal view; feet wide, one hand on the floor, the other behind the back.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftWrist", "rightWrist", "leftHip"],
+    evaluate(body, _hands, _history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftWrist", "rightWrist", "leftHip"]);
+      const T = bodyUnit(body);
+      const sh = midpoint(body.leftShoulder, body.rightShoulder);
+      const hip = midpoint(body.leftHip, body.rightHip);
+      const lw = body.leftWrist;
+      const rw = body.rightWrist;
+      if (!sh || !hip || !lw || !rw) return baseEval(false, false, [flag("position", "One hand down", false, "One hand on the floor")], ok);
+      const low = lw.y > rw.y ? lw : rw;
+      const free = lw.y > rw.y ? rw : lw;
+      const support = (low.y - sh.y) / T > 0.4;
+      const freeHigh = (low.y - free.y) / T > 0.3;
+      const [bent] = elbowPair(body);
+      const horiz = horizontalBodyScore(body) > 0.45;
+      const positioned = support && freeHigh && horiz;
+      const atBottom = positioned && bent < DEEP_ELBOW;
+      const atTop = positioned && bent > TOP_ELBOW;
+      const holdMet = atBottom || atTop;
+      const metrics: FormMetric[] = [
+        metric("position", "One hand down, one free", positioned, positioned ? 100 : 30, "Support on one hand, the other behind the back"),
+        metric("depth", "Depth", holdMet, holdMet ? (atBottom ? 95 : 85) : ramp(bent, 160, DEEP_ELBOW), CUES.pushUps.bottomDepth),
+      ];
+      if (mode === "perfect") {
+        metrics.push(metric("plank_line", "Hips square, body straight", bodyLineDeviation(body) > 155, ramp(bodyLineDeviation(body), 120, 155), "Keep the hips square and the body rigid"));
+      }
+      return baseEval(holdMet, holdMet && bodyLineDeviation(body) > 155, metrics, ok);
+    },
+  },
+  {
+    id: "l-dips",
+    name: "L-Dips",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Side view on parallel bars; legs held level through the dip.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"]);
+      const angle = elbow(body, history);
+      const inSupport = inWeightSupportPosition(body) || hangDepth(body) < -0.3;
+      const hipAng = hipAngle(body);
+      const kneeAng = knee(body, history);
+      const legsL = hipAng > 55 && hipAng < 125 && kneeAng > 140;
+      const atBottom = inSupport && angle < DEEP_ELBOW;
+      const atTop = inSupport && angle > TOP_ELBOW;
+      const holdMet = legsL && (atBottom || atTop);
+      const metrics: FormMetric[] = [
+        metric("hip_angle", "Legs held level", legsL, Math.min(ramp(Math.abs(hipAng - 90), 60, 30), ramp(kneeAng, 90, 140)), CUES.lSit.legExtension),
+        metric("position", "Dip position", atBottom || atTop, atBottom ? 95 : atTop ? 85 : 30, atTop ? CUES.dips.topLockout : CUES.dips.bottomDepth),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
+    },
+  },
+  {
+    id: "korean-dips",
+    name: "Korean Dips",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Side view; straight bar behind the body at hip height, hands behind you.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip"]);
+      const T = bodyUnit(body);
+      const angle = elbow(body, history);
+      const sh = midpoint(body.leftShoulder, body.rightShoulder);
+      const hip = midpoint(body.leftHip, body.rightHip);
+      const wrist = midpoint(body.leftWrist, body.rightWrist);
+      const nose = body.nose;
+      // Hands behind: wrists on the far side of the hips from the nose, roughly at hip height.
+      const facing = nose && sh ? Math.sign(nose.x - sh.x) || 1 : 1;
+      const behind = wrist && hip ? ((hip.x - wrist.x) * facing) / T > 0.15 : false;
+      const atHipHeight = wrist && hip ? Math.abs(wrist.y - hip.y) / T < 0.6 : false;
+      const upright = horizontalBodyScore(body) < 0.4;
+      const positioned = behind && atHipHeight && upright;
+      const atBottom = positioned && angle < 110;
+      const atTop = positioned && angle > TOP_ELBOW;
+      const holdMet = atBottom || atTop;
+      const metrics: FormMetric[] = [
+        metric("hands", "Hands behind, bar at the hips", positioned, positioned ? 100 : 30, "Grip the bar behind you at hip height"),
+        metric("position", "Dip position", holdMet, holdMet ? (atBottom ? 95 : 85) : 30, atTop ? "Press to lockout, chest up" : "Sink until the elbows reach ninety degrees"),
+      ];
+      if (mode === "perfect") {
+        metrics.push(flag("scap_depression", "Chest up, shoulders open", !shouldersShrugged(body), "Chest up, shoulders pulled back"));
+      }
+      return baseEval(holdMet, holdMet && !shouldersShrugged(body), metrics, ok);
+    },
+  },
+  {
+    id: "elbow-lever",
+    name: "Elbow Lever",
+    category: "static",
+    cameraAngle: "side",
+    cameraGuide: "Side view; elbows tucked into the hips, body straight and level.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftAnkle"]);
+      const angle = elbow(body, history);
+      const bent = angle > 55 && angle < 115;
+      const elbowsIn = jointGap(body, ["leftElbow", "rightElbow"], ["leftHip", "rightHip"]) < 0.7;
+      const horiz = horizontalBodyScore(body);
+      const level = horiz > 0.65;
+      const handsDown = hangDepth(body) < -0.3;
+      const line = bodyLineDeviation(body);
+      const holdMet = bent && elbowsIn && level && handsDown;
+      const metrics: FormMetric[] = [
+        metric("elbows", "Elbows into the hips", bent && elbowsIn, Math.min(ramp(Math.abs(angle - 85), 60, 30), ramp(jointGap(body, ["leftElbow", "rightElbow"], ["leftHip", "rightHip"]), 1.5, 0.7)), "Dig the elbows into the hip bones"),
+        metric("horizontal", "Body level", level, ramp(horiz, 0.3, 0.65), "Lean forward until the body floats level"),
+      ];
+      if (mode === "perfect") {
+        metrics.push(metric("straight", "Straight body", line > 155, ramp(line, 120, 155), "Squeeze glutes; toes pointed"));
+      }
+      return baseEval(holdMet, holdMet && line > 155, metrics, ok);
+    },
+  },
+  {
+    id: "maltese",
+    name: "Maltese",
+    category: "static",
+    cameraAngle: "front",
+    cameraGuide: "Front view; body level at hand height, arms straight and wide.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftWrist", "rightWrist", "leftHip", "leftAnkle"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftWrist", "rightWrist", "leftHip", "leftAnkle"]);
+      const T = bodyUnit(body);
+      const spread = wristSpread(body);
+      const wide = spread > 1.6;
+      const wrist = midpoint(body.leftWrist, body.rightWrist);
+      const hip = midpoint(body.leftHip, body.rightHip);
+      const atHipHeight = wrist && hip ? Math.abs(wrist.y - hip.y) / T < 0.5 : false;
+      const horiz = horizontalBodyScore(body);
+      const level = horiz > 0.7;
+      const angle = elbow(body, history);
+      const locked = angle > 150;
+      const holdMet = wide && atHipHeight && level && locked;
+      const metrics: FormMetric[] = [
+        metric("hands", "Arms wide at hip height", wide && atHipHeight, Math.min(ramp(spread, 0.6, 1.6), atHipHeight ? 100 : 40), "Hands out wide, level with the hips"),
+        metric("horizontal", "Body level", level, ramp(horiz, 0.3, 0.7), "Lean until the body is level with the hands"),
+        metric("elbows", "Locked arms", locked, ramp(angle, 110, 150), "Elbows locked, shoulders protracted"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
     },
   },
 ];

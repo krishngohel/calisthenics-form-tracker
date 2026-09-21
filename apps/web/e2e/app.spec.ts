@@ -38,7 +38,12 @@ test.describe("app shell", () => {
     await page.getByRole("link", { name: "Paths" }).tap();
     await expect(page).toHaveURL(/\/skills\/?$/);
     await expect(page.getByRole("heading", { name: "Paths" })).toBeVisible();
-    await page.getByRole("link", { name: "Progress" }).tap();
+    await expect(page.getByText("L1 · Beginner").first()).toBeVisible();
+    await page.getByRole("link", { name: /How progression works/ }).tap();
+    await expect(page.getByRole("heading", { name: "Progression" })).toBeVisible();
+    await page.getByRole("link", { name: "Paths" }).first().tap();
+    await expect(page.getByRole("heading", { name: "Paths" })).toBeVisible();
+    await page.getByRole("link", { name: "Progress", exact: true }).tap();
     await expect(page.getByText("No holds yet")).toBeVisible();
     await page.getByRole("link", { name: "Settings" }).tap();
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();

@@ -268,7 +268,49 @@ function buildFlag(): Record<string, Landmark> {
   return frontView({ nose: lm(0.34, 0.44), leftShoulder: lm(0.4, 0.46), leftElbow: lm(0.34, 0.3), leftWrist: lm(0.3, 0.16), leftHip: lm(0.58, 0.46), leftKnee: lm(0.7, 0.46), leftAnkle: lm(0.82, 0.46) }, 0.5);
 }
 
+function buildElevatedPike(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.4, 0.66), leftShoulder: lm(0.42, 0.58), leftElbow: lm(0.38, 0.68), leftWrist: lm(0.36, 0.8), leftHip: lm(0.5, 0.34), leftKnee: lm(0.64, 0.4), leftAnkle: lm(0.78, 0.46) });
+}
+function buildPressLiftOff(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.46, 0.7), leftShoulder: lm(0.46, 0.6), leftElbow: lm(0.42, 0.7), leftWrist: lm(0.38, 0.82), leftHip: lm(0.54, 0.38), leftKnee: lm(0.6, 0.56), leftAnkle: lm(0.62, 0.72) });
+}
+function buildBentArmPress(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.46, 0.74), leftShoulder: lm(0.46, 0.62), leftElbow: lm(0.36, 0.7), leftWrist: lm(0.4, 0.84), leftHip: lm(0.52, 0.42), leftKnee: lm(0.58, 0.56), leftAnkle: lm(0.5, 0.5) });
+}
+function buildElbowLever(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.3, 0.44), leftShoulder: lm(0.38, 0.46), leftElbow: lm(0.5, 0.56), leftWrist: lm(0.42, 0.7), leftHip: lm(0.56, 0.46), leftKnee: lm(0.7, 0.46), leftAnkle: lm(0.84, 0.46) });
+}
+function buildKoreanDip(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.5, 0.28), leftShoulder: lm(0.48, 0.34), leftElbow: lm(0.4, 0.42), leftWrist: lm(0.36, 0.52), leftHip: lm(0.5, 0.56), leftKnee: lm(0.54, 0.72), leftAnkle: lm(0.56, 0.88) });
+}
+function buildCross(): Record<string, Landmark> {
+  return frontView({ nose: lm(0.5, 0.24), leftShoulder: lm(0.44, 0.32), leftElbow: lm(0.3, 0.32), leftWrist: lm(0.16, 0.32), leftHip: lm(0.46, 0.56), leftKnee: lm(0.47, 0.72), leftAnkle: lm(0.48, 0.88) });
+}
+function buildMaltese(): Record<string, Landmark> {
+  return frontView({ nose: lm(0.5, 0.3), leftShoulder: lm(0.44, 0.38), leftElbow: lm(0.3, 0.42), leftWrist: lm(0.16, 0.46), leftHip: lm(0.46, 0.5), leftKnee: lm(0.47, 0.54), leftAnkle: lm(0.48, 0.58) });
+}
+function buildManna(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.4, 0.5), leftShoulder: lm(0.42, 0.56), leftElbow: lm(0.4, 0.66), leftWrist: lm(0.38, 0.76), leftHip: lm(0.5, 0.36), leftKnee: lm(0.64, 0.38), leftAnkle: lm(0.78, 0.4) });
+}
+
 const TARGET_POSES: Record<string, Record<string, Landmark>> = {
+  "elevated-pike-push-ups": buildElevatedPike(),
+  "deficit-handstand-push-ups": buildInverted(),
+  "one-arm-push-ups": buildSidePlank(),
+  "l-dips": buildSupport(),
+  "korean-dips": buildKoreanDip(),
+  "elbow-lever": buildElbowLever(),
+  maltese: buildMaltese(),
+  "iron-cross": buildCross(),
+  "tuck-flag": buildFlag(),
+  "straddle-flag": buildFlag(),
+  "straddle-press": buildPressLiftOff(),
+  "pike-press": buildPressLiftOff(),
+  "bent-arm-press": buildBentArmPress(),
+  "tuck-planche-push-ups": buildTuckPlanche(),
+  "straddle-planche-push-ups": buildStraddlePlanche(),
+  "planche-push-ups": buildPlancheFull(),
+  manna: buildManna(),
   "knee-push-ups": buildSidePlank(),
   "diamond-push-ups": buildSidePlank(),
   "archer-push-ups": buildSidePlank(),

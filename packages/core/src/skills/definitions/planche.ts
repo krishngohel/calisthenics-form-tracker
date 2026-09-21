@@ -40,6 +40,7 @@ import {
   scapularLift,
   pressingHold,
   plancheHold,
+  above,
 } from "../helpers";
 
 export const PLANCHE_SKILLS: SkillDefinition[] = [
@@ -154,6 +155,90 @@ export const PLANCHE_SKILLS: SkillDefinition[] = [
         legs: () => null,
         cues: CUES.planche,
       });
+    },
+  },
+  {
+    id: "tuck-planche-push-ups",
+    name: "Tuck Planche Push-Ups",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Side view; tuck planche held while the elbows bend and press.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"]);
+      const angle = elbow(body, history);
+      const lean = shoulderLeanOverWrists(body);
+      const leanOk = lean > 0.15;
+      const horiz = horizontalBodyScore(body);
+      const horizOk = horiz > 0.4;
+      const legs = ((b: Body, h: Body[]) => { const k = knee(b, h); return { passed: k < 100, score: ramp(k, 160, 100) }; })(body, history);
+      const bottom = angle < 110;
+      const top = angle > LOCKED_ELBOW;
+      const holdMet = leanOk && horizOk && legs.passed && (bottom || top);
+      const metrics: FormMetric[] = [
+        metric("lean", "Lean held through the rep", leanOk, ramp(lean, 0, 0.15), CUES.pseudoPlanche.lean),
+        metric("horizontal", "Body level", horizOk, ramp(horiz, 0.05, 0.4), CUES.planche.horizontal),
+        metric("depth", "Knee tuck", legs.passed, legs.score, "Keep the knees tight to the chest"),
+        metric("position", "Bottom or lockout", bottom || top, bottom ? 95 : top ? 88 : 30, "Lower with the lean, then press to lockout"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
+    },
+  },
+  {
+    id: "straddle-planche-push-ups",
+    name: "Straddle Planche Push-Ups",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Side-diagonal view; straddle planche held through the press.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"]);
+      const angle = elbow(body, history);
+      const lean = shoulderLeanOverWrists(body);
+      const leanOk = lean > 0.15;
+      const horiz = horizontalBodyScore(body);
+      const horizOk = horiz > 0.55;
+      const legs = ((b: Body, h: Body[]) => { const spread = ankleSpread(b); const k = knee(b, h); const passed = spread > 0.45 && k > 140; return { passed, score: Math.min(ramp(spread, 0, 0.45), ramp(k, 90, 140)) }; })(body, history);
+      const bottom = angle < 110;
+      const top = angle > LOCKED_ELBOW;
+      const holdMet = leanOk && horizOk && legs.passed && (bottom || top);
+      const metrics: FormMetric[] = [
+        metric("lean", "Lean held through the rep", leanOk, ramp(lean, 0, 0.15), CUES.pseudoPlanche.lean),
+        metric("horizontal", "Body level", horizOk, ramp(horiz, 0.2, 0.55), CUES.planche.horizontal),
+        metric("depth", "Straddle", legs.passed, legs.score, "Legs straight and wide"),
+        metric("position", "Bottom or lockout", bottom || top, bottom ? 95 : top ? 88 : 30, "Lower with the lean, then press to lockout"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
+    },
+  },
+  {
+    id: "planche-push-ups",
+    name: "Planche Push-Ups",
+    category: "upper",
+    cameraAngle: "side",
+    cameraGuide: "Side view; full planche held while the elbows bend and press.",
+    needsHands: false,
+    requiredLandmarks: ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"],
+    evaluate(body, _hands, history, mode) {
+      const ok = vis(body, ["leftShoulder", "leftElbow", "leftWrist", "leftHip", "leftKnee"]);
+      const angle = elbow(body, history);
+      const lean = shoulderLeanOverWrists(body);
+      const leanOk = lean > 0.2;
+      const horiz = horizontalBodyScore(body);
+      const horizOk = horiz > 0.6;
+      const legs = ((b: Body, h: Body[]) => { const k = knee(b, h); const line = bodyLineDeviation(b); const passed = k > 150 && line > 150; return { passed, score: Math.min(ramp(k, 110, 150), ramp(line, 110, 150)) }; })(body, history);
+      const bottom = angle < 110;
+      const top = angle > LOCKED_ELBOW;
+      const holdMet = leanOk && horizOk && legs.passed && (bottom || top);
+      const metrics: FormMetric[] = [
+        metric("lean", "Lean held through the rep", leanOk, ramp(lean, 0, 0.2), CUES.pseudoPlanche.lean),
+        metric("horizontal", "Body level", horizOk, ramp(horiz, 0.25, 0.6), CUES.planche.horizontal),
+        metric("depth", "Straight body", legs.passed, legs.score, "Squeeze everything; no pike"),
+        metric("position", "Bottom or lockout", bottom || top, bottom ? 95 : top ? 88 : 30, "Lower with the lean, then press to lockout"),
+      ];
+      return baseEval(holdMet, holdMet, metrics, ok);
     },
   },
 ];
