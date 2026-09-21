@@ -6,6 +6,7 @@ import {
   evaluateSkill,
   getSkill,
   toIsotropic,
+  orientToGravity,
   type BodyProviderId,
   type HandLandmarks,
   type HoldMode,
@@ -29,6 +30,7 @@ import { getStoredBodyProvider, usePoseDetection, type PoseFrameInfo } from "@/h
 import { useHoldSession } from "@/hooks/useHoldSession";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
 import { useFrameHistory } from "@/hooks/useFrameHistory";
+import { useFrameOrientation } from "@/hooks/useFrameOrientation";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { readPreferences } from "@/lib/preferences";
 
@@ -64,11 +66,14 @@ export default function AutoTrainPage() {
   const [armed, setArmed] = useState(false);
   const armedRef = useRef(false);
   const { armAudio } = feedback;
+  const orientation = useFrameOrientation();
+  const { enable: enableOrientation, getRotation } = orientation;
   const start = useCallback(() => {
     armAudio();
+    void enableOrientation();
     armedRef.current = true;
     setArmed(true);
-  }, [armAudio]);
+  }, [armAudio, enableOrientation]);
 
   const [dismissedHoldAt, setDismissedHoldAt] = useState(0);
   const lastHoldAt = session.lastHold?.endedAt.getTime() ?? 0;
@@ -103,7 +108,8 @@ export default function AutoTrainPage() {
 
   const onFrame = useCallback(
     (raw: Record<string, Landmark | null>, hands: HandLandmarks, frame: PoseFrameInfo) => {
-      const body = toIsotropic(raw, frame.aspect);
+      // Rules need x and y in the same units and gravity pointing down the y axis.
+      const body = orientToGravity(toIsotropic(raw, frame.aspect), getRotation(), frame.aspect);
       const frames = history.push(body);
       const now = performance.now();
       const currentMode = modeRef.current;
@@ -135,7 +141,7 @@ export default function AutoTrainPage() {
       const evaluation = evaluateSkill(skillId, body, hands, frames, currentMode);
       if (evaluation) processHold(skillId, evaluation, now);
     },
-    [history, lockSkill, processHold]
+    [history, lockSkill, processHold, getRotation]
   );
 
   const { getRenderLandmarks, getRenderHands, ready, error } = usePoseDetection(videoRef, {
@@ -227,7 +233,13 @@ export default function AutoTrainPage() {
             error={error}
             videoReady={videoReady}
             visibilityWarning={armed && !!activeSkill && !holdView.visibilityOk}
-            hint={armed && !activeSkill && session.pinnedCues.length === 0 ? "Get into position — detection locks in after about a second" : null}
+            hint={
+              orientation.rotation !== 0
+                ? "Phone is turned; tracking corrected for gravity"
+                : armed && !activeSkill && session.pinnedCues.length === 0
+                  ? "Get into position — detection locks in after about a second"
+                  : null
+            }
           />
           {!showResult && (
             <PersistentCueOverlay stage cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />

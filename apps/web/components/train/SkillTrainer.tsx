@@ -7,6 +7,7 @@ import {
   getSkillPathStep,
   evaluateSkill,
   toIsotropic,
+  orientToGravity,
   type HoldMode,
   type TrainMode,
   type BodyProviderId,
@@ -31,6 +32,7 @@ import { getStoredBodyProvider, usePoseDetection, type PoseFrameInfo } from "@/h
 import { useHoldSession } from "@/hooks/useHoldSession";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
 import { useFrameHistory } from "@/hooks/useFrameHistory";
+import { useFrameOrientation } from "@/hooks/useFrameOrientation";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { readPreferences } from "@/lib/preferences";
 
@@ -69,11 +71,14 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   const [armed, setArmed] = useState(false);
   const armedRef = useRef(false);
   const { armAudio } = feedback;
+  const orientation = useFrameOrientation();
+  const { enable: enableOrientation, getRotation } = orientation;
   const start = useCallback(() => {
     armAudio();
+    void enableOrientation();
     armedRef.current = true;
     setArmed(true);
-  }, [armAudio]);
+  }, [armAudio, enableOrientation]);
 
   // The result sheet stays until dismissed; a new hold replaces it.
   const [dismissedHoldAt, setDismissedHoldAt] = useState(0);
@@ -91,7 +96,8 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   const onFrame = useCallback(
     (raw: Record<string, Landmark | null>, hands: HandLandmarks, frame: PoseFrameInfo) => {
       if (!skill) return;
-      const body = toIsotropic(raw, frame.aspect);
+      // Rules need x and y in the same units and gravity pointing down the y axis.
+      const body = orientToGravity(toIsotropic(raw, frame.aspect), getRotation(), frame.aspect);
       const frames = history.push(body);
       const currentMode = modeRef.current;
       const evalMode: HoldMode = currentMode === "learn" ? "perfect" : currentMode;
@@ -102,7 +108,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
       if (currentMode === "learn") processLearn(evaluation, now);
       else if (armedRef.current) processHold(skillId, evaluation, now);
     },
-    [skill, skillId, history, processHold, processLearn]
+    [skill, skillId, history, processHold, processLearn, getRotation]
   );
 
   const { getRenderLandmarks, getRenderHands, ready, error } = usePoseDetection(videoRef, {
@@ -200,7 +206,14 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
               onStart={start}
             />
           )}
-          <CameraStatusBanner stage ready={ready} error={error} videoReady={videoReady} visibilityWarning={armed && !holdView.visibilityOk} />
+          <CameraStatusBanner
+            stage
+            ready={ready}
+            error={error}
+            videoReady={videoReady}
+            visibilityWarning={armed && !holdView.visibilityOk}
+            hint={orientation.rotation !== 0 ? "Phone is turned; tracking corrected for gravity" : null}
+          />
           {!showResult && (
             <PersistentCueOverlay stage cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />
           )}
