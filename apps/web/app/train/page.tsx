@@ -31,6 +31,7 @@ import { useHoldSession } from "@/hooks/useHoldSession";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
 import { useFrameHistory } from "@/hooks/useFrameHistory";
 import { useFrameOrientation } from "@/hooks/useFrameOrientation";
+import { useHoldRecorder } from "@/hooks/useHoldRecorder";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { readPreferences } from "@/lib/preferences";
 
@@ -67,6 +68,7 @@ export default function AutoTrainPage() {
   const armedRef = useRef(false);
   const { armAudio } = feedback;
   const orientation = useFrameOrientation();
+  const recorder = useHoldRecorder({ videoRef, holdView, skillName: (activeSkillId && getSkill(activeSkillId)?.name) || "Auto-detect", enabled: armed });
   const { enable: enableOrientation, getRotation } = orientation;
   const start = useCallback(() => {
     armAudio();
@@ -256,6 +258,7 @@ export default function AutoTrainPage() {
             next={session.lastHold ? { href: `/train/${session.lastHold.skillId}`, label: "Train this skill" } : null}
             skillName={getSkill(session.lastHold.skillId)?.name}
             onAgain={() => setDismissedHoldAt(lastHoldAt)}
+            video={recorder.clip ? { onSave: () => void recorder.save(), state: recorder.saveState } : null}
           />
         ) : null
       }

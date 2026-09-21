@@ -34,6 +34,7 @@ import { useHoldSession } from "@/hooks/useHoldSession";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
 import { useFrameHistory } from "@/hooks/useFrameHistory";
 import { useFrameOrientation } from "@/hooks/useFrameOrientation";
+import { useHoldRecorder } from "@/hooks/useHoldRecorder";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { readPreferences } from "@/lib/preferences";
 
@@ -73,6 +74,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   const armedRef = useRef(false);
   const { armAudio } = feedback;
   const orientation = useFrameOrientation();
+  const recorder = useHoldRecorder({ videoRef, holdView, skillName: skill?.name ?? "", enabled: armed });
   const { enable: enableOrientation, getRotation } = orientation;
   const start = useCallback(() => {
     armAudio();
@@ -231,6 +233,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
             next={nextSkill ? { href: `/train/${nextSkill.id}`, label: `Next: ${nextSkill.name}` } : null}
             skillName={skill.name}
             onAgain={() => setDismissedHoldAt(lastHoldAt)}
+            video={recorder.clip ? { onSave: () => void recorder.save(), state: recorder.saveState } : null}
           />
         ) : null
       }

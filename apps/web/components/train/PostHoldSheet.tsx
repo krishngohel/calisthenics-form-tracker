@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { CoachingPlan } from "@cft/core";
 import type { CompletedHold, SaveState } from "@/hooks/useHoldSession";
+import type { ClipSaveState } from "@/hooks/useHoldRecorder";
 import { formatMs } from "@/lib/format";
 
 interface PostHoldSheetProps {
@@ -13,6 +14,8 @@ interface PostHoldSheetProps {
   next?: { href: string; label: string } | null;
   skillName?: string;
   onAgain: () => void;
+  /** Present when a video of this hold was captured. */
+  video?: { onSave: () => void; state: ClipSaveState } | null;
 }
 
 /**
@@ -20,7 +23,7 @@ interface PostHoldSheetProps {
  * the one or two things to fix, and where to go next. Rises from the bottom
  * of the camera stage; dismissing it leaves you ready for the next attempt.
  */
-export function PostHoldSheet({ hold, newBest, plan, saveState, next, skillName, onAgain }: PostHoldSheetProps) {
+export function PostHoldSheet({ hold, newBest, plan, saveState, next, skillName, onAgain, video }: PostHoldSheetProps) {
   const weak = plan?.weakPoints.slice(0, 2) ?? [];
   const drills = plan?.recommendedDrills.slice(0, 2) ?? [];
   return (
@@ -69,6 +72,16 @@ export function PostHoldSheet({ hold, newBest, plan, saveState, next, skillName,
           </Link>
         )}
       </div>
+      {video && (
+        <button
+          type="button"
+          onClick={video.onSave}
+          disabled={video.state === "saving"}
+          className="btn-ghost mt-1 w-full disabled:opacity-60"
+        >
+          {video.state === "saving" ? "Saving video…" : video.state === "saved" ? "Video saved" : video.state === "error" ? "Could not save video — try again" : "Save video with timer"}
+        </button>
+      )}
     </div>
   );
 }
