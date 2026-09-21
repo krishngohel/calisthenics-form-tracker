@@ -44,8 +44,26 @@ export interface PathStep {
   focus?: string;
 }
 
+/** Movement families: the top level of the skill tree. Each path is a branch of one family. */
+export type FamilyId = "push" | "pull" | "handstand" | "core" | "legs";
+
+export interface Family {
+  id: FamilyId;
+  name: string;
+  description: string;
+}
+
+export const FAMILIES: Family[] = [
+  { id: "push", name: "Push", description: "Horizontal and vertical pressing: push-ups, dips, handstand push-ups, and the planche line." },
+  { id: "pull", name: "Pull", description: "Pulling strength on the bar and rings: pull-ups, front and back levers, iron cross." },
+  { id: "handstand", name: "Handstand", description: "Balance and straight-arm pressing into the handstand." },
+  { id: "core", name: "Core", description: "Compression, hollow body, hanging raises, and the flag." },
+  { id: "legs", name: "Legs", description: "Single-leg squats and the hinge and bridge line." },
+];
+
 export interface LearningPath {
   id: string;
+  family: FamilyId;
   name: string;
   description: string;
   /** Skill ids ordered beginner → advanced (derived from `steps`). */
@@ -57,9 +75,10 @@ export interface LearningPath {
 
 type StepTuple = [skillId: string, level: number, goal: PathGoal, extra?: { prerequisites?: string[]; focus?: string }];
 
-function path(id: string, name: string, description: string, sources: string[], steps: StepTuple[]): LearningPath {
+function path(id: string, family: FamilyId, name: string, description: string, sources: string[], steps: StepTuple[]): LearningPath {
   return {
     id,
+    family,
     name,
     description,
     sources,
@@ -83,6 +102,7 @@ const RR = "r/bodyweightfitness Recommended Routine";
 export const LEARNING_PATHS: LearningPath[] = [
   path(
     "push",
+    "push",
     "Push-Ups",
     "Regular → diamond → archer → pseudo planche → one-arm. Horizontal pressing from the floor.",
     [OG, RR, "GMB push-up progression"],
@@ -99,6 +119,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "dips",
+    "push",
     "Dips",
     "Support hold → dips → L-dips → Korean dips. Vertical pressing on bars.",
     [OG, RR, "Caliverse Korean dips guide"],
@@ -110,6 +131,7 @@ export const LEARNING_PATHS: LearningPath[] = [
     ]
   ),
   path(
+    "pull",
     "pull",
     "Pull-Ups",
     "Hang → scapular pulls → negatives → pull-ups → L, archer, muscle-up, one-arm.",
@@ -128,6 +150,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "handstand",
+    "handstand",
     "Handstand",
     "Arm balances → handstand → one-arm handstand. Skill work: fixed 3×30 s targets.",
     [OG, "Calisthenics 101 handstand progression", "BodyTree isometric programming"],
@@ -141,6 +164,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "hspu",
+    "push",
     "Handstand Push-Ups",
     "Pike → elevated pike → wall → freestanding → deficit. 30 s wall handstand before pressing.",
     [OG, "caliskills.fit HSPU progression"],
@@ -154,6 +178,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "press",
+    "handstand",
     "Press to Handstand",
     "Straight-arm presses: straddle lift-off → pike lift-off → L-sit family. Bent-arm press as a strength variant.",
     [OG, "BERG Movement press handstand", "Handstand Factory press program", "Antranik L/V/manna progressions"],
@@ -165,6 +190,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "front-lever",
+    "pull",
     "Front Lever",
     "Tuck → advanced tuck → one leg → straddle → full. 20–30 s per step.",
     [OG, "Cali Move front lever progression", "BERG Movement front lever progressions"],
@@ -178,6 +204,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "back-lever",
+    "pull",
     "Back Lever",
     "German hang → skin the cat → tuck → advanced tuck → straddle → full.",
     [OG, "BERG Movement back lever tutorial", "bodyweight.fitness back lever progression"],
@@ -192,6 +219,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "planche",
+    "push",
     "Planche",
     "Lean → tuck → advanced tuck → straddle → full, then planche push-ups.",
     [OG, "GMB planche progression", "Calisthenics Corner straddle planche"],
@@ -208,6 +236,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "rings",
+    "pull",
     "Ring Strength",
     "Iron cross and the elite ring holds. Requires solid planche and back lever strength.",
     [OG, "GymnastGem iron cross vs Maltese", "Gravgear Maltese guide"],
@@ -216,6 +245,7 @@ export const LEARNING_PATHS: LearningPath[] = [
     ]
   ),
   path(
+    "core",
     "core",
     "Core & Compression",
     "Hollow body → tuck sit → L-sit family → hanging raises → V-sit → manna; dragon flag.",
@@ -234,6 +264,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "flag",
+    "core",
     "Human Flag",
     "Tuck → straddle → full flag. Pole strength: pull with the top arm, push with the bottom.",
     [OG],
@@ -244,6 +275,7 @@ export const LEARNING_PATHS: LearningPath[] = [
     ]
   ),
   path(
+    "legs",
     "legs",
     "Legs",
     "Squat → wall sit → split squats → shrimp → pistol → dragon squat.",
@@ -261,6 +293,7 @@ export const LEARNING_PATHS: LearningPath[] = [
   ),
   path(
     "posterior",
+    "legs",
     "Hinge & Bridge",
     "Glute bridge → single-leg bridge → full bridge; Nordic curls for the hamstrings.",
     [RR],
@@ -274,6 +307,15 @@ export const LEARNING_PATHS: LearningPath[] = [
 ];
 
 export const LEARNING_PATH_MAP = Object.fromEntries(LEARNING_PATHS.map((p) => [p.id, p]));
+
+/** Paths grouped by family, in family order. */
+export function pathsByFamily(): { family: Family; paths: LearningPath[] }[] {
+  return FAMILIES.map((family) => ({ family, paths: LEARNING_PATHS.filter((p) => p.family === family.id) }));
+}
+
+export function getFamily(id: FamilyId): Family {
+  return FAMILIES.find((f) => f.id === id) ?? FAMILIES[0];
+}
 
 /** Resolve a path with full skill definitions (skips unknown ids). */
 export function getLearningPath(pathId: string): (LearningPath & {
@@ -357,6 +399,9 @@ export function validateLearningPaths(): string[] {
 
   for (const id of Object.keys(SKILL_MAP)) {
     if (!seen.has(id)) errors.push(`Skill "${id}" is not in any learning path`);
+  }
+  for (const f of FAMILIES) {
+    if (!LEARNING_PATHS.some((p) => p.family === f.id)) errors.push(`Family "${f.id}" has no paths`);
   }
 
   return errors;
@@ -443,6 +488,20 @@ export function athleteLevel(bests: BestHolds, reps: BestReps = {}): { level: nu
   const progress = evaluatePathProgress(bests, reps);
   const level = Math.max(0, ...progress.map((p) => p.level));
   return { level, band: bandForLevel(Math.max(1, level)), metCount: progress.reduce((n, p) => n + p.completed, 0) };
+}
+
+/** Level reached in each family: the highest met goal across the family's paths. */
+export function familyLevels(bests: BestHolds, reps: BestReps = {}): { family: Family; level: number; completed: number; total: number }[] {
+  const progress = evaluatePathProgress(bests, reps);
+  return FAMILIES.map((family) => {
+    const own = progress.filter((p) => p.path.family === family.id);
+    return {
+      family,
+      level: Math.max(0, ...own.map((p) => p.level)),
+      completed: own.reduce((n, p) => n + p.completed, 0),
+      total: own.reduce((n, p) => n + p.path.steps.length, 0),
+    };
+  });
 }
 
 export interface SessionItem {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LEARNING_PATHS, athleteLevel, buildSessionPlan, describeGoal, getSkill, getSkillPathStep } from "@cft/core";
+import { athleteLevel, buildSessionPlan, describeGoal, familyLevels, getSkill, getSkillPathStep, pathsByFamily } from "@cft/core";
 import { useMemo } from "react";
 import { Screen, ChevronRight, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
@@ -21,6 +21,7 @@ export default function HomePage() {
   const hasHistory = loaded && stats.totalHolds > 0;
   const plan = useMemo(() => buildSessionPlan(bests, reps, 4), [bests, reps]);
   const level = useMemo(() => athleteLevel(bests, reps), [bests, reps]);
+  const families = useMemo(() => familyLevels(bests, reps), [bests, reps]);
   const BAND = { beginner: "Beginner", intermediate: "Intermediate", advanced: "Advanced", elite: "Elite" } as const;
 
   return (
@@ -65,15 +66,16 @@ export default function HomePage() {
         </ListGroup>
       )}
 
-      <ListGroup title="Paths">
-        {LEARNING_PATHS.map((path) => {
-          const trained = path.skillIds.filter((id) => stats.bestBySkill[id]).length;
+      <ListGroup title="Families">
+        {pathsByFamily().map(({ family, paths }) => {
+          const lvl = families.find((l) => l.family.id === family.id);
           return (
             <ListRow
-              key={path.id}
-              href={`/skills#${path.id}`}
-              label={path.name}
-              detail={trained > 0 ? `${trained} of ${path.skillIds.length} skills trained` : `${path.skillIds.length} skills`}
+              key={family.id}
+              href={`/skills#family-${family.id}`}
+              label={family.name}
+              detail={paths.map((p) => p.name).join(" · ")}
+              trailing={lvl && lvl.completed > 0 ? <span className="chip">L{lvl.level}</span> : undefined}
             />
           );
         })}

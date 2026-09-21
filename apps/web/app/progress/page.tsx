@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { SKILLS, athleteLevel, evaluatePathProgress, getSkill } from "@cft/core";
+import { SKILLS, athleteLevel, evaluatePathProgress, familyLevels, getSkill } from "@cft/core";
 import { Screen, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { useAuthUser } from "@/hooks/useAuthUser";
@@ -32,6 +32,7 @@ export default function ProgressPage() {
   const grouped = groupByDay(filtered);
   const pathProgress = useMemo(() => evaluatePathProgress(bestMs, reps).filter((p) => p.completed > 0), [bestMs, reps]);
   const level = useMemo(() => athleteLevel(bestMs, reps), [bestMs, reps]);
+  const families = useMemo(() => familyLevels(bestMs, reps).filter((f) => f.completed > 0), [bestMs, reps]);
 
   return (
     <Screen title="Progress">
@@ -59,8 +60,16 @@ export default function ProgressPage() {
         </ListGroup>
       )}
 
+      {families.length > 0 && (
+        <ListGroup title="Families">
+          {families.map((f) => (
+            <ListRow key={f.family.id} href={`/skills#family-${f.family.id}`} label={f.family.name} trailing={<Value>{`Level ${f.level} · ${f.completed}/${f.total}`}</Value>} />
+          ))}
+        </ListGroup>
+      )}
+
       {pathProgress.length > 0 && (
-        <ListGroup title="Levels reached">
+        <ListGroup title="Ladders">
           {pathProgress.map((p) => (
             <ListRow
               key={p.path.id}

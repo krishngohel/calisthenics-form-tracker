@@ -20,6 +20,13 @@ export default function ProgressionGuidePage() {
 
   return (
     <Screen title="Progression" back={{ href: "/skills", label: "Paths" }}>
+      <ListGroup title="Families and ladders">
+        <Para>
+          Skills are grouped into five movement families: Push, Pull, Handstand, Core and Legs. Each family holds a few ladders, so
+          pike push-ups, handstand push-ups and the planche all live under Push, while the levers and iron cross sit under Pull.
+          Train something from Push and Pull most sessions, and add Handstand, Core and Legs work around them.
+        </Para>
+      </ListGroup>
       <ListGroup title="Levels">
         <Para>
           Every step has a level from 1 to 16, taken from the Overcoming Gravity charts. Levels 1–4 are beginner, 5–8 intermediate,

@@ -119,6 +119,21 @@ describe("lessons", () => {
   });
 });
 
+describe("families", () => {
+  it("every path belongs to a family and the push family owns pressing lines", async () => {
+    const { pathsByFamily, familyLevels, LEARNING_PATH_MAP } = await import("../skills/learningPaths");
+    const grouped = pathsByFamily();
+    expect(grouped.map((g) => g.family.id)).toEqual(["push", "pull", "handstand", "core", "legs"]);
+    expect(grouped.every((g) => g.paths.length > 0)).toBe(true);
+    expect(grouped.find((g) => g.family.id === "push")!.paths.map((p) => p.id)).toEqual(["push", "dips", "hspu", "planche"]);
+    expect(LEARNING_PATH_MAP["front-lever"].family).toBe("pull");
+    expect(LEARNING_PATH_MAP["press"].family).toBe("handstand");
+    const levels = familyLevels({ handstand: 31_000 });
+    expect(levels.find((l) => l.family.id === "handstand")!.level).toBe(4);
+    expect(levels.find((l) => l.family.id === "push")!.level).toBe(0);
+  });
+});
+
 describe("rep goals and session plans", () => {
   it("parses rep standards out of notes and marks them met from the rep log", async () => {
     const { parseRepGoal, getSkillPathStep, isGoalMet, isGoalTracked, athleteLevel, buildSessionPlan } = await import("../skills/learningPaths");

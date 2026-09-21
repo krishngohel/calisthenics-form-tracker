@@ -10,6 +10,7 @@ import {
   evaluateSkill,
   getLesson,
   getSkill,
+  getFamily,
   getSkillPathStep,
   getTargetPose,
   isGoalMet,
@@ -75,7 +76,7 @@ export function SkillLesson({ skillId }: { skillId: string }) {
   return (
     <Screen
       title={skill.name}
-      subtitle={step ? `${step.path.name} · step ${step.step} of ${step.total}` : undefined}
+      subtitle={step ? `${getFamily(step.path.family).name} › ${step.path.name} · step ${step.step} of ${step.total}` : undefined}
       back={{ href: "/skills", label: "Paths" }}
     >
       <div className="mb-4 flex items-start gap-4 px-1">
