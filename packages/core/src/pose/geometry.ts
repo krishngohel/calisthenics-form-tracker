@@ -237,9 +237,9 @@ export function hangDepth(lm: Body): number {
   return (shoulder.y - wrist.y) / bodyUnit(lm);
 }
 
-/** Straight-arm hang: shoulders well below the hands. */
+/** Straight-arm hang: shoulders well below the hands (photographed hangs: 0.55–0.94 T). */
 export function isHanging(lm: Body): boolean {
-  return hangDepth(lm) > 0.6;
+  return hangDepth(lm) > 0.5;
 }
 
 /** Mean squared displacement of a landmark over `history`, in body units². */

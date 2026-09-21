@@ -1,4 +1,5 @@
 import type { Landmark } from "../pose/provider";
+import generated from "./targetPoses.generated.json";
 
 function lm(x: number, y: number): Landmark {
   return { x, y, visibility: 1 };
@@ -258,7 +259,20 @@ const TARGET_POSES: Record<string, Record<string, Landmark>> = {
   "bosu-single-leg-squats": buildFrontSquatDeep(),
 };
 
+/**
+ * Skills whose target skeleton comes from measured reference photos
+ * (tools/pose-reference): hip-centred, torso-scaled medians over several
+ * real athletes. Others still use the hand-built canonical poses above.
+ */
+const DATA_BACKED = new Set(["plank-hold", "l-sit", "handstand", "dead-hang", "push-ups", "crow-pose"]);
+const GENERATED = generated as Record<string, Record<string, { x: number; y: number }>>;
+
 export function getTargetPose(skillId: string): Record<string, Landmark> | null {
+  if (DATA_BACKED.has(skillId) && GENERATED[skillId]) {
+    const out: Record<string, Landmark> = {};
+    for (const [k, p] of Object.entries(GENERATED[skillId])) out[k] = { x: p.x, y: p.y, visibility: 1 };
+    return out;
+  }
   return TARGET_POSES[skillId] ?? null;
 }
 

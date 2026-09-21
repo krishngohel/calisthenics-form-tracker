@@ -112,10 +112,17 @@ export interface SkillDefinition {
  * nose→shoulder ≈ 0.35T. Every constant below is chosen against these.
  */
 
-/** Elbow lockout / straight-arm angle. */
-const LOCKED_ELBOW = 165;
-/** Bottom of a pressing or pulling rep. */
-const DEEP_ELBOW = 100;
+/**
+ * Elbow lockout / straight-arm angle. Reference photos of clean straight-arm
+ * holds measure 150–179° (camera perspective rarely shows a true 180°).
+ */
+const LOCKED_ELBOW = 150;
+/** Bottom of a pressing rep; photographed push-up bottoms measure 79–103°. */
+const DEEP_ELBOW = 110;
+/** Top of a pressing rep; photographed lockouts measure 150–170°. */
+const TOP_ELBOW = 150;
+/** Forearm plank: elbows on the floor, roughly a right angle. */
+const FOREARM_ELBOW = [60, 115] as const;
 /** Knees considered straight. */
 const STRAIGHT_KNEE = 165;
 
@@ -137,9 +144,26 @@ function baseEval(
   };
 }
 
+/**
+ * Visibility gate. Rules name left-side joints, but in a side view the far
+ * side is occluded and scores low, so each key counts whichever side of the
+ * pair is better seen.
+ */
 function vis(body: Body, keys: string[]): boolean {
   const ctx = getDistanceContext(body);
-  return visibilityScore(body, keys) > ctx.visThreshold;
+  let total = 0;
+  let count = 0;
+  for (const key of keys) {
+    const mirror = key.startsWith("left") ? `right${key.slice(4)}` : key.startsWith("right") ? `left${key.slice(5)}` : key;
+    const a = body[key]?.visibility;
+    const b = body[mirror]?.visibility;
+    const best = Math.max(a ?? (body[key] ? 0.8 : 0), b ?? (body[mirror] ? 0.8 : 0));
+    if (body[key] || body[mirror]) {
+      total += best;
+      count++;
+    }
+  }
+  return count > 0 && total / count > ctx.visThreshold;
 }
 
 /** Median-filtered elbow angle on the visible side. */
@@ -210,7 +234,7 @@ function pressingHold(
   const horiz = !opts.horizontal || isHorizontalHold(body);
   const positioned = inSupport && horiz;
   const atBottom = positioned && angle < DEEP_ELBOW;
-  const atTop = positioned && angle > 160;
+  const atTop = positioned && angle > TOP_ELBOW;
   const holdMet = atBottom || atTop;
   const metrics: FormMetric[] = [
     metric(
@@ -330,15 +354,18 @@ export const SKILLS: SkillDefinition[] = [
       const horiz = isHorizontalHold(body);
       const inSupport = inWeightSupportPosition(body);
       const line = bodyLineDeviation(body);
-      const straightLine = line > 165;
+      // Reference planks: body line 168–179° for a straight plank; sagging/piked ones sit below 160°.
+      const straightLine = line > 160;
       const lockedElbows = angle > LOCKED_ELBOW;
-      const holdMet = horiz && inSupport && lockedElbows;
+      const forearm = angle >= FOREARM_ELBOW[0] && angle <= FOREARM_ELBOW[1];
+      const armsOk = lockedElbows || forearm;
+      const holdMet = horiz && inSupport && armsOk;
       const metrics: FormMetric[] = [
         metric("horizontal", "Plank position", horiz && inSupport, horiz && inSupport ? 100 : ramp(horizontalBodyScore(body), 0.1, 0.52) * 0.6, CUES.basics.plank),
-        metric("plank_line", "Body line", straightLine, ramp(line, 135, 165), CUES.basics.plank),
+        metric("plank_line", "Body line", straightLine, ramp(line, 135, 160), CUES.basics.plank),
       ];
       if (mode === "perfect") {
-        metrics.push(metric("elbow_bend", "Locked elbows", lockedElbows, ramp(angle, 130, LOCKED_ELBOW), CUES.pushUps.topLockout));
+        metrics.push(metric("elbow_bend", "Arms set", armsOk, armsOk ? 100 : 50, CUES.pushUps.topLockout));
       }
       return baseEval(holdMet, holdMet && straightLine, metrics, ok);
     },
@@ -483,9 +510,10 @@ export const SKILLS: SkillDefinition[] = [
       const hipLift = hip && wrist ? (wrist.y - hip.y) / T : -Infinity;
       const hipUp = hipLift > -0.15;
       const kneeAng = knee(body, history);
-      const legsForward = kneeAng > 150;
+      // Reference L-sits: knee 163–173°, hip 86–99°; allow a slightly low leg line.
+      const legsForward = kneeAng > 140;
       const hipAng = stableAngle(history, body, hipAngle);
-      const lShape = hipAng > 60 && hipAng < 120;
+      const lShape = hipAng > 55 && hipAng < 125;
       const holdMet = hipUp && legsForward && lShape;
       const kneesLocked = kneeAng > STRAIGHT_KNEE;
       const scapDepressed = !shouldersShrugged(body);
@@ -545,17 +573,26 @@ export const SKILLS: SkillDefinition[] = [
       const T = bodyUnit(body);
       const kneePt = midpoint(body.leftKnee, body.rightKnee);
       const elbowPt = midpoint(body.leftElbow, body.rightElbow);
-      const kneeGap = kneePt && elbowPt ? Math.abs(kneePt.y - elbowPt.y) / T : Infinity;
-      const stacked = kneeGap < 0.35;
+      const kneeGap = kneePt && elbowPt ? Math.hypot(kneePt.x - elbowPt.x, kneePt.y - elbowPt.y) / T : Infinity;
+      // Reference crows: hands planted (shoulders 0.7–1.2 T above the wrists),
+      // knees tucked (44–80°), hips deeply flexed (15–35°), knees on the arms.
+      const planted = hangDepth(body) < -0.5;
+      const kneeAng = knee(body, history);
+      const tucked = kneeAng < 100;
+      const hipAng = hipAngle(body);
+      const folded = hipAng < 70;
+      const stacked = kneeGap < 0.7;
+      const holdMet = planted && tucked && folded && stacked;
       const angle = elbow(body, history);
       const straightArms = angle > 150;
       const metrics: FormMetric[] = [
-        metric("stack", "Knee stack", stacked, ramp(kneeGap, 1.2, 0.35), CUES.crowPose.kneeStack),
+        metric("stack", "Knees on arms", stacked, ramp(kneeGap, 1.5, 0.7), CUES.crowPose.kneeStack),
+        metric("depth", "Tuck", tucked && folded, Math.min(ramp(kneeAng, 150, 100), ramp(hipAng, 120, 70)), CUES.crowPose.kneeStack),
       ];
       if (mode === "perfect") {
         metrics.push(metric("arms", "Arm extension", straightArms, ramp(angle, 90, 150), CUES.crowPose.arms));
       }
-      return baseEval(stacked, stacked && straightArms, metrics, ok);
+      return baseEval(holdMet, holdMet && straightArms, metrics, ok);
     },
   },
   {
