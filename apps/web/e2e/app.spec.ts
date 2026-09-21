@@ -63,6 +63,21 @@ test.describe("app shell", () => {
     await expect(page.getByText("Perfect form — stricter criteria")).toBeVisible();
   });
 
+  test("lesson page teaches a skill and links to the trainer", async ({ page }) => {
+    const check = await noPageErrors(page);
+    await page.goto("/skills/");
+    await page.getByRole("link", { name: /1\. Plank Hold/ }).tap();
+    await expect(page).toHaveURL(/\/learn\/plank-hold\/?$/);
+    await expect(page.getByRole("heading", { name: "Plank Hold" })).toBeVisible();
+    await expect(page.getByText("Set up")).toBeVisible();
+    await expect(page.getByText("Common faults")).toBeVisible();
+    await expect(page.getByText("What the camera checks")).toBeVisible();
+    await page.getByTestId("lesson-train").tap();
+    await expect(page).toHaveURL(/\/train\/plank-hold\/?$/);
+    await expect(page.getByRole("button", { name: "Start" })).toBeVisible();
+    check();
+  });
+
   test("training stage: model loads, Start arms the HUD, mode and back work", async ({ page }) => {
     const check = await noPageErrors(page);
     await page.goto("/train/plank-hold/");

@@ -345,3 +345,67 @@ export function validateLearningPaths(): string[] {
 
   return errors;
 }
+
+/** Best hold per skill in milliseconds; rep-based goals are tracked outside the app. */
+export type BestHolds = Record<string, number | undefined>;
+
+/** A hold goal is met when the best logged hold reaches it. Rep goals never count as met here. */
+export function isGoalMet(skillId: string, bests: BestHolds): boolean {
+  const step = getSkillPathStep(skillId);
+  const best = bests[skillId];
+  return !!step?.goal.holdSec && !!best && best >= step.goal.holdSec * 1000;
+}
+
+/** Only hold goals can be verified by the app; rep goals are advisory. */
+export function isGoalTracked(skillId: string): boolean {
+  return !!getSkillPathStep(skillId)?.goal.holdSec;
+}
+
+/** Prerequisites with a tracked (hold) goal that has not been met. Rep-based prerequisites never block. */
+export function unmetPrerequisites(skillId: string, bests: BestHolds): string[] {
+  return (getSkillPathStep(skillId)?.prerequisites ?? []).filter((id) => isGoalTracked(id) && !isGoalMet(id, bests));
+}
+
+export interface PathProgress {
+  path: LearningPath;
+  /** Highest level among steps whose goal is met, or 0. */
+  level: number;
+  /** Steps with a met goal. */
+  completed: number;
+  /** First tracked (hold) step whose goal is unmet, with all prerequisites met; null when the path is done or blocked. Rep-only steps are skipped. */
+  next: PathStep | null;
+  /** First unmet step that is blocked by prerequisites (when `next` is null because of that). */
+  blocked: PathStep | null;
+}
+
+/** Where the athlete stands on each path, from logged bests. */
+export function evaluatePathProgress(bests: BestHolds): PathProgress[] {
+  return LEARNING_PATHS.map((path) => {
+    let level = 0;
+    let completed = 0;
+    let next: PathStep | null = null;
+    let blocked: PathStep | null = null;
+    for (const step of path.steps) {
+      if (isGoalMet(step.skillId, bests)) {
+        level = Math.max(level, step.level);
+        completed++;
+        continue;
+      }
+      if (next || blocked || !step.goal.holdSec) continue;
+      if (unmetPrerequisites(step.skillId, bests).length === 0) next = step;
+      else blocked = step;
+    }
+    return { path, level, completed, next, blocked };
+  });
+}
+
+/**
+ * Suggested next holds across all paths: the unblocked next step of every
+ * path, lowest level first so beginners are not sent to a planche.
+ */
+export function suggestNextSteps(bests: BestHolds, limit = 3): PathStep[] {
+  return evaluatePathProgress(bests)
+    .flatMap((p) => (p.next ? [p.next] : []))
+    .sort((a, b) => a.level - b.level)
+    .slice(0, limit);
+}

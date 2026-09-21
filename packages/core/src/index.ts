@@ -12,6 +12,7 @@ export * from "./hold/accumulator";
 export * from "./skills/registry";
 export * from "./skills/formPointers";
 export * from "./skills/learningPaths";
+export * from "./skills/lessons";
 export * from "./skills/targetPoses";
 export * from "./skills/formCorrections";
 export * from "./skills/autoDetect";

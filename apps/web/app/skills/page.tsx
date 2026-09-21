@@ -1,6 +1,7 @@
 "use client";
 
-import { LEARNING_PATHS, bandForLevel, describeGoal, getPathForSkill, getSkill, type Band } from "@cft/core";
+import { LEARNING_PATHS, bandForLevel, describeGoal, getSkill, isGoalMet, unmetPrerequisites, type Band } from "@cft/core";
+import { useMemo } from "react";
 import { Screen, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { formatSec } from "@/lib/format";
@@ -10,15 +11,10 @@ const BAND_LABEL: Record<Band, string> = { beginner: "Beginner", intermediate: "
 export default function SkillsPage() {
   const { stats } = useLocalHistory();
 
-  /** A hold-based goal counts as met when the best logged hold reaches it. Rep-based goals are tracked outside the app. */
-  const goalMet = (skillId: string) => {
-    const goal = getPathForSkill(skillId)?.steps.find((s) => s.skillId === skillId)?.goal;
-    const best = stats.bestBySkill[skillId];
-    return !!goal?.holdSec && !!best && best.durationMs >= goal.holdSec * 1000;
-  };
+  const bests = useMemo(() => Object.fromEntries(Object.entries(stats.bestBySkill).map(([id, h]) => [id, h.durationMs])), [stats.bestBySkill]);
 
   return (
-    <Screen title="Paths" subtitle="Levels 1–16 follow the Overcoming Gravity charts">
+    <Screen title="Paths" subtitle="Tap a skill to learn it, then train it">
       <ListGroup>
         <ListRow href="/skills/guide" label="How progression works" detail="Working holds, volume, and when to move up" />
         <ListRow href="/train" label="Auto-detect" detail="Strike any hold and the app names it" />
@@ -30,8 +26,8 @@ export default function SkillsPage() {
               const skill = getSkill(step.skillId);
               if (!skill) return null;
               const best = stats.bestBySkill[step.skillId];
-              const achieved = goalMet(step.skillId);
-              const unmet = (step.prerequisites ?? []).filter((id) => !goalMet(id));
+              const achieved = isGoalMet(step.skillId, bests);
+              const unmet = unmetPrerequisites(step.skillId, bests);
               const band = bandForLevel(step.level);
               const detail = (
                 <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
@@ -49,7 +45,7 @@ export default function SkillsPage() {
               return (
                 <ListRow
                   key={step.skillId}
-                  href={`/train/${step.skillId}`}
+                  href={`/learn/${step.skillId}`}
                   label={`${index + 1}. ${skill.name}`}
                   detail={detail}
                   trailing={

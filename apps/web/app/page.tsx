@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { LEARNING_PATHS, describeGoal, getSkill, getSkillPathStep } from "@cft/core";
+import { LEARNING_PATHS, describeGoal, getSkill, getSkillPathStep, suggestNextSteps } from "@cft/core";
+import { useMemo } from "react";
 import { Screen, ChevronRight, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { usePreferences } from "@/hooks/usePreferences";
@@ -18,6 +19,8 @@ export default function HomePage() {
   const best = stats.bestBySkill[focusSkill.id];
   const weekMs = stats.last7Days.reduce((s, d) => s + d.totalMs, 0);
   const hasHistory = loaded && stats.totalHolds > 0;
+  const bests = useMemo(() => Object.fromEntries(Object.entries(stats.bestBySkill).map(([id, h]) => [id, h.durationMs])), [stats.bestBySkill]);
+  const upNext = useMemo(() => suggestNextSteps(bests, 3).filter((s) => s.skillId !== focusSkill.id), [bests, focusSkill.id]);
 
   return (
     <Screen title="Train">
@@ -39,6 +42,16 @@ export default function HomePage() {
           {stats.streakDays > 0 ? `${stats.streakDays}-day streak` : "No streak yet"} · {formatSec(weekMs)} this week · {stats.totalHolds} hold
           {stats.totalHolds === 1 ? "" : "s"}
         </p>
+      )}
+
+      {upNext.length > 0 && (
+        <ListGroup title="Up next">
+          {upNext.map((s) => {
+            const sk = getSkill(s.skillId);
+            const st = getSkillPathStep(s.skillId);
+            return sk && st ? <ListRow key={s.skillId} href={`/learn/${s.skillId}`} label={sk.name} detail={`${st.path.name} · L${s.level} · ${describeGoal(s.goal)}`} /> : null;
+          })}
+        </ListGroup>
       )}
 
       <ListGroup title="Paths">

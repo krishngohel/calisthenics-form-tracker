@@ -103,3 +103,46 @@ describe("expanded skill set", () => {
     expect(evaluateSkill("human-flag", flag, noHands, [], "hold_only")?.holdCriteriaMet).toBe(true);
   });
 });
+
+describe("lessons", () => {
+  it("every skill has a lesson with setup, cues and faults", async () => {
+    const { LESSONS } = await import("../skills/lessons");
+    for (const s of SKILLS) {
+      const l = LESSONS[s.id];
+      expect(l, s.id).toBeDefined();
+      expect(l.setup.length, s.id).toBeGreaterThan(0);
+      expect(l.cues.length, s.id).toBeGreaterThan(0);
+      expect(l.faults.length, s.id).toBeGreaterThan(0);
+      expect(l.equipment.length, s.id).toBeGreaterThan(0);
+    }
+    for (const id of Object.keys(LESSONS)) expect(SKILLS.some((s) => s.id === id), `orphan lesson ${id}`).toBe(true);
+  });
+});
+
+describe("path progress", () => {
+  it("tracks level, next step and blocked steps from bests", async () => {
+    const { evaluatePathProgress, suggestNextSteps, isGoalMet, unmetPrerequisites } = await import("../skills/learningPaths");
+    const none = evaluatePathProgress({});
+    const press = none.find((p) => p.path.id === "press")!;
+    expect(press.level).toBe(0);
+    expect(press.next).toBeNull();
+    expect(press.blocked?.skillId).toBe("bent-arm-press");
+    expect(unmetPrerequisites("bent-arm-press", {})).toEqual(["handstand"]);
+
+    const bests = { handstand: 31_000, "plank-hold": 60_000, "l-sit": 30_000 };
+    expect(isGoalMet("handstand", bests)).toBe(true);
+    expect(isGoalMet("pike-push-ups", bests)).toBe(false); // rep goal
+    const withHs = evaluatePathProgress(bests);
+    expect(withHs.find((p) => p.path.id === "handstand")!.level).toBe(4);
+    expect(withHs.find((p) => p.path.id === "press")!.next?.skillId).toBe("bent-arm-press");
+    const next = suggestNextSteps(bests, 3);
+    expect(next.length).toBe(3);
+    expect(next[0].level).toBeLessThanOrEqual(next[2].level);
+    expect(next.some((s) => s.skillId === "handstand")).toBe(false);
+    expect(next.every((s) => !!s.goal.holdSec)).toBe(true); // only camera-trackable holds are suggested
+    const push = withHs.find((p) => p.path.id === "push")!;
+    expect(push.next).toBeNull(); // rep steps skipped; maltese is the only hold left and it is blocked
+    expect(push.blocked?.skillId).toBe("maltese");
+
+  });
+});

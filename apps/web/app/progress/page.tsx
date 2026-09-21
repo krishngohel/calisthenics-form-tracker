@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { SKILLS, getSkill } from "@cft/core";
+import { SKILLS, evaluatePathProgress, getSkill } from "@cft/core";
 import { Screen, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { useAuthUser } from "@/hooks/useAuthUser";
@@ -29,6 +29,8 @@ export default function ProgressPage() {
     (a, b) => stats.bestBySkill[b.id].durationMs - stats.bestBySkill[a.id].durationMs
   );
   const grouped = groupByDay(filtered);
+  const bestMs = useMemo(() => Object.fromEntries(Object.entries(stats.bestBySkill).map(([id, h]) => [id, h.durationMs])), [stats.bestBySkill]);
+  const pathProgress = useMemo(() => evaluatePathProgress(bestMs).filter((p) => p.completed > 0), [bestMs]);
 
   return (
     <Screen title="Progress">
@@ -51,6 +53,20 @@ export default function ProgressPage() {
           <ListRow label="Holds" trailing={<Value>{String(filtered.length)}</Value>} />
           <ListRow label="Average form" trailing={<Value>{filtered.length ? `${avgForm}%` : "–"}</Value>} />
           <ListRow label="Streak" trailing={<Value>{`${stats.streakDays} day${stats.streakDays === 1 ? "" : "s"}`}</Value>} />
+        </ListGroup>
+      )}
+
+      {pathProgress.length > 0 && (
+        <ListGroup title="Levels reached">
+          {pathProgress.map((p) => (
+            <ListRow
+              key={p.path.id}
+              href={p.next ? `/learn/${p.next.skillId}` : `/skills#${p.path.id}`}
+              label={p.path.name}
+              detail={p.next ? `Next: ${getSkill(p.next.skillId)?.name ?? p.next.skillId}` : p.blocked ? `Blocked: ${getSkill(p.blocked.skillId)?.name ?? p.blocked.skillId} needs prerequisites` : "Path complete"}
+              trailing={<Value>{`Level ${p.level} · ${p.completed}/${p.path.steps.length}`}</Value>}
+            />
+          ))}
         </ListGroup>
       )}
 
