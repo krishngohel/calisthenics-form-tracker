@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   detectSkill,
+  SkillVote,
   evaluateSkill,
   getSkill,
   toIsotropic,
@@ -108,6 +109,8 @@ export default function AutoTrainPage() {
     [resetLive]
   );
 
+  const voteRef = useRef(new SkillVote());
+
   const onFrame = useCallback(
     (raw: Record<string, Landmark | null>, hands: HandLandmarks, frame: PoseFrameInfo) => {
       // Rules need x and y in the same units and gravity pointing down the y axis.
@@ -117,7 +120,10 @@ export default function AutoTrainPage() {
       const currentMode = modeRef.current;
       if (!armedRef.current) return;
 
-      const guess = detectSkill(body, hands, frames, currentMode);
+      const candidate = detectSkill(body, hands, frames, currentMode);
+      // Only act on a skill that has won most of the last few frames.
+      const winner = voteRef.current.push(candidate?.skillId ?? null);
+      const guess = candidate && winner === candidate.skillId ? candidate : null;
       if (guess) {
         if (now - detectionUiAtRef.current >= DETECTION_UI_INTERVAL_MS) {
           detectionUiAtRef.current = now;

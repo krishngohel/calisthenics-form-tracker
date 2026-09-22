@@ -7,6 +7,8 @@ export * from "./pose/interpolation";
 export * from "./pose/confidence";
 export * from "./pose/persistence";
 export * from "./pose/viewport";
+export * from "./pose/skeleton";
+export * from "./pose/view";
 export * from "./hold/stateMachine";
 export * from "./hold/accumulator";
 export * from "./skills/registry";

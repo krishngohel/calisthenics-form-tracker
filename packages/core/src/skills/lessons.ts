@@ -599,6 +599,210 @@ export const LESSONS: Record<string, Lesson> = {
     ["Push through the hands; try to straighten the arms.", "Shoulders over the hands.", "Knees pointing forward."],
     [["Arms bend", "Walk the feet closer and push the shoulders over the hands."], ["Knees splay", "Squeeze the knees toward each other."]]
   ),
+
+  // ---------- Push regressions and variations
+  "wall-push-ups": L(
+    "Push-ups standing against a wall. The lightest version of the movement, for learning the plank body and elbow path.",
+    ["wall"],
+    ["Hands on the wall at shoulder height, feet a step back.", "Squeeze the glutes so the body is one line."],
+    ["Bend the elbows back at about 45°.", "Touch the chest, not the face, to the wall.", "Push back to locked arms."],
+    [["Hips bend first", "Brace; the body moves as one piece."], ["Too easy", "Walk the feet further back or move to an incline."]]
+  ),
+  "incline-push-ups": L(
+    "Push-ups with the hands on a bench. Lower the bench over weeks until you reach the floor.",
+    ["floor"],
+    ["Hands on a bench or step, slightly wider than shoulders.", "Body straight from head to heels."],
+    ["Chest to the edge of the bench.", "Elbows at 45°.", "Full lockout at the top."],
+    [["Sagging hips", "Squeeze the glutes; shorten the set."], ["Hands too low too soon", "Only lower the surface once 3×10 is clean."]]
+  ),
+  "wide-push-ups": L(
+    "Push-ups with the hands well outside the shoulders. More chest, less triceps.",
+    ["floor"],
+    ["Hands about 1.5× shoulder width, fingers turned slightly out.", "Plank line as usual."],
+    ["Lower the chest between the hands.", "Elbows stay under the wrists at the bottom.", "Press to full lockout."],
+    [["Elbows flare to 90°", "Turn the fingers out and keep the elbows under the wrists."], ["Shoulders sore", "Narrow the hands a little."]]
+  ),
+  "decline-push-ups": L(
+    "Push-ups with the feet elevated. Shifts the load to the upper chest and shoulders, on the way to pike work.",
+    ["floor"],
+    ["Feet on a box or bench, hands on the floor under the shoulders.", "Hollow body; ribs down."],
+    ["Lower until the nose is near the floor.", "Keep the hips in line; do not pike.", "Lock out and push the floor away."],
+    [["Piking to shorten the range", "Squeeze the glutes; use a lower box."], ["Head reaching for the floor", "Neck neutral; chest leads."]]
+  ),
+  "bench-dips": L(
+    "Dips with the hands on a bench behind you and the feet on the floor. The first vertical push for the triceps.",
+    ["floor"],
+    ["Sit on the edge of a bench, hands beside the hips, fingers forward.", "Slide the hips off and straighten the legs."],
+    ["Lower until the elbows reach 90°.", "Keep the hips close to the bench.", "Press to a full lockout with the shoulders down."],
+    [["Shoulders roll forward", "Stop at 90° and keep the chest up."], ["Hips drift away", "Keep the back brushing the bench."]]
+  ),
+  "straight-bar-dips": L(
+    "Dips on a single bar in front of you. Trains the forward lean of the muscle-up transition.",
+    ["bar"],
+    ["Support on a straight bar, hands shoulder width, wrists over the bar.", "Lean the chest forward."],
+    ["Lower until the bar reaches the lower chest.", "Keep the lean; elbows go back, not out.", "Press to lockout and push the bar down."],
+    [["Shoulders shrug at the top", "Push the bar down and away."], ["Losing the lean", "Think of pressing the bar toward the hips."]]
+  ),
+  headstand: L(
+    "Balance on the head and hands with the body vertical. A safe first inversion for stacking the hips.",
+    ["floor"],
+    ["Crown of the head on a mat, hands beside it in a tripod or clasped behind.", "Walk the feet in, lift the hips, then the legs."],
+    ["Push through the hands; most of the weight is on the arms.", "Hips over the shoulders, feet over the hips.", "Squeeze the glutes; toes pointed."],
+    [["Weight on the neck", "Press the hands into the floor harder."], ["Arching", "Tuck the pelvis; hold a tuck headstand first."]]
+  ),
+  "wall-handstand": L(
+    "Handstand with the chest facing the wall. Teaches the straight, stacked line before balancing.",
+    ["floor", "wall"],
+    ["Start in a plank with the feet against the wall, then walk the feet up as the hands walk in.", "Stop with the nose and toes near the wall."],
+    ["Push the shoulders tall.", "Ribs down; squeeze the glutes.", "Look between the hands."],
+    [["Big arch", "Keep the hands a little further from the wall and pull the ribs in."], ["Shoulders sink", "Push the floor away for the whole hold."]]
+  ),
+  "straddle-handstand": L(
+    "Handstand with the legs wide. The shape presses pass through, and an easier balance than legs together.",
+    ["floor"],
+    ["Kick up to a handstand, then open the legs to a wide straddle.", "Hips stay stacked over the shoulders."],
+    ["Legs straight and level with each other.", "Push tall; balance with the fingers.", "Hollow body."],
+    [["Hips tilt", "Open the legs evenly; keep the pelvis square."], ["Legs droop", "Squeeze the glutes and point the toes."]]
+  ),
+
+  // ---------- Pull: rows and hangs
+  "incline-rows": L(
+    "Rows under a high bar with the feet on the floor. The horizontal pull that starts the pull-up path.",
+    ["bar"],
+    ["Hang under a bar at chest height, heels on the floor, body straight at an angle.", "Overhand grip, shoulder width."],
+    ["Pull the chest to the bar.", "Squeeze the shoulder blades at the top.", "Lower to straight arms with the body still straight."],
+    [["Hips sag", "Squeeze the glutes; treat the body as a plank."], ["Elbows flare", "Pull the elbows back along the ribs."]]
+  ),
+  "bodyweight-rows": L(
+    "Rows with the body horizontal under a low bar. Same bar, harder angle.",
+    ["bar"],
+    ["Bar at hip height, heels on the floor, body straight and level.", "Overhand grip."],
+    ["Chest to bar every rep.", "Body stays level: no hips first.", "Full extension at the bottom."],
+    [["Half reps", "Lower the bar count and touch the chest to the bar."], ["Hips lead", "Brace; the whole body moves as one."]]
+  ),
+  "feet-elevated-rows": L(
+    "Rows with the feet on a box at bar height. Close to a full pull in load.",
+    ["bar"],
+    ["Feet on a box, body level under the bar.", "Overhand grip, shoulder width."],
+    ["Chest to bar.", "Glutes tight; body straight.", "Pause at the top."],
+    [["Piking at the hips", "Squeeze the glutes; lower the box."], ["Losing the pause", "Slow the rep down."]]
+  ),
+  "archer-rows": L(
+    "Rows pulling to one hand while the other arm goes straight along the bar. The bridge to the one-arm row.",
+    ["bar"],
+    ["Wide grip, body level.", "Pull to one hand as the other arm straightens."],
+    ["The straight arm stays locked and only guides.", "Chest to the working hand.", "Alternate sides."],
+    [["Assisting arm bends", "Move the hands wider."], ["Body rotates", "Keep the hips square to the bar."]]
+  ),
+  "one-arm-rows": L(
+    "A row on one arm with the free hand on the chest. Real one-arm pulling strength.",
+    ["bar"],
+    ["Grip the bar with one hand, body level, free hand on the chest.", "Feet slightly wider for balance."],
+    ["Pull the chest to the hand.", "Minimal twist; hips stay square.", "Lower slowly to a straight arm."],
+    [["Torso twists", "Widen the feet, or hold the wrist with the free hand."], ["Shoulder shrugs", "Depress the shoulder before pulling."]]
+  ),
+  "wide-pull-ups": L(
+    "Pull-ups with a wide grip. More lats and upper back, less biceps.",
+    ["bar"],
+    ["Overhand grip about 1.5× shoulder width.", "Dead hang, then scapular pull."],
+    ["Pull the elbows down and in.", "Chest toward the bar.", "Full hang at the bottom."],
+    [["Shoulders shrug", "Lead with the shoulder blades."], ["Grip too wide", "Bring the hands in until the shoulders feel safe."]]
+  ),
+  "one-arm-dead-hang": L(
+    "Hang from one hand. Grip and shoulder strength for one-arm work and the flag.",
+    ["bar"],
+    ["Dead hang, then let go with one hand.", "Keep the free hand at the side or on the wrist."],
+    ["Hanging arm straight.", "Shoulder packed, not hanging in the joint.", "Body still; no twist."],
+    [["Spinning", "Point the toes and brace; hold the wrist to start."], ["Grip fails early", "Build two-arm hangs to 60 s."]]
+  ),
+  "inverted-hang": L(
+    "Hanging upside down, body vertical, hands at the hips. The gateway to skin-the-cat and the levers.",
+    ["bar", "rings"],
+    ["Hang, tuck the knees, rotate until the hips are over the shoulders, then extend the legs up.", "Look at the ceiling."],
+    ["Feet to the ceiling; squeeze the glutes.", "Arms straight along the body.", "Rotate down with control."],
+    [["Piking", "Open the hips; think tall."], ["Losing the grip", "Keep the thumbs wrapped."]]
+  ),
+
+  // ---------- Core
+  "side-plank": L(
+    "Plank on one forearm with the hips lifted. Lateral core strength for the flag and one-arm work.",
+    ["floor"],
+    ["Lie on the side, elbow under the shoulder, feet stacked.", "Lift the hips until the body is one line."],
+    ["Hips high; do not let them sag.", "Shoulder pushed away from the ear.", "Top arm on the hip or reaching up."],
+    [["Hips drop", "Shorten the hold and drive the hips up."], ["Rolling forward", "Stack the shoulders and hips vertically."]]
+  ),
+  "reverse-plank": L(
+    "Plank facing up on the hands with the hips high. Opens the shoulders and trains the back of the body.",
+    ["floor"],
+    ["Sit with the legs straight, hands behind the hips, fingers forward.", "Press the hips up until the body is straight."],
+    ["Push through the hands; arms locked.", "Squeeze the glutes; toes pointed.", "Chest open, head neutral."],
+    [["Hips sag", "Squeeze the glutes; shorten the hold."], ["Shoulder pinch", "Turn the fingers slightly out."]]
+  ),
+  "arch-hold": L(
+    "Lying face down with the chest and legs lifted. The opposite of the hollow, and the shape behind the handstand and back lever.",
+    ["floor"],
+    ["Lie on the front, arms overhead.", "Lift the chest, arms and legs together."],
+    ["Squeeze the glutes; lift from the hips.", "Legs straight and together.", "Eyes forward, neck long."],
+    [["Only the chest lifts", "Squeeze the glutes and lift the thighs."], ["Bent knees", "Point the toes and lock the knees."]]
+  ),
+  "l-hang": L(
+    "The L-sit in a hang: straight legs held horizontal from the bar.",
+    ["bar"],
+    ["Dead hang, shoulders active.", "Lift straight legs to horizontal."],
+    ["Knees locked, toes pointed.", "No swing.", "Tilt the pelvis back to stop the legs dropping."],
+    [["Legs sag", "Lift higher than horizontal, then settle."], ["Knees bend", "Build with a tuck hang first."]]
+  ),
+  "toes-to-bar": L(
+    "Straight-leg raise until the feet touch the bar.",
+    ["bar"],
+    ["Dead hang, shoulders active.", "Raise straight legs all the way to the hands."],
+    ["Legs straight.", "No swing; pause at the top.", "Lower slowly to a straight hang."],
+    [["Kipping", "Slow the rep and lower under control."], ["Bent knees", "Regress to leg raises past horizontal."]]
+  ),
+  "ab-wheel-kneeling": L(
+    "Kneeling rollout to full extension. Anti-extension core strength with the hips open.",
+    ["floor"],
+    ["Kneel with the wheel under the shoulders.", "Roll out slowly, keeping the hips open."],
+    ["Ribs down; hollow body throughout.", "Reach as far as the line holds.", "Pull back with the lats and abs."],
+    [["Lower back arches", "Reduce the range; squeeze the glutes."], ["Folding at the hips", "Keep the hips open the whole way."]]
+  ),
+  "ab-wheel-standing": L(
+    "Standing rollout to full extension. One of the hardest core exercises there is.",
+    ["floor"],
+    ["Stand with the wheel at the feet, legs straight.", "Roll out under control to full reach."],
+    ["Legs straight; hips open.", "Ribs down; no arch.", "Pull back in one piece."],
+    [["Back arches at full reach", "Stop short; build kneeling rollouts to 3×15."], ["Piking on the return", "Hips stay open."]]
+  ),
+
+  // ---------- Legs
+  lunges: L(
+    "Split-stance squat with the back knee to the floor. The base for all single-leg work.",
+    ["floor"],
+    ["Long step forward, feet hip width.", "Lower straight down until the back knee touches."],
+    ["Front knee over the toes.", "Torso upright.", "Drive through the front heel."],
+    [["Step too short", "Lengthen the stance."], ["Knee caves", "Push the knee out over the toes."]]
+  ),
+  "cossack-squats": L(
+    "Wide-stance squat onto one leg with the other straight. Hip mobility and single-leg strength.",
+    ["floor"],
+    ["Feet wide, toes forward or slightly out.", "Sit fully onto one heel; the other leg stays straight."],
+    ["Heel down on the bent side.", "Chest up.", "Shift across the middle and repeat."],
+    [["Heel lifts", "Work ankle mobility; narrow the stance."], ["Straight leg bends", "Point the toe up and lock the knee."]]
+  ),
+  "single-leg-rdl": L(
+    "Balance on one leg and hinge until the torso and back leg are level. Hamstrings, glutes and balance.",
+    ["floor"],
+    ["Stand on one leg, slight knee bend.", "Hinge at the hips, reaching the free leg back."],
+    ["Torso and back leg move as one line.", "Hips square to the floor.", "Slow lowering; drive up through the heel."],
+    [["Hips open sideways", "Point the free toe down."], ["Rounding the back", "Keep the chest open and hinge from the hips."]]
+  ),
+  "natural-leg-extensions": L(
+    "Kneeling with the hips open, lean the whole body back and pull up with the quads.",
+    ["floor"],
+    ["Kneel with the feet anchored, hips fully open.", "Lean back from the knees as far as you can control."],
+    ["Hips open the whole time.", "Slow and smooth.", "Pull back up with the quads."],
+    [["Folding at the hips", "Reduce the range; squeeze the glutes."], ["Knee pain", "Kneel on a pad; shorter range."]]
+  ),
 };
 
 export function getLesson(skillId: string): Lesson | undefined {

@@ -16,6 +16,7 @@ import {
   rejectOutliers,
   getDistanceContext,
   dropLowConfidence,
+  BoneConsistencyFilter,
   detectPerformanceTier,
   PERFORMANCE_PROFILES,
   OVERLAY_SMOOTHING,
@@ -124,6 +125,7 @@ export function usePoseDetection(
   const overlaySmootherRef = useRef(new PoseSmoother());
   const holdSmootherRef = useRef(new PoseSmoother());
   const persistenceRef = useRef(new LandmarkPersistence());
+  const boneFilterRef = useRef(new BoneConsistencyFilter());
   const handSmootherRef = useRef(new PoseSmoother());
   const overlayInterpolatorRef = useRef(new LandmarkInterpolator());
   const handInterpolatorRef = useRef(new HandInterpolator());
@@ -200,6 +202,7 @@ export function usePoseDetection(
     holdSmootherRef.current.reset();
     handSmootherRef.current.reset();
     persistenceRef.current.reset();
+    boneFilterRef.current.reset();
     overlayInterpolatorRef.current.reset();
     handInterpolatorRef.current.reset();
     lastBodyRef.current = null;
@@ -252,7 +255,9 @@ export function usePoseDetection(
         busyRef.current = false;
         // Off-frame / occluded joints come back with near-zero confidence at
         // arbitrary positions; drop them before any geometry sees them.
-        const body = dropLowConfidence(data.body as Record<string, Landmark | null>);
+        // Then drop joints whose bone lengths no longer fit the athlete: a wrist
+        // snapped onto the hip passes the confidence gate but not this one.
+        const body = dropLowConfidence(boneFilterRef.current.apply(dropLowConfidence(data.body as Record<string, Landmark | null>)).body);
         const distanceCtx = getDistanceContext(body);
         captureEdgeRef.current = distanceCtx.captureMaxEdge;
         onDistanceContextRef.current?.(distanceCtx);

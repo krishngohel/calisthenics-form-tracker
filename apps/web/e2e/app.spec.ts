@@ -42,7 +42,7 @@ test.describe("app shell", () => {
     await expect(page.getByRole("heading", { name: "Push", exact: true })).toBeVisible();
     await page.getByRole("tab", { name: "Pull" }).tap();
     await expect(page.getByRole("heading", { name: "Push", exact: true })).toBeHidden();
-    await expect(page.getByRole("link", { name: /Dead Hang/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /1\. Dead Hang/ })).toBeVisible();
     await page.getByRole("tab", { name: "All" }).tap();
     await page.getByRole("link", { name: /How progression works/ }).tap();
     await expect(page.getByRole("heading", { name: "Progression" })).toBeVisible();
@@ -95,7 +95,7 @@ test.describe("app shell", () => {
     await page.goto("/skills/");
     await page.getByRole("searchbox", { name: "Search skills" }).fill("push-up");
     await expect(page.getByRole("link", { name: /Push-Ups/ }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: /Dead Hang/ })).toBeHidden();
+    await expect(page.getByRole("link", { name: /1\. Dead Hang/ })).toBeHidden();
     await page.goto("/progress/");
     await expect(page.getByText("Rep sessions")).toBeVisible();
     await expect(page.getByText("3×8").first()).toBeVisible();

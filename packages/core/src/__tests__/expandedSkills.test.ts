@@ -128,6 +128,7 @@ describe("families", () => {
     expect(grouped.find((g) => g.family.id === "push")!.paths.map((p) => p.id)).toEqual(["push", "dips", "hspu", "planche"]);
     expect(LEARNING_PATH_MAP["front-lever"].family).toBe("pull");
     expect(LEARNING_PATH_MAP["press"].family).toBe("handstand");
+    expect(LEARNING_PATH_MAP["flag"].family).toBe("pull");
     const levels = familyLevels({ handstand: 31_000 });
     expect(levels.find((l) => l.family.id === "handstand")!.level).toBe(4);
     expect(levels.find((l) => l.family.id === "push")!.level).toBe(0);
@@ -151,8 +152,8 @@ describe("rep goals and session plans", () => {
     expect(lvl.level).toBe(6);
     expect(lvl.band).toBe("intermediate");
 
-    const plan = buildSessionPlan({ "plank-hold": 40_000 }, {}, 4);
-    expect(plan.length).toBe(4);
+    const plan = buildSessionPlan({ "plank-hold": 40_000 }, {}, 6);
+    expect(plan.length).toBe(6);
     const plank = plan.find((i) => i.step.skillId === "plank-hold");
     expect(plank?.prescription).toBe("3 × 24–30 s");
     const untested = plan.find((i) => i.step.goal.holdSec && i.step.skillId !== "plank-hold");
@@ -178,17 +179,34 @@ describe("path progress", () => {
     expect(isGoalMet("pike-push-ups", bests)).toBe(false); // rep goal
     const withHs = evaluatePathProgress(bests);
     expect(withHs.find((p) => p.path.id === "handstand")!.level).toBe(4);
+    expect(withHs.find((p) => p.path.id === "handstand")!.next?.skillId).toBe("headstand");
     expect(withHs.find((p) => p.path.id === "press")!.blocked?.skillId).toBe("bent-arm-press"); // still needs pike push-ups logged
     const next = suggestNextSteps(bests, {}, 3);
     expect(next.length).toBe(3);
     expect(next[0].level).toBeLessThanOrEqual(next[2].level);
     expect(next.some((s) => s.skillId === "handstand")).toBe(false);
     const push = withHs.find((p) => p.path.id === "push")!;
-    expect(push.next?.skillId).toBe("knee-push-ups"); // rep steps count now that reps can be logged
-    const pushDone = evaluatePathProgress(bests, { "knee-push-ups": { sets: 3, reps: 8 }, "push-ups": { sets: 3, reps: 8 }, "diamond-push-ups": { sets: 3, reps: 8 }, "archer-push-ups": { sets: 3, reps: 6 } }).find((p) => p.path.id === "push")!;
+    expect(push.next?.skillId).toBe("wall-push-ups"); // rep steps count now that reps can be logged
+    const pushDone = evaluatePathProgress(bests, { "wall-push-ups": { sets: 3, reps: 12 }, "incline-push-ups": { sets: 3, reps: 10 }, "knee-push-ups": { sets: 3, reps: 8 }, "push-ups": { sets: 3, reps: 8 }, "wide-push-ups": { sets: 3, reps: 10 }, "diamond-push-ups": { sets: 3, reps: 8 }, "decline-push-ups": { sets: 3, reps: 8 }, "archer-push-ups": { sets: 3, reps: 6 } }).find((p) => p.path.id === "push")!;
     expect(pushDone.level).toBe(6);
     expect(pushDone.next).toBeNull();
     expect(pushDone.blocked?.skillId).toBe("pseudo-planche-push-ups"); // needs the planche lean hold first
 
+  });
+});
+
+describe("new skill target poses satisfy their own rules", () => {
+  const NEW_IDS = [
+    "wall-push-ups", "incline-push-ups", "wide-push-ups", "decline-push-ups", "bench-dips", "straight-bar-dips",
+    "headstand", "wall-handstand", "straddle-handstand",
+    "incline-rows", "bodyweight-rows", "feet-elevated-rows", "archer-rows", "one-arm-rows", "wide-pull-ups", "one-arm-dead-hang", "inverted-hang",
+    "side-plank", "reverse-plank", "arch-hold", "l-hang", "toes-to-bar", "ab-wheel-kneeling", "ab-wheel-standing",
+    "lunges", "cossack-squats", "single-leg-rdl", "natural-leg-extensions",
+  ];
+  it.each(NEW_IDS)("%s", (id) => {
+    const pose = getTargetPose(id);
+    expect(pose).not.toBeNull();
+    const e = evaluateSkill(id, pose!, noHands, [], "hold_only");
+    expect(e?.holdCriteriaMet, JSON.stringify(e?.metrics)).toBe(true);
   });
 });

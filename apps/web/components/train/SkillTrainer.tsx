@@ -9,6 +9,8 @@ import {
   evaluateSkill,
   toIsotropic,
   orientToGravity,
+  estimateView,
+  viewHint,
   type HoldMode,
   type TrainMode,
   type BodyProviderId,
@@ -96,12 +98,24 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   statusRef.current = !holdView.visibilityOk ? "lowvis" : mode === "learn" ? "idle" : holdView.state;
   const getStatus = useCallback(() => statusRef.current, []);
 
+  const [viewNote, setViewNote] = useState<string | null>(null);
+  const viewCheckRef = useRef({ at: 0, streak: 0 });
+
   const onFrame = useCallback(
     (raw: Record<string, Landmark | null>, hands: HandLandmarks, frame: PoseFrameInfo) => {
       if (!skill) return;
       // Rules need x and y in the same units and gravity pointing down the y axis.
       const body = orientToGravity(toIsotropic(raw, frame.aspect), getRotation(), frame.aspect);
       const frames = history.push(body);
+      // Facing the wrong way is the most common reason a rule never passes; say so, but only after it persists.
+      const check = viewCheckRef.current;
+      const nowMs = performance.now();
+      if (nowMs - check.at > 400) {
+        check.at = nowMs;
+        const hint = viewHint(skill.cameraAngle, estimateView(body));
+        check.streak = hint ? check.streak + 1 : 0;
+        setViewNote(check.streak >= 3 ? hint : null);
+      }
       const currentMode = modeRef.current;
       const evalMode: HoldMode = currentMode === "learn" ? "perfect" : currentMode;
       const evaluation = evaluateSkill(skillId, body, hands, frames, evalMode);
@@ -216,7 +230,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
             error={error}
             videoReady={videoReady}
             visibilityWarning={armed && !holdView.visibilityOk}
-            hint={orientation.rotation !== 0 ? "Phone is turned; tracking corrected for gravity" : null}
+            hint={viewNote ?? (orientation.rotation !== 0 ? "Phone is turned; tracking corrected for gravity" : null)}
           />
           {!showResult && (
             <PersistentCueOverlay stage cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />

@@ -106,6 +106,7 @@ export interface SkillDefinition {
 }
 
 import { PUSH_SKILLS } from "./definitions/push";
+import { EXPANDED_SKILLS } from "./definitions/expanded";
 import { PULL_SKILLS } from "./definitions/pull";
 import { HANDSTAND_SKILLS } from "./definitions/handstand";
 import { LEVER_SKILLS } from "./definitions/levers";
@@ -115,6 +116,7 @@ import { LEG_SKILLS } from "./definitions/legs";
 
 export const SKILLS: SkillDefinition[] = [
   ...PUSH_SKILLS,
+  ...EXPANDED_SKILLS,
   ...PULL_SKILLS,
   ...HANDSTAND_SKILLS,
   ...LEVER_SKILLS,

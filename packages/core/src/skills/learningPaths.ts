@@ -55,9 +55,9 @@ export interface Family {
 
 export const FAMILIES: Family[] = [
   { id: "push", name: "Push", description: "Horizontal and vertical pressing: push-ups, dips, handstand push-ups, and the planche line." },
-  { id: "pull", name: "Pull", description: "Pulling strength on the bar and rings: pull-ups, front and back levers, iron cross." },
+  { id: "pull", name: "Pull", description: "Pulling strength on the bar, rings and pole: rows, pull-ups, levers, flag, iron cross." },
   { id: "handstand", name: "Handstand", description: "Balance and straight-arm pressing into the handstand." },
-  { id: "core", name: "Core", description: "Compression, hollow body, hanging raises, and the flag." },
+  { id: "core", name: "Core", description: "Hollow and arch, planks, compression, hanging raises, ab wheel." },
   { id: "legs", name: "Legs", description: "Single-leg squats and the hinge and bridge line." },
 ];
 
@@ -108,9 +108,13 @@ export const LEARNING_PATHS: LearningPath[] = [
     [OG, RR, "GMB push-up progression"],
     [
       ["plank-hold", 1, { holdSec: 60 }, { focus: "Straight line, ribs down" }],
+      ["wall-push-ups", 1, { note: "3×12" }, { focus: "Body moves as one plank" }],
+      ["incline-push-ups", 1, { note: "3×10" }],
       ["knee-push-ups", 1, { note: "3×8 clean reps" }],
       ["push-ups", 1, { note: "3×8 clean reps" }, { focus: "Elbows ~45°, chest to floor" }],
+      ["wide-push-ups", 2, { note: "3×10" }],
       ["diamond-push-ups", 2, { note: "3×8 clean reps" }],
+      ["decline-push-ups", 3, { note: "3×8 with feet on a box" }],
       ["archer-push-ups", 6, { note: "3×6 each side" }, { focus: "Support arm locked, hips square" }],
       ["pseudo-planche-push-ups", 7, { note: "3×8 with a clear lean" }, { prerequisites: ["planche-lean"], focus: "Keep the lean at the bottom" }],
       ["one-arm-push-ups", 8, { note: "3×5 each side" }, { prerequisites: ["archer-push-ups"], focus: "Feet wide, hips square, no twist" }],
@@ -125,7 +129,9 @@ export const LEARNING_PATHS: LearningPath[] = [
     [OG, RR, "Caliverse Korean dips guide"],
     [
       ["support-hold", 1, { holdSec: 30 }, { focus: "Shoulders down, elbows locked" }],
+      ["bench-dips", 1, { note: "3×10" }, { focus: "Shoulders back; do not shrug" }],
       ["dips", 3, { note: "3×8; negatives first if needed" }, { focus: "Shoulder below elbow at the bottom" }],
+      ["straight-bar-dips", 4, { note: "3×6" }, { focus: "Lean over the bar; muscle-up transition strength" }],
       ["l-dips", 4, { note: "3×6 with legs level" }, { prerequisites: ["l-sit"] }],
       ["korean-dips", 8, { note: "3×6 controlled" }, { prerequisites: ["dips", "german-hang"], focus: "Bar at the hips, chest up" }],
     ]
@@ -138,12 +144,19 @@ export const LEARNING_PATHS: LearningPath[] = [
     [OG, RR, "GMB pull-up progression"],
     [
       ["dead-hang", 1, { holdSec: 30 }],
+      ["incline-rows", 1, { note: "3×10" }, { focus: "Chest to the bar; body straight" }],
       ["scapular-pulls", 1, { note: "3×8 controlled pulls" }, { focus: "Straight arms; shoulders down" }],
+      ["bodyweight-rows", 2, { note: "3×8" }, { focus: "Body level; elbows past the ribs" }],
       ["negative-pull-ups", 2, { holdSec: 10, note: "5 s lowering ×5" }],
+      ["feet-elevated-rows", 3, { note: "3×8" }],
       ["pull-ups", 3, { note: "3×8 strict" }, { focus: "Chest to bar, no kip" }],
       ["chin-ups", 3, { note: "3×8 strict" }],
+      ["wide-pull-ups", 4, { note: "3×6" }],
       ["l-sit-pull-ups", 4, { note: "3×5 with legs level" }, { prerequisites: ["l-sit"] }],
+      ["one-arm-dead-hang", 4, { holdSec: 15, note: "each hand" }, { prerequisites: ["dead-hang"] }],
+      ["archer-rows", 5, { note: "3×6 each side" }],
       ["archer-pull-ups", 7, { note: "3×5 each side" }],
+      ["one-arm-rows", 7, { note: "3×5 each side" }, { prerequisites: ["archer-rows"] }],
       ["muscle-up", 7, { note: "3 strict reps" }, { prerequisites: ["dips", "pull-ups"], focus: "High pull, quick transition, no kip" }],
       ["one-arm-pull-ups", 9, { note: "1 clean rep each side" }, { prerequisites: ["archer-pull-ups"] }],
     ]
@@ -155,10 +168,13 @@ export const LEARNING_PATHS: LearningPath[] = [
     "Arm balances → handstand → one-arm handstand. Skill work: fixed 3×30 s targets.",
     [OG, "Calisthenics 101 handstand progression", "BodyTree isometric programming"],
     [
+      ["headstand", 2, { holdSec: 30 }, { focus: "Tripod base; hips stacked" }],
+      ["wall-handstand", 2, { holdSec: 60 }, { focus: "Chest to wall; push tall" }],
       ["frog-stand", 3, { holdSec: 30 }, { focus: "Wrist prep; knees on the arms" }],
       ["crow-pose", 3, { holdSec: 30 }],
+      ["handstand", 4, { holdSec: 30 }, { prerequisites: ["wall-handstand"], focus: "Stack shoulders over hands; hollow" }],
       ["elbow-lever", 5, { holdSec: 20 }, { focus: "Elbows into the hip bones" }],
-      ["handstand", 4, { holdSec: 30, note: "chest-to-wall first, then free" }, { focus: "Stack shoulders over hands; hollow" }],
+      ["straddle-handstand", 5, { holdSec: 15 }, { prerequisites: ["handstand"], focus: "Legs wide; hips level" }],
       ["one-arm-handstand", 10, { holdSec: 10 }, { prerequisites: ["handstand"] }],
     ]
   ),
@@ -210,6 +226,7 @@ export const LEARNING_PATHS: LearningPath[] = [
     [OG, "BERG Movement back lever tutorial", "bodyweight.fitness back lever progression"],
     [
       ["german-hang", 1, { holdSec: 15 }, { focus: "Shoulder extension mobility first" }],
+      ["inverted-hang", 2, { holdSec: 20 }, { focus: "Body vertical; hands at the hips" }],
       ["skin-the-cat", 2, { note: "3×3 slow rotations" }],
       ["tuck-back-lever", 3, { holdSec: 30 }],
       ["advanced-tuck-back-lever", 4, { holdSec: 20 }],
@@ -252,19 +269,26 @@ export const LEARNING_PATHS: LearningPath[] = [
     [OG, "Antranik L-sit / V-sit / manna progressions", "Fitloop dragon flag progression"],
     [
       ["hollow-body-hold", 1, { holdSec: 30 }, { focus: "Lower back pressed down" }],
+      ["arch-hold", 1, { holdSec: 30 }, { focus: "The hollow's opposite; glutes drive it" }],
+      ["side-plank", 1, { holdSec: 45, note: "each side" }],
       ["tuck-sit", 1, { holdSec: 30 }],
+      ["reverse-plank", 2, { holdSec: 30 }, { focus: "Hips up; shoulders open" }],
       ["one-leg-l-sit", 2, { holdSec: 20 }],
       ["l-sit", 3, { holdSec: 30 }, { focus: "Push the floor away; knees locked" }],
       ["hanging-knee-raises", 3, { holdSec: 10, note: "or 3×10 reps" }],
+      ["l-hang", 3, { holdSec: 15 }, { prerequisites: ["dead-hang"] }],
+      ["ab-wheel-kneeling", 3, { note: "3×8" }, { focus: "Hips open the whole way out" }],
       ["hanging-leg-raises", 4, { holdSec: 10, note: "or 3×8 reps" }],
+      ["toes-to-bar", 5, { note: "3×8 strict" }, { prerequisites: ["hanging-leg-raises"] }],
       ["v-sit", 6, { holdSec: 15 }, { prerequisites: ["l-sit"] }],
       ["dragon-flag", 7, { holdSec: 10 }, { prerequisites: ["hollow-body-hold"] }],
+      ["ab-wheel-standing", 8, { note: "3×5" }, { prerequisites: ["dragon-flag"] }],
       ["manna", 13, { holdSec: 5 }, { prerequisites: ["v-sit"] }],
     ]
   ),
   path(
     "flag",
-    "core",
+    "pull",
     "Human Flag",
     "Tuck → straddle → full flag. Pole strength: pull with the top arm, push with the bottom.",
     [OG],
@@ -281,8 +305,10 @@ export const LEARNING_PATHS: LearningPath[] = [
     "Squat → wall sit → split squats → shrimp → pistol → dragon squat.",
     [OG, RR],
     [
+      ["lunges", 1, { note: "3×10 each side" }, { focus: "Long stance; back knee to the floor" }],
       ["squats", 2, { holdSec: 30, note: "deep squat hold" }],
       ["wall-sit", 2, { holdSec: 60 }],
+      ["cossack-squats", 2, { note: "3×6 each side" }, { focus: "Heel down; sit fully to one side" }],
       ["bulgarian-split-squats", 3, { note: "3×8 each side" }],
       ["shrimp-squats", 4, { note: "3×6 each side" }],
       ["pistol-squats", 4, { note: "3×6 each side" }, { focus: "Heel down; chest up" }],
@@ -300,7 +326,9 @@ export const LEARNING_PATHS: LearningPath[] = [
     [
       ["glute-bridge", 1, { holdSec: 30 }],
       ["single-leg-glute-bridge", 2, { holdSec: 20, note: "each side" }],
+      ["single-leg-rdl", 2, { holdSec: 20, note: "each side" }, { focus: "Hinge; hips square" }],
       ["bridge", 3, { holdSec: 30 }, { focus: "Push through the hands; open the shoulders" }],
+      ["natural-leg-extensions", 4, { note: "3×6" }, { focus: "Hips open; lean from the knees" }],
       ["nordic-curls", 5, { note: "3×5 slow negatives" }],
     ]
   ),

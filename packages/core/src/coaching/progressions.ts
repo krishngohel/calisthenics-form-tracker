@@ -345,6 +345,118 @@ export const PROGRESSIONS: Record<string, ProgressionDrill[]> = {
     { id: "v_sit", name: "V-Sit", description: "150°+ V-sit", targetHoldSec: 10, sets: 4 },
     { id: "manna_rocks", name: "Manna Rocks", description: "Rock the hips up from a V-sit", sets: 4, reps: 5 },
   ],
+  "wall-push-ups": [
+    { id: "wall_plank", name: "Wall Plank", description: "Hands on the wall, body straight, hold", targetHoldSec: 30, sets: 3 },
+    { id: "wall_pu_slow", name: "Slow Wall Push-Ups", description: "3 s down, 3 s up", sets: 3, reps: 10 },
+  ],
+  "incline-push-ups": [
+    { id: "wall_pu", name: "Wall Push-Ups", description: "Own 3×12 first", sets: 3, reps: 12 },
+    { id: "high_incline", name: "High Incline Push-Ups", description: "Hands on a table, then lower each week", sets: 3, reps: 10 },
+  ],
+  "wide-push-ups": [
+    { id: "pu_std", name: "Push-Ups", description: "Standard width first", sets: 3, reps: 8 },
+    { id: "wide_plank", name: "Wide Plank", description: "Hands wide, body straight", targetHoldSec: 30, sets: 3 },
+  ],
+  "decline-push-ups": [
+    { id: "pu_std", name: "Push-Ups", description: "Clean floor push-ups", sets: 3, reps: 10 },
+    { id: "low_decline", name: "Low Decline Push-Ups", description: "Feet on a step, then a box", sets: 3, reps: 8 },
+  ],
+  "bench-dips": [
+    { id: "bench_support", name: "Bench Support Hold", description: "Arms locked, shoulders down", targetHoldSec: 30, sets: 3 },
+    { id: "bench_dip_neg", name: "Bench Dip Negatives", description: "4 s lowering", sets: 3, reps: 6 },
+  ],
+  "straight-bar-dips": [
+    { id: "dips_pb", name: "Parallel Bar Dips", description: "Full depth", sets: 3, reps: 8 },
+    { id: "bar_support_lean", name: "Bar Support Lean", description: "Support on the bar, lean the chest forward", targetHoldSec: 20, sets: 3 },
+  ],
+  headstand: [
+    { id: "tripod", name: "Tripod Headstand", description: "Knees on the elbows, feet off", targetHoldSec: 20, sets: 3 },
+    { id: "wall_headstand", name: "Wall Headstand", description: "Heels on the wall", targetHoldSec: 30, sets: 3 },
+  ],
+  "wall-handstand": [
+    { id: "wall_walk", name: "Wall Walks", description: "Walk the feet up to vertical", sets: 3, reps: 4 },
+    { id: "hs_shrugs", name: "Handstand Shrugs", description: "Push tall on the wall", sets: 3, reps: 8 },
+  ],
+  "straddle-handstand": [
+    { id: "hs_hold", name: "Handstand", description: "30 s free hold", targetHoldSec: 30, sets: 3 },
+    { id: "wall_straddle", name: "Wall Straddle Handstand", description: "Back to the wall, open the legs", targetHoldSec: 20, sets: 3 },
+  ],
+  "incline-rows": [
+    { id: "scap_rows", name: "Scapular Rows", description: "Straight-arm shoulder blade pulls under the bar", sets: 3, reps: 10 },
+    { id: "row_iso", name: "Row Top Hold", description: "Chest to bar hold", targetHoldSec: 10, sets: 3 },
+  ],
+  "bodyweight-rows": [
+    { id: "incline_rows", name: "Incline Rows", description: "Steeper angle first", sets: 3, reps: 10 },
+    { id: "row_negatives", name: "Row Negatives", description: "4 s lowering", sets: 3, reps: 6 },
+  ],
+  "feet-elevated-rows": [
+    { id: "bw_rows", name: "Bodyweight Rows", description: "Level body, full range", sets: 3, reps: 8 },
+    { id: "row_pause", name: "Paused Rows", description: "2 s pause at the top", sets: 3, reps: 6 },
+  ],
+  "archer-rows": [
+    { id: "wide_rows", name: "Wide Rows", description: "Wide grip", sets: 3, reps: 8 },
+    { id: "typewriter_rows", name: "Typewriter Rows", description: "Slide side to side at the top", sets: 3, reps: 6 },
+  ],
+  "one-arm-rows": [
+    { id: "archer_rows_d", name: "Archer Rows", description: "Assist arm as straight as possible", sets: 3, reps: 6 },
+    { id: "oar_negatives", name: "One-Arm Row Negatives", description: "5 s lowering", sets: 3, reps: 4 },
+  ],
+  "wide-pull-ups": [
+    { id: "pull_ups", name: "Pull-Ups", description: "Shoulder width first", sets: 3, reps: 8 },
+    { id: "wide_scap", name: "Wide Scapular Pulls", description: "Wide grip, straight arms", sets: 3, reps: 8 },
+  ],
+  "one-arm-dead-hang": [
+    { id: "dead_hang", name: "Dead Hang", description: "Two-arm hang, 45 s", targetHoldSec: 45, sets: 3 },
+    { id: "uneven_hang", name: "Uneven Hang", description: "One hand on a towel or lower bar", targetHoldSec: 20, sets: 3 },
+  ],
+  "inverted-hang": [
+    { id: "tuck_inv", name: "Tuck Inverted Hang", description: "Knees tucked, hips over shoulders", targetHoldSec: 15, sets: 3 },
+    { id: "german_hang", name: "German Hang", description: "Shoulder extension", targetHoldSec: 15, sets: 3 },
+  ],
+  "side-plank": [
+    { id: "knee_side_plank", name: "Knee Side Plank", description: "Bottom knee on the floor", targetHoldSec: 30, sets: 3 },
+    { id: "hip_dips", name: "Side Plank Hip Dips", description: "Lower and lift the hip", sets: 3, reps: 10 },
+  ],
+  "reverse-plank": [
+    { id: "table_top", name: "Table Top", description: "Knees bent, hips up", targetHoldSec: 30, sets: 3 },
+    { id: "shoulder_ext", name: "Shoulder Extension Stretch", description: "Hands behind, sit back", targetHoldSec: 30, sets: 2 },
+  ],
+  "arch-hold": [
+    { id: "superman_alt", name: "Alternating Superman", description: "Opposite arm and leg", sets: 3, reps: 10 },
+    { id: "arch_rocks", name: "Arch Rocks", description: "Rock in the arch", sets: 3, reps: 10 },
+  ],
+  "l-hang": [
+    { id: "tuck_hang", name: "Tuck Hang", description: "Knees to the chest in a hang", targetHoldSec: 20, sets: 3 },
+    { id: "one_leg_lhang", name: "One-Leg L-Hang", description: "One leg straight", targetHoldSec: 10, sets: 3 },
+  ],
+  "toes-to-bar": [
+    { id: "hlr", name: "Hanging Leg Raises", description: "To horizontal and above", sets: 3, reps: 8 },
+    { id: "ttb_negatives", name: "Toes-to-Bar Negatives", description: "Lower slowly from the bar", sets: 3, reps: 5 },
+  ],
+  "ab-wheel-kneeling": [
+    { id: "plank_walkouts", name: "Plank Walkouts", description: "Walk the hands out and back", sets: 3, reps: 6 },
+    { id: "wheel_partial", name: "Partial Rollouts", description: "Roll to a wall stop", sets: 3, reps: 8 },
+  ],
+  "ab-wheel-standing": [
+    { id: "wheel_kneel", name: "Kneeling Rollouts", description: "Full reach, hips open", sets: 3, reps: 10 },
+    { id: "wheel_incline", name: "Standing Rollouts to a Stop", description: "Reduce the range with a wall", sets: 3, reps: 5 },
+  ],
+  lunges: [
+    { id: "split_hold", name: "Split Squat Hold", description: "Bottom position hold", targetHoldSec: 20, sets: 3 },
+    { id: "reverse_lunges", name: "Reverse Lunges", description: "Step back, control the knee", sets: 3, reps: 10 },
+  ],
+  "cossack-squats": [
+    { id: "cossack_assisted", name: "Assisted Cossacks", description: "Hold a post; sit deep", sets: 3, reps: 6 },
+    { id: "deep_squat", name: "Deep Squat Hold", description: "Ankle mobility", targetHoldSec: 30, sets: 3 },
+  ],
+  "single-leg-rdl": [
+    { id: "hip_hinge", name: "Two-Leg Hinge", description: "Hips back, flat back", sets: 3, reps: 10 },
+    { id: "kickstand_rdl", name: "Kickstand RDL", description: "Rear toe touching the floor", sets: 3, reps: 8 },
+  ],
+  "natural-leg-extensions": [
+    { id: "nle_partial", name: "Partial Leg Extensions", description: "Lean back a little; hips open", sets: 3, reps: 8 },
+    { id: "glute_bridge_d", name: "Glute Bridge", description: "Hip extension strength", targetHoldSec: 30, sets: 3 },
+  ],
 };
 
 export const METRIC_TO_DRILL: Record<string, string> = {

@@ -10,6 +10,8 @@ export interface FormCorrection {
 
 /** Which joints to nudge toward the target pose when a metric fails. */
 const METRIC_JOINTS: Record<string, string[]> = {
+  stance: ["leftAnkle", "rightAnkle"],
+  straddle: ["leftAnkle", "rightAnkle", "leftKnee", "rightKnee"],
   arc: ["leftHip", "rightHip", "leftShoulder", "rightShoulder"],
   balance: ["leftHip", "rightHip", "leftAnkle", "rightAnkle"],
   control: ["leftHip", "rightHip"],

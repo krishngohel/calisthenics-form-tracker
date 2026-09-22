@@ -293,7 +293,161 @@ function buildManna(): Record<string, Landmark> {
   return sideView({ nose: lm(0.4, 0.5), leftShoulder: lm(0.42, 0.56), leftElbow: lm(0.4, 0.66), leftWrist: lm(0.38, 0.76), leftHip: lm(0.5, 0.36), leftKnee: lm(0.64, 0.38), leftAnkle: lm(0.78, 0.4) });
 }
 
+function buildWallPushUp(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.44, 0.26), leftShoulder: lm(0.44, 0.34), leftElbow: lm(0.54, 0.4), leftWrist: lm(0.6, 0.34), leftHip: lm(0.46, 0.56), leftKnee: lm(0.47, 0.74), leftAnkle: lm(0.48, 0.92) });
+}
+function buildInclinePushUp(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.56, 0.44), leftShoulder: lm(0.5, 0.5), leftElbow: lm(0.58, 0.6), leftWrist: lm(0.62, 0.62), leftHip: lm(0.34, 0.66), leftKnee: lm(0.22, 0.78), leftAnkle: lm(0.1, 0.9) });
+}
+function buildWidePushUp(): Record<string, Landmark> {
+  return frontView({ nose: lm(0.5, 0.3), leftShoulder: lm(0.42, 0.4), leftElbow: lm(0.28, 0.44), leftWrist: lm(0.2, 0.5), leftHip: lm(0.46, 0.6), leftKnee: lm(0.47, 0.76), leftAnkle: lm(0.48, 0.9) });
+}
+function buildDeclinePushUp(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.32, 0.5), leftShoulder: lm(0.38, 0.52), leftElbow: lm(0.34, 0.66), leftWrist: lm(0.3, 0.8), leftHip: lm(0.56, 0.44), leftKnee: lm(0.7, 0.4), leftAnkle: lm(0.84, 0.36) });
+}
+function buildBenchDip(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.46, 0.34), leftShoulder: lm(0.46, 0.42), leftElbow: lm(0.34, 0.44), leftWrist: lm(0.36, 0.6), leftHip: lm(0.52, 0.62), leftKnee: lm(0.7, 0.7), leftAnkle: lm(0.86, 0.78) });
+}
+function buildBarDip(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.42, 0.28), leftShoulder: lm(0.44, 0.36), leftElbow: lm(0.56, 0.42), leftWrist: lm(0.52, 0.5), leftHip: lm(0.5, 0.6), leftKnee: lm(0.52, 0.78), leftAnkle: lm(0.54, 0.94) });
+}
+function buildHeadstand(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.5, 0.86), leftShoulder: lm(0.5, 0.74), leftElbow: lm(0.4, 0.82), leftWrist: lm(0.42, 0.88), leftHip: lm(0.5, 0.5), leftKnee: lm(0.5, 0.3), leftAnkle: lm(0.5, 0.12) });
+}
+function buildStraddleHandstand(): Record<string, Landmark> {
+  return frontView({ nose: lm(0.5, 0.82), leftShoulder: lm(0.44, 0.72), leftElbow: lm(0.43, 0.84), leftWrist: lm(0.42, 0.96), leftHip: lm(0.46, 0.48), leftKnee: lm(0.34, 0.3), leftAnkle: lm(0.22, 0.12) });
+}
+function buildInclineRow(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.42, 0.36), leftShoulder: lm(0.44, 0.44), leftElbow: lm(0.4, 0.38), leftWrist: lm(0.5, 0.34), leftHip: lm(0.56, 0.6), leftKnee: lm(0.64, 0.72), leftAnkle: lm(0.72, 0.84) });
+}
+function buildRow(feetUp = false): Record<string, Landmark> {
+  return sideView({ nose: lm(0.32, 0.54), leftShoulder: lm(0.36, 0.6), leftElbow: lm(0.3, 0.54), leftWrist: lm(0.4, 0.5), leftHip: lm(0.56, 0.62), leftKnee: lm(0.72, feetUp ? 0.6 : 0.63), leftAnkle: lm(0.88, feetUp ? 0.58 : 0.64) });
+}
+function buildArcherRow(): Record<string, Landmark> {
+  return {
+    nose: lm(0.5, 0.42),
+    leftShoulder: lm(0.42, 0.5), rightShoulder: lm(0.58, 0.5),
+    leftElbow: lm(0.36, 0.42), rightElbow: lm(0.72, 0.44),
+    leftWrist: lm(0.44, 0.36), rightWrist: lm(0.86, 0.38),
+    leftHip: lm(0.45, 0.7), rightHip: lm(0.55, 0.7),
+    leftKnee: lm(0.45, 0.84), rightKnee: lm(0.55, 0.84),
+    leftAnkle: lm(0.45, 0.96), rightAnkle: lm(0.55, 0.96),
+  };
+}
+function buildOneArmRow(): Record<string, Landmark> {
+  return {
+    nose: lm(0.5, 0.42),
+    leftShoulder: lm(0.42, 0.5), rightShoulder: lm(0.58, 0.5),
+    leftElbow: lm(0.34, 0.44), rightElbow: lm(0.66, 0.58),
+    leftWrist: lm(0.46, 0.32), rightWrist: lm(0.56, 0.56),
+    leftHip: lm(0.45, 0.7), rightHip: lm(0.55, 0.7),
+    leftKnee: lm(0.45, 0.84), rightKnee: lm(0.55, 0.84),
+    leftAnkle: lm(0.45, 0.96), rightAnkle: lm(0.55, 0.96),
+  };
+}
+function buildWidePullUp(): Record<string, Landmark> {
+  return frontView({ nose: lm(0.5, 0.28), leftShoulder: lm(0.42, 0.42), leftElbow: lm(0.24, 0.44), leftWrist: lm(0.2, 0.26), leftHip: lm(0.46, 0.64), leftKnee: lm(0.47, 0.8), leftAnkle: lm(0.48, 0.96) });
+}
+function buildOneArmHang(): Record<string, Landmark> {
+  return {
+    nose: lm(0.52, 0.36),
+    leftShoulder: lm(0.48, 0.46), rightShoulder: lm(0.56, 0.46),
+    leftElbow: lm(0.5, 0.28), rightElbow: lm(0.6, 0.6),
+    leftWrist: lm(0.5, 0.1), rightWrist: lm(0.6, 0.74),
+    leftHip: lm(0.49, 0.7), rightHip: lm(0.55, 0.7),
+    leftKnee: lm(0.5, 0.86), rightKnee: lm(0.54, 0.86),
+    leftAnkle: lm(0.5, 0.98), rightAnkle: lm(0.54, 0.98),
+  };
+}
+function buildInvertedHang(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.5, 0.9), leftShoulder: lm(0.5, 0.76), leftElbow: lm(0.46, 0.68), leftWrist: lm(0.44, 0.58), leftHip: lm(0.5, 0.5), leftKnee: lm(0.5, 0.3), leftAnkle: lm(0.5, 0.1) });
+}
+function buildSidePlankHold(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.28, 0.42), leftShoulder: lm(0.3, 0.5), leftElbow: lm(0.3, 0.66), leftWrist: lm(0.38, 0.68), leftHip: lm(0.52, 0.6), leftKnee: lm(0.68, 0.68), leftAnkle: lm(0.84, 0.76) });
+}
+function buildReversePlank(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.28, 0.42), leftShoulder: lm(0.3, 0.5), leftElbow: lm(0.25, 0.61), leftWrist: lm(0.2, 0.72), leftHip: lm(0.5, 0.6), leftKnee: lm(0.68, 0.68), leftAnkle: lm(0.86, 0.76) });
+}
+function buildArch(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.22, 0.5), leftShoulder: lm(0.32, 0.56), leftElbow: lm(0.22, 0.48), leftWrist: lm(0.14, 0.44), leftHip: lm(0.52, 0.66), leftKnee: lm(0.7, 0.6), leftAnkle: lm(0.86, 0.56) });
+}
+function buildLHang(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.5, 0.4), leftShoulder: lm(0.5, 0.48), leftElbow: lm(0.5, 0.3), leftWrist: lm(0.5, 0.1), leftHip: lm(0.5, 0.74), leftKnee: lm(0.66, 0.74), leftAnkle: lm(0.82, 0.74) });
+}
+function buildToesToBar(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.52, 0.4), leftShoulder: lm(0.5, 0.48), leftElbow: lm(0.5, 0.3), leftWrist: lm(0.5, 0.1), leftHip: lm(0.52, 0.72), leftKnee: lm(0.5, 0.46), leftAnkle: lm(0.5, 0.18) });
+}
+function buildAbWheel(standing = false): Record<string, Landmark> {
+  return standing
+    ? sideView({ nose: lm(0.66, 0.42), leftShoulder: lm(0.62, 0.5), leftElbow: lm(0.76, 0.64), leftWrist: lm(0.9, 0.78), leftHip: lm(0.38, 0.68), leftKnee: lm(0.22, 0.8), leftAnkle: lm(0.06, 0.92) })
+    : sideView({ nose: lm(0.64, 0.42), leftShoulder: lm(0.6, 0.5), leftElbow: lm(0.72, 0.62), leftWrist: lm(0.84, 0.74), leftHip: lm(0.36, 0.72), leftKnee: lm(0.2, 0.9), leftAnkle: lm(0.06, 0.92) });
+}
+function buildLunge(): Record<string, Landmark> {
+  return {
+    nose: lm(0.44, 0.34),
+    leftShoulder: lm(0.44, 0.42), rightShoulder: lm(0.45, 0.42),
+    leftElbow: lm(0.44, 0.54), rightElbow: lm(0.45, 0.54),
+    leftWrist: lm(0.44, 0.64), rightWrist: lm(0.45, 0.64),
+    leftHip: lm(0.44, 0.66), rightHip: lm(0.45, 0.66),
+    leftKnee: lm(0.62, 0.68), rightKnee: lm(0.4, 0.86),
+    leftAnkle: lm(0.62, 0.88), rightAnkle: lm(0.22, 0.88),
+  };
+}
+function buildCossack(): Record<string, Landmark> {
+  return {
+    nose: lm(0.45, 0.38),
+    leftShoulder: lm(0.4, 0.46), rightShoulder: lm(0.5, 0.46),
+    leftElbow: lm(0.36, 0.58), rightElbow: lm(0.56, 0.58),
+    leftWrist: lm(0.34, 0.68), rightWrist: lm(0.6, 0.68),
+    leftHip: lm(0.4, 0.72), rightHip: lm(0.46, 0.72),
+    leftKnee: lm(0.3, 0.66), rightKnee: lm(0.66, 0.78),
+    leftAnkle: lm(0.28, 0.9), rightAnkle: lm(0.86, 0.86),
+  };
+}
+function buildSingleLegRdl(): Record<string, Landmark> {
+  return {
+    nose: lm(0.2, 0.5),
+    leftShoulder: lm(0.28, 0.48), rightShoulder: lm(0.29, 0.48),
+    leftElbow: lm(0.28, 0.6), rightElbow: lm(0.29, 0.6),
+    leftWrist: lm(0.28, 0.7), rightWrist: lm(0.29, 0.7),
+    leftHip: lm(0.5, 0.5), rightHip: lm(0.51, 0.5),
+    leftKnee: lm(0.5, 0.7), rightKnee: lm(0.7, 0.5),
+    leftAnkle: lm(0.5, 0.9), rightAnkle: lm(0.9, 0.5),
+  };
+}
+function buildNaturalLegExtension(): Record<string, Landmark> {
+  return sideView({ nose: lm(0.28, 0.34), leftShoulder: lm(0.3, 0.42), leftElbow: lm(0.32, 0.54), leftWrist: lm(0.34, 0.64), leftHip: lm(0.42, 0.64), leftKnee: lm(0.5, 0.88), leftAnkle: lm(0.68, 0.9) });
+}
+
 const TARGET_POSES: Record<string, Record<string, Landmark>> = {
+  "wall-push-ups": buildWallPushUp(),
+  "incline-push-ups": buildInclinePushUp(),
+  "wide-push-ups": buildWidePushUp(),
+  "decline-push-ups": buildDeclinePushUp(),
+  "bench-dips": buildBenchDip(),
+  "straight-bar-dips": buildBarDip(),
+  headstand: buildHeadstand(),
+  "wall-handstand": buildInverted(),
+  "straddle-handstand": buildStraddleHandstand(),
+  "incline-rows": buildInclineRow(),
+  "bodyweight-rows": buildRow(),
+  "feet-elevated-rows": buildRow(true),
+  "archer-rows": buildArcherRow(),
+  "one-arm-rows": buildOneArmRow(),
+  "wide-pull-ups": buildWidePullUp(),
+  "one-arm-dead-hang": buildOneArmHang(),
+  "inverted-hang": buildInvertedHang(),
+  "side-plank": buildSidePlankHold(),
+  "reverse-plank": buildReversePlank(),
+  "arch-hold": buildArch(),
+  "l-hang": buildLHang(),
+  "toes-to-bar": buildToesToBar(),
+  "ab-wheel-kneeling": buildAbWheel(),
+  "ab-wheel-standing": buildAbWheel(true),
+  lunges: buildLunge(),
+  "cossack-squats": buildCossack(),
+  "single-leg-rdl": buildSingleLegRdl(),
+  "natural-leg-extensions": buildNaturalLegExtension(),
   "elevated-pike-push-ups": buildElevatedPike(),
   "deficit-handstand-push-ups": buildInverted(),
   "one-arm-push-ups": buildSidePlank(),
