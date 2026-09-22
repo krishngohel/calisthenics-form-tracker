@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { BodyProviderId } from "@cft/core";
 import { CameraFeed, type CameraFacingMode } from "@/components/camera/CameraFeed";
 import { PoseOverlay } from "@/components/camera/PoseOverlay";
-import { usePoseBenchmark, usePoseDetection } from "@/hooks/usePoseDetection";
+import { getStoredBodyProvider, usePoseBenchmark, usePoseDetection } from "@/hooks/usePoseDetection";
 import { Screen } from "@/components/app/Screen";
 
 export default function PoseBenchmarkPage() {
@@ -11,8 +12,10 @@ export default function PoseBenchmarkPage() {
   const [videoReady, setVideoReady] = useState(false);
   const [facingMode, setFacingMode] = useState<CameraFacingMode>("user");
   const mirrored = facingMode === "user";
-  const { getRenderLandmarks, ready, inferenceMs, provider } =
-    usePoseDetection(videoRef, { bodyProvider: "movenet" });
+  const [bodyProvider, setBodyProvider] = useState<BodyProviderId>("movenet");
+  useEffect(() => setBodyProvider(getStoredBodyProvider()), []);
+  const { getRenderLandmarks, ready, inferenceMs, detectFps, provider, backend, initMs, captureSize, engine, error } =
+    usePoseDetection(videoRef, { bodyProvider, trackHands: false });
   const { results, running, runBenchmark, recommendation } =
     usePoseBenchmark(videoRef);
 
@@ -37,10 +40,23 @@ export default function PoseBenchmarkPage() {
         )}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-4 text-sm text-muted">
-        <span>Worker: {ready ? "ready" : "loading…"}</span>
-        <span>Provider: {provider}</span>
-        <span>Inference: {inferenceMs.toFixed(1)}ms</span>
+      <div className="list-group mb-4">
+        {[
+          ["Engine", engine === "worker" ? "Web Worker" : "Main thread (worker unavailable)"],
+          ["Model", provider],
+          ["Backend", backend],
+          ["Status", error ? `Error: ${error}` : ready ? "Ready" : "Loading…"],
+          ["Model load", initMs ? `${initMs} ms` : "–"],
+          ["Inference", inferenceMs ? `${inferenceMs} ms` : "–"],
+          ["Detection rate", detectFps ? `${detectFps} fps` : "–"],
+          ["Capture size", captureSize || "–"],
+          ["Video", videoReady && videoRef.current ? `${videoRef.current.videoWidth}×${videoRef.current.videoHeight}` : "–"],
+        ].map(([k, v]) => (
+          <div key={k} className="list-row">
+            <div className="flex-1 text-base">{k}</div>
+            <div className="text-sm text-muted">{v}</div>
+          </div>
+        ))}
       </div>
 
       <button
@@ -56,8 +72,8 @@ export default function PoseBenchmarkPage() {
           <p className="font-semibold text-accent">
             Recommended default: {recommendation} (saved for training sessions)
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {(["movenet", "mediapipe"] as const).map((p) => (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {(["movenet", "movenet-thunder", "mediapipe"] as const).map((p) => (
               <div
                 key={p}
                 className={`card p-4 ${

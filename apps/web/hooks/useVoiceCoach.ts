@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { HoldState } from "@cft/core";
 import { readVoiceEnabled, writeVoiceEnabled } from "@/lib/preferences";
 
@@ -107,5 +107,8 @@ export function useVoiceCoach() {
     };
   }, [stopCounting]);
 
-  return { enabled, supported, toggle, onHoldState, onCues };
+  return useMemo(
+    () => ({ enabled, supported, toggle, onHoldState, onCues }),
+    [enabled, supported, toggle, onHoldState, onCues]
+  );
 }

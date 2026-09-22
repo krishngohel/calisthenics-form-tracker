@@ -10,6 +10,18 @@ export interface FormCorrection {
 
 /** Which joints to nudge toward the target pose when a metric fails. */
 const METRIC_JOINTS: Record<string, string[]> = {
+  stance: ["leftAnkle", "rightAnkle"],
+  straddle: ["leftAnkle", "rightAnkle", "leftKnee", "rightKnee"],
+  arc: ["leftHip", "rightHip", "leftShoulder", "rightShoulder"],
+  balance: ["leftHip", "rightHip", "leftAnkle", "rightAnkle"],
+  control: ["leftHip", "rightHip"],
+  hand_off: ["leftWrist", "rightWrist"],
+  knees_locked: ["leftKnee", "rightKnee"],
+  line: ["leftShoulder", "rightShoulder", "leftHip", "rightHip", "leftAnkle", "rightAnkle"],
+  no_swing: ["leftHip", "rightHip", "leftAnkle", "rightAnkle"],
+  single_leg: ["leftKnee", "rightKnee", "leftAnkle", "rightAnkle"],
+  stability: ["leftHip", "rightHip"],
+  upright: ["leftShoulder", "rightShoulder", "leftHip", "rightHip"],
   chin_height: ["nose", "leftShoulder", "rightShoulder"],
   top_position: ["nose"],
   elbow_bend: ["leftElbow", "rightElbow"],
@@ -37,6 +49,12 @@ const METRIC_JOINTS: Record<string, string[]> = {
   stack: ["leftKnee", "rightKnee"],
   transition: ["leftShoulder", "rightShoulder"],
   lowering: ["leftShoulder", "rightShoulder", "leftHip", "rightHip"],
+  hands: ["leftWrist", "rightWrist"],
+  pike: ["leftHip", "rightHip"],
+  arms: ["leftElbow", "rightElbow"],
+  hollow_body: ["leftShoulder", "rightShoulder", "leftAnkle", "rightAnkle"],
+  arch: ["leftHip", "rightHip"],
+  hips: ["leftHip", "rightHip"],
 };
 
 /**

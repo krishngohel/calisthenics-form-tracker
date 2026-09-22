@@ -16,19 +16,31 @@ import {
   rejectOutliers,
   getDistanceContext,
   dropLowConfidence,
+  BoneConsistencyFilter,
   detectPerformanceTier,
   PERFORMANCE_PROFILES,
   OVERLAY_SMOOTHING,
   HOLD_SMOOTHING,
 } from "@cft/core";
-import { isIOS } from "@/lib/camera/platform";
 import { readString, STORAGE_KEYS, writeString } from "@/lib/storage";
+import { createMainThreadEndpoint, createWorkerEndpoint, type PoseEndpoint } from "@/lib/pose/endpoint";
 
 export interface PoseDetectionState {
+  /** Smoothed model inference time. */
   inferenceMs: number;
+  /** Achieved detection rate over the last second. */
+  detectFps: number;
   provider: BodyProviderId;
+  /** What ran the model: webgl / cpu (MoveNet), wasm-gpu / wasm-cpu (MediaPipe). */
+  backend: string;
+  /** Model load time. */
+  initMs: number;
+  /** Captured frame size sent to the model, e.g. "640×360". */
+  captureSize: string;
   ready: boolean;
   error: string | null;
+  /** Where inference runs; "main-thread" means the worker was unavailable. */
+  engine: "worker" | "main-thread";
 }
 
 export interface PoseFrameInfo {
@@ -60,10 +72,16 @@ const STATS_UPDATE_INTERVAL_MS = 500;
 /** Hard timeout per provider benchmark to avoid hanging UI forever. */
 const BENCHMARK_TIMEOUT_MS = 45_000;
 /** Predict skeleton slightly ahead of the last detection frame. */
-const EXTRAPOLATE_MS = 40;
+const EXTRAPOLATE_MS = 30;
+/** Console diagnostics cadence (readable from the native app's log). */
+const DIAG_LOG_INTERVAL_MS = 5000;
 
-function createWorker(): Worker {
-  return new Worker(new URL("../workers/pose.worker.ts", import.meta.url));
+/** If the worker has not reported ready by then, run the engine in-page instead. */
+const WORKER_READY_TIMEOUT_MS = 25_000;
+
+/** Prefer a worker; fall back to the page thread when workers are unavailable. */
+function createEndpoint(): PoseEndpoint {
+  return createWorkerEndpoint() ?? createMainThreadEndpoint();
 }
 
 async function createCaptureBitmap(
@@ -102,11 +120,12 @@ export function usePoseDetection(
 ) {
   const { bodyProvider = "movenet", trackHands = true, onFrame, onDistanceContext } =
     options;
-  const workerRef = useRef<Worker | null>(null);
+  const workerRef = useRef<PoseEndpoint | null>(null);
   const readyRef = useRef(false);
   const overlaySmootherRef = useRef(new PoseSmoother());
   const holdSmootherRef = useRef(new PoseSmoother());
   const persistenceRef = useRef(new LandmarkPersistence());
+  const boneFilterRef = useRef(new BoneConsistencyFilter());
   const handSmootherRef = useRef(new PoseSmoother());
   const overlayInterpolatorRef = useRef(new LandmarkInterpolator());
   const handInterpolatorRef = useRef(new HandInterpolator());
@@ -116,6 +135,10 @@ export function usePoseDetection(
   const lastDetectRef = useRef(0);
   const captureEdgeRef = useRef(DEFAULT_CAPTURE_EDGE);
   const lastStatsUpdateRef = useRef(0);
+  const inferenceEmaRef = useRef(0);
+  const frameTimesRef = useRef<number[]>([]);
+  const lastDiagLogRef = useRef(0);
+  const captureSizeRef = useRef("");
   const isPageVisibleRef = useRef(true);
   const trackHandsRef = useRef(trackHands);
 
@@ -132,7 +155,8 @@ export function usePoseDetection(
   const profile = PERFORMANCE_PROFILES[tier];
 
   useEffect(() => {
-    setTier(isIOS() ? "low" : detectPerformanceTier());
+    // Modern iPhones handle 30–45 fps detection; only older ones need the low tier.
+    setTier(detectPerformanceTier());
   }, []);
 
   // Re-tune smoothing when the tier resolves — without tearing down the worker.
@@ -148,9 +172,14 @@ export function usePoseDetection(
 
   const [state, setState] = useState<PoseDetectionState>({
     inferenceMs: 0,
+    detectFps: 0,
     provider: bodyProvider,
+    backend: "unknown",
+    initMs: 0,
+    captureSize: "",
     ready: false,
     error: null,
+    engine: "worker",
   });
 
   useEffect(() => {
@@ -164,29 +193,61 @@ export function usePoseDetection(
   }, []);
 
   useEffect(() => {
-    const worker = createWorker();
-    workerRef.current = worker;
+    let endpoint = createEndpoint();
+    let readyTimer = 0;
+    let disposed = false;
+    workerRef.current = endpoint;
     readyRef.current = false;
     overlaySmootherRef.current.reset();
     holdSmootherRef.current.reset();
     handSmootherRef.current.reset();
     persistenceRef.current.reset();
+    boneFilterRef.current.reset();
     overlayInterpolatorRef.current.reset();
     handInterpolatorRef.current.reset();
     lastBodyRef.current = null;
     rejectCountRef.current = 0;
     busyRef.current = false;
     lastDetectRef.current = 0;
+    inferenceEmaRef.current = 0;
+    frameTimesRef.current = [];
 
-    worker.onmessage = (ev) => {
-      const data = ev.data;
+    /** Swap to the in-page engine when the worker cannot come up. */
+    const fallBack = (reason: string) => {
+      if (disposed || endpoint.kind === "main-thread") return;
+      console.warn(`Pose worker unavailable (${reason}); running inference on the main thread.`);
+      window.clearTimeout(readyTimer);
+      endpoint.terminate();
+      endpoint = createMainThreadEndpoint();
+      workerRef.current = endpoint;
+      busyRef.current = false;
+      attach(endpoint);
+      setState((s) => ({ ...s, engine: "main-thread", ready: false, error: null }));
+      endpoint.postMessage({ type: "init", bodyProvider, enableHands: trackHands });
+    };
+
+    const attach = (target: PoseEndpoint) => {
+      target.onerror = (message) => {
+        if (target.kind === "worker" && !readyRef.current) fallBack(message);
+        else {
+          readyRef.current = false;
+          setState((s) => ({ ...s, ready: false, error: message }));
+          busyRef.current = false;
+        }
+      };
+      target.onmessage = (ev) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- discriminated in the branches below
+      const data = ev.data as any;
       if (data.type === "ready") {
+        window.clearTimeout(readyTimer);
         readyRef.current = true;
         setState((s) => ({
           ...s,
           ready: true,
           error: null,
           provider: data.bodyProvider,
+          backend: data.backend ?? "unknown",
+          initMs: data.initMs ?? 0,
         }));
       } else if (data.type === "skipped") {
         busyRef.current = false;
@@ -194,7 +255,9 @@ export function usePoseDetection(
         busyRef.current = false;
         // Off-frame / occluded joints come back with near-zero confidence at
         // arbitrary positions; drop them before any geometry sees them.
-        const body = dropLowConfidence(data.body as Record<string, Landmark | null>);
+        // Then drop joints whose bone lengths no longer fit the athlete: a wrist
+        // snapped onto the hip passes the confidence gate but not this one.
+        const body = dropLowConfidence(boneFilterRef.current.apply(dropLowConfidence(data.body as Record<string, Landmark | null>)).body);
         const distanceCtx = getDistanceContext(body);
         captureEdgeRef.current = distanceCtx.captureMaxEdge;
         onDistanceContextRef.current?.(distanceCtx);
@@ -234,28 +297,58 @@ export function usePoseDetection(
         });
 
         const now = performance.now();
+        inferenceEmaRef.current = inferenceEmaRef.current
+          ? inferenceEmaRef.current * 0.85 + data.inferenceMs * 0.15
+          : data.inferenceMs;
+        const times = frameTimesRef.current;
+        times.push(now);
+        while (times.length && now - times[0] > 1000) times.shift();
+        const captureSize = `${data.frameWidth}×${data.frameHeight}`;
+        captureSizeRef.current = captureSize;
         if (now - lastStatsUpdateRef.current > STATS_UPDATE_INTERVAL_MS) {
           lastStatsUpdateRef.current = now;
           setState((s) => ({
             ...s,
-            inferenceMs: data.inferenceMs,
+            inferenceMs: Math.round(inferenceEmaRef.current),
+            detectFps: times.length,
             provider: data.provider,
+            captureSize,
           }));
         }
+        if (now - lastDiagLogRef.current > DIAG_LOG_INTERVAL_MS) {
+          lastDiagLogRef.current = now;
+          const video = videoRef.current;
+          console.log(
+            `[pose] engine=${workerRef.current?.kind} provider=${data.provider} infer=${Math.round(inferenceEmaRef.current)}ms fps=${times.length} capture=${captureSize} video=${video?.videoWidth ?? 0}×${video?.videoHeight ?? 0} far=${distanceCtx.isFar}`
+          );
+        }
       } else if (data.type === "error") {
+        if (target.kind === "worker" && !readyRef.current) {
+          fallBack(data.message);
+          return;
+        }
         readyRef.current = false;
         setState((s) => ({ ...s, ready: false, error: data.message }));
         busyRef.current = false;
       }
+      };
     };
 
-    setState((s) => ({ ...s, ready: false, error: null, provider: bodyProvider }));
-    worker.postMessage({ type: "init", bodyProvider, enableHands: trackHands });
+    attach(endpoint);
+    setState((s) => ({ ...s, ready: false, error: null, provider: bodyProvider, engine: endpoint.kind }));
+    endpoint.postMessage({ type: "init", bodyProvider, enableHands: trackHands });
+    if (endpoint.kind === "worker") {
+      readyTimer = window.setTimeout(() => {
+        if (!readyRef.current) fallBack("no ready signal within 25s");
+      }, WORKER_READY_TIMEOUT_MS);
+    }
 
     return () => {
+      disposed = true;
+      window.clearTimeout(readyTimer);
       readyRef.current = false;
-      worker.postMessage({ type: "dispose" });
-      worker.terminate();
+      endpoint.postMessage({ type: "dispose" });
+      endpoint.terminate();
       workerRef.current = null;
     };
   }, [bodyProvider, trackHands]);
@@ -346,13 +439,15 @@ export function usePoseBenchmark(
         throw new Error("Video not ready");
       }
 
-      const worker = createWorker();
+      const worker = createEndpoint();
 
       try {
         return await withTimeout(
           new Promise<BenchmarkProviderResult>((resolve, reject) => {
+            worker.onerror = (message) => reject(new Error(message));
             worker.onmessage = (ev) => {
-              const data = ev.data;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const data = ev.data as any;
               if (data.type === "ready") {
                 createCaptureBitmap(video)
                   .then((bitmap) => {
@@ -407,7 +502,7 @@ export function usePoseBenchmark(
 
     const collected = {} as Record<BodyProviderId, BenchmarkProviderResult>;
 
-    for (const provider of ["movenet", "mediapipe"] as const) {
+    for (const provider of ["movenet", "movenet-thunder", "mediapipe"] as const) {
       try {
         collected[provider] = await runProviderBenchmark(provider);
       } catch {
@@ -424,10 +519,9 @@ export function usePoseBenchmark(
     setResults(collected);
     const score = (r: BenchmarkProviderResult) =>
       r.avgFps * 2 - r.avgInferenceMs - r.droppedFrames * 5;
-    const winner: BodyProviderId =
-      score(collected.movenet) >= score(collected.mediapipe)
-        ? "movenet"
-        : "mediapipe";
+    const winner = (Object.keys(collected) as BodyProviderId[]).reduce((best, p) =>
+      score(collected[p]) > score(collected[best]) ? p : best
+    );
     setRecommendation(winner);
     writeString(STORAGE_KEYS.bodyProvider, winner);
     setRunning(false);
@@ -439,6 +533,14 @@ export function usePoseBenchmark(
 export function getStoredBodyProvider(): BodyProviderId {
   if (typeof window === "undefined") return "movenet";
   const stored = readString(STORAGE_KEYS.bodyProvider);
-  if (stored === "mediapipe" || stored === "movenet") return stored;
-  return isIOS() ? "mediapipe" : "movenet";
+  if (stored === "mediapipe" || stored === "movenet" || stored === "movenet-thunder") return stored;
+  // MoveNet on WebGL is the reliable path everywhere, including WKWebView
+  // workers where MediaPipe's GPU delegate is not dependable. Thunder is
+  // noticeably more precise and recent phones run it at a usable rate.
+  const cores = navigator.hardwareConcurrency ?? 4;
+  return cores >= 6 ? "movenet-thunder" : "movenet";
+}
+
+export function setStoredBodyProvider(provider: BodyProviderId): void {
+  writeString(STORAGE_KEYS.bodyProvider, provider);
 }

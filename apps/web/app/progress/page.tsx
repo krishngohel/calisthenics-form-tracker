@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { SKILLS, getSkill } from "@cft/core";
+import { SKILLS, athleteLevel, evaluatePathProgress, familyLevels, getSkill } from "@cft/core";
 import { Screen, ListGroup, ListRow } from "@/components/app/Screen";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { useAuthUser } from "@/hooks/useAuthUser";
@@ -12,7 +12,7 @@ import type { LocalHold } from "@/lib/localHistory";
 type Range = "7d" | "30d" | "all";
 
 export default function ProgressPage() {
-  const { history, stats, loaded } = useLocalHistory();
+  const { history, stats, loaded, bests: bestMs, reps } = useLocalHistory();
   const { user, configured } = useAuthUser();
   const [range, setRange] = useState<Range>("7d");
 
@@ -23,19 +23,19 @@ export default function ProgressPage() {
     return history.filter((h) => new Date(h.endedAt).getTime() >= cutoff);
   }, [history, range]);
 
-  const totalMs = filtered.reduce((s, h) => s + h.durationMs, 0);
-  const avgForm = filtered.length ? Math.round(filtered.reduce((s, h) => s + h.formScore, 0) / filtered.length) : 0;
-  const trainedSkills = Object.keys(stats.bestBySkill).length;
+  const holdsOnly = filtered.filter((h) => h.kind !== "reps");
+  const totalMs = holdsOnly.reduce((s, h) => s + h.durationMs, 0);
+  const avgForm = holdsOnly.length ? Math.round(holdsOnly.reduce((s, h) => s + h.formScore, 0) / holdsOnly.length) : 0;
   const bests = SKILLS.filter((s) => stats.bestBySkill[s.id]).sort(
     (a, b) => stats.bestBySkill[b.id].durationMs - stats.bestBySkill[a.id].durationMs
   );
   const grouped = groupByDay(filtered);
+  const pathProgress = useMemo(() => evaluatePathProgress(bestMs, reps).filter((p) => p.completed > 0), [bestMs, reps]);
+  const level = useMemo(() => athleteLevel(bestMs, reps), [bestMs, reps]);
+  const families = useMemo(() => familyLevels(bestMs, reps).filter((f) => f.completed > 0), [bestMs, reps]);
 
   return (
-    <Screen
-      title="Progress"
-      subtitle={configured ? (user ? "Synced to your account" : "Stored on this device") : "Stored on this device"}
-    >
+    <Screen title="Progress">
       <div className="segmented mb-5" role="tablist" aria-label="Range">
         {(["7d", "30d", "all"] as Range[]).map((r) => (
           <button key={r} type="button" role="tab" aria-selected={range === r} onClick={() => setRange(r)} className={`segmented-btn ${range === r ? "segmented-btn-active" : ""}`}>
@@ -44,26 +44,46 @@ export default function ProgressPage() {
         ))}
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3">
-        <Tile label="Hold time" value={formatSec(totalMs)} />
-        <Tile label="Holds" value={String(filtered.length)} />
-        <Tile label="Avg form" value={filtered.length ? `${avgForm}%` : "–"} />
-        <Tile label="Streak" value={`${stats.streakDays} day${stats.streakDays === 1 ? "" : "s"}`} />
-      </div>
+      {loaded && history.length === 0 ? (
+        <ListGroup>
+          <ListRow label="No holds yet" detail="Completed holds appear here with their time and form score." />
+          <ListRow href="/skills" label="Choose a skill" />
+        </ListGroup>
+      ) : (
+        <ListGroup>
+          <ListRow label="Hold time" trailing={<Value>{formatSec(totalMs)}</Value>} />
+          <ListRow label="Holds" trailing={<Value>{String(holdsOnly.length)}</Value>} />
+          <ListRow label="Rep sessions" trailing={<Value>{String(filtered.length - holdsOnly.length)}</Value>} />
+          <ListRow label="Average form" trailing={<Value>{holdsOnly.length ? `${avgForm}%` : "–"}</Value>} />
+          <ListRow label="Level" trailing={<Value>{level.level > 0 ? `${level.level} · ${level.metCount} goal${level.metCount === 1 ? "" : "s"} met` : "–"}</Value>} />
+          <ListRow label="Streak" trailing={<Value>{`${stats.streakDays} day${stats.streakDays === 1 ? "" : "s"}`}</Value>} />
+        </ListGroup>
+      )}
 
-      {loaded && history.length === 0 && (
-        <div className="stat-tile mb-6 text-center">
-          <div className="text-3xl">🏁</div>
-          <div className="mt-2 font-bold text-foreground">No holds yet</div>
-          <p className="mt-1 text-sm text-muted">Your first completed hold shows up here with its time and form score.</p>
-          <Link href="/skills" className="btn-primary mt-4 w-full text-sm">
-            Pick a skill
-          </Link>
-        </div>
+      {families.length > 0 && (
+        <ListGroup title="Families">
+          {families.map((f) => (
+            <ListRow key={f.family.id} href={`/skills#family-${f.family.id}`} label={f.family.name} trailing={<Value>{`Level ${f.level} · ${f.completed}/${f.total}`}</Value>} />
+          ))}
+        </ListGroup>
+      )}
+
+      {pathProgress.length > 0 && (
+        <ListGroup title="Ladders">
+          {pathProgress.map((p) => (
+            <ListRow
+              key={p.path.id}
+              href={p.next ? `/learn/${p.next.skillId}` : `/skills#${p.path.id}`}
+              label={p.path.name}
+              detail={p.next ? `Next: ${getSkill(p.next.skillId)?.name ?? p.next.skillId}` : p.blocked ? `Blocked: ${getSkill(p.blocked.skillId)?.name ?? p.blocked.skillId} needs prerequisites` : "Path complete"}
+              trailing={<Value>{`Level ${p.level} · ${p.completed}/${p.path.steps.length}`}</Value>}
+            />
+          ))}
+        </ListGroup>
       )}
 
       {bests.length > 0 && (
-        <ListGroup title={`Personal bests · ${trainedSkills} skill${trainedSkills === 1 ? "" : "s"}`}>
+        <ListGroup title="Personal bests">
           {bests.map((skill) => {
             const b = stats.bestBySkill[skill.id];
             return (
@@ -72,7 +92,7 @@ export default function ProgressPage() {
                 href={`/train/${skill.id}`}
                 label={skill.name}
                 detail={`${new Date(b.endedAt).toLocaleDateString()} · form ${b.formScore}%`}
-                trailing={<span className="font-mono text-base font-bold text-accent">{formatMs(b.durationMs)}</span>}
+                trailing={<Value mono>{formatMs(b.durationMs)}</Value>}
               />
             );
           })}
@@ -85,32 +105,39 @@ export default function ProgressPage() {
             <ListRow
               key={h.id}
               label={getSkill(h.skillId)?.name ?? h.skillId}
-              detail={`${new Date(h.endedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · ${h.mode === "perfect" ? "Perfect form" : "Hold only"} · form ${h.formScore}%`}
-              trailing={<span className="font-mono text-base font-semibold text-foreground">{formatMs(h.durationMs)}</span>}
+              detail={`${new Date(h.endedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} · ${h.kind === "reps" ? "Reps logged" : `${h.mode === "perfect" ? "Perfect form" : "Hold"} · form ${h.formScore}%`}`}
+              trailing={<Value mono>{h.kind === "reps" ? `${h.sets}×${h.reps}` : formatMs(h.durationMs)}</Value>}
             />
           ))}
         </ListGroup>
       ))}
 
-      {configured && user && (
-        <p className="px-1 text-center text-sm text-muted">
-          <Link href="/dashboard" className="font-medium text-accent">
-            Open cloud dashboard
-          </Link>{" "}
-          for history synced from other devices.
-        </p>
-      )}
-
-      {configured && !user && history.length > 0 && (
-        <p className="px-1 text-center text-sm text-muted">
-          <Link href="/login" className="font-medium text-accent">
-            Sign in
-          </Link>{" "}
-          to back up your history and see it on other devices.
+      {configured && (
+        <p className="px-4 text-xs text-muted">
+          {user ? (
+            <>
+              Synced to your account.{" "}
+              <Link href="/dashboard" className="text-accent">
+                Open cloud dashboard
+              </Link>
+            </>
+          ) : (
+            <>
+              Stored on this device.{" "}
+              <Link href="/login" className="text-accent">
+                Sign in
+              </Link>{" "}
+              to back it up.
+            </>
+          )}
         </p>
       )}
     </Screen>
   );
+}
+
+function Value({ children, mono = false }: { children: string; mono?: boolean }) {
+  return <span className={`text-base text-muted ${mono ? "font-mono tabular-nums" : ""}`}>{children}</span>;
 }
 
 function groupByDay(holds: LocalHold[]): [string, LocalHold[]][] {
@@ -126,13 +153,4 @@ function groupByDay(holds: LocalHold[]): [string, LocalHold[]][] {
     map.set(label, list);
   }
   return Array.from(map.entries());
-}
-
-function Tile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="stat-tile">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">{label}</div>
-      <div className="mt-1 text-2xl font-extrabold text-foreground">{value}</div>
-    </div>
-  );
 }

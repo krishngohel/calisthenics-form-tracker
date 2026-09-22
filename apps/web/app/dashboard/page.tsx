@@ -174,7 +174,7 @@ export default function DashboardPage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="card p-4 sm:p-5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted sm:text-xs">{label}</p>
+      <p className="text-xs text-muted">{label}</p>
       <p className="mt-1 text-xl font-bold text-accent-hover sm:text-2xl">{value}</p>
     </div>
   );

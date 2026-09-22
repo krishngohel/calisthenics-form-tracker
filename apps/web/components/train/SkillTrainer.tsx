@@ -5,10 +5,15 @@ import Link from "next/link";
 import {
   getSkill,
   getSkillPathStep,
+  describeGoal,
   evaluateSkill,
   toIsotropic,
+  orientToGravity,
+  estimateView,
+  viewHint,
   type HoldMode,
   type TrainMode,
+  type BodyProviderId,
   type HandLandmarks,
   type Landmark,
 } from "@cft/core";
@@ -17,20 +22,21 @@ import { CameraStatusBanner } from "@/components/camera/CameraStatusBanner";
 import { PoseOverlay, type SkeletonStatus } from "@/components/camera/PoseOverlay";
 import { LearnOverlay } from "@/components/camera/LearnOverlay";
 import { HoldHud } from "@/components/train/HoldHud";
-import { HoldResultToast } from "@/components/train/HoldResultToast";
 import { ReadyOverlay } from "@/components/train/ReadyOverlay";
-import { TrainingScreen } from "@/components/train/TrainingScreen";
+import { PostHoldSheet } from "@/components/train/PostHoldSheet";
+import { TrainingStage } from "@/components/train/TrainingStage";
 import { CoachingPanel } from "@/components/coaching/CoachingPanel";
 import { LearnMetricsPanel } from "@/components/coaching/LearnMetricsPanel";
 import { PersistentCueOverlay } from "@/components/coaching/PersistentCueOverlay";
 import { SessionProgressChart } from "@/components/coaching/SessionProgressChart";
-import { HoldSummaryCard } from "@/components/coaching/HoldSummaryCard";
 import { ModeToggle } from "@/components/ModeToggle";
 import { useAutoBackCameraFraming } from "@/hooks/useAutoBackCameraFraming";
 import { getStoredBodyProvider, usePoseDetection, type PoseFrameInfo } from "@/hooks/usePoseDetection";
 import { useHoldSession } from "@/hooks/useHoldSession";
 import { useTrainingFeedback } from "@/hooks/useTrainingFeedback";
 import { useFrameHistory } from "@/hooks/useFrameHistory";
+import { useFrameOrientation } from "@/hooks/useFrameOrientation";
+import { useHoldRecorder } from "@/hooks/useHoldRecorder";
 import { useLocalHistory } from "@/hooks/useLocalHistory";
 import { readPreferences } from "@/lib/preferences";
 
@@ -42,7 +48,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [mode, setMode] = useState<TrainMode>("hold_only");
-  const [bodyProvider, setBodyProvider] = useState<"movenet" | "mediapipe">("movenet");
+  const [bodyProvider, setBodyProvider] = useState<BodyProviderId>("movenet");
 
   useEffect(() => {
     setBodyProvider(getStoredBodyProvider());
@@ -68,11 +74,21 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   // Nothing is timed until the athlete taps Start on the setup card.
   const [armed, setArmed] = useState(false);
   const armedRef = useRef(false);
+  const { armAudio } = feedback;
+  const orientation = useFrameOrientation();
+  const recorder = useHoldRecorder({ videoRef, holdView, skillName: skill?.name ?? "", enabled: armed });
+  const { enable: enableOrientation, getRotation } = orientation;
   const start = useCallback(() => {
-    feedback.armAudio();
+    armAudio();
+    void enableOrientation();
     armedRef.current = true;
     setArmed(true);
-  }, [feedback]);
+  }, [armAudio, enableOrientation]);
+
+  // The result sheet stays until dismissed; a new hold replaces it.
+  const [dismissedHoldAt, setDismissedHoldAt] = useState(0);
+  const lastHoldAt = session.lastHold?.endedAt.getTime() ?? 0;
+  const showResult = !!session.lastHold && lastHoldAt !== dismissedHoldAt;
 
   const modeRef = useRef(mode);
   useEffect(() => {
@@ -82,12 +98,24 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
   statusRef.current = !holdView.visibilityOk ? "lowvis" : mode === "learn" ? "idle" : holdView.state;
   const getStatus = useCallback(() => statusRef.current, []);
 
+  const [viewNote, setViewNote] = useState<string | null>(null);
+  const viewCheckRef = useRef({ at: 0, streak: 0 });
+
   const onFrame = useCallback(
     (raw: Record<string, Landmark | null>, hands: HandLandmarks, frame: PoseFrameInfo) => {
       if (!skill) return;
-      // Rules measure angles and distances, so they need x and y in the same units.
-      const body = toIsotropic(raw, frame.aspect);
+      // Rules need x and y in the same units and gravity pointing down the y axis.
+      const body = orientToGravity(toIsotropic(raw, frame.aspect), getRotation(), frame.aspect);
       const frames = history.push(body);
+      // Facing the wrong way is the most common reason a rule never passes; say so, but only after it persists.
+      const check = viewCheckRef.current;
+      const nowMs = performance.now();
+      if (nowMs - check.at > 400) {
+        check.at = nowMs;
+        const hint = viewHint(skill.cameraAngle, estimateView(body));
+        check.streak = hint ? check.streak + 1 : 0;
+        setViewNote(check.streak >= 3 ? hint : null);
+      }
       const currentMode = modeRef.current;
       const evalMode: HoldMode = currentMode === "learn" ? "perfect" : currentMode;
       const evaluation = evaluateSkill(skillId, body, hands, frames, evalMode);
@@ -97,10 +125,10 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
       if (currentMode === "learn") processLearn(evaluation, now);
       else if (armedRef.current) processHold(skillId, evaluation, now);
     },
-    [skill, skillId, history, processHold, processLearn]
+    [skill, skillId, history, processHold, processLearn, getRotation]
   );
 
-  const { getRenderLandmarks, getRenderHands, ready, error, profile } = usePoseDetection(videoRef, {
+  const { getRenderLandmarks, getRenderHands, ready, error } = usePoseDetection(videoRef, {
     bodyProvider,
     trackHands: skill?.needsHands ?? true,
     onFrame,
@@ -112,6 +140,7 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
     resetAll();
     armedRef.current = false;
     setArmed(false);
+    setDismissedHoldAt(0);
   }, [skillId, history, resetAll]);
 
   useEffect(() => {
@@ -129,38 +158,28 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
     );
   }
 
-  const prevSkillId = pathStep && pathStep.step > 1 ? pathStep.path.skillIds[pathStep.step - 2] : null;
   const nextSkillId = pathStep && pathStep.step < pathStep.total ? pathStep.path.skillIds[pathStep.step] : null;
+  const nextSkill = nextSkillId ? getSkill(nextSkillId) : null;
 
   return (
-    <TrainingScreen
-      back={{ href: "/skills", label: pathStep ? pathStep.path.name : "Paths" }}
+    <TrainingStage
+      back={{ href: "/skills", label: "Paths" }}
       title={skill.name}
-      subtitle={`${pathStep ? `Step ${pathStep.step} of ${pathStep.total} · ` : ""}${skill.cameraGuide}`}
-      modeControl={<ModeToggle value={mode} options={TRAIN_MODES} onChange={setMode} label="Training mode" />}
+      modeControl={<ModeToggle value={mode} options={TRAIN_MODES} onChange={setMode} label="Training mode" compact />}
       camera={
         <TrainCameraPanel
+          stage
           videoRef={videoRef}
           onVideoReady={() => setVideoReady(true)}
           onStreamReady={framing.onStreamReady}
           facingMode={framing.facingMode}
           deviceId={framing.deviceId}
           onFacingModeChange={framing.onFacingModeChange}
-          framingLabel={framing.framingLabel}
           framingGuidance={framing.framingGuidance}
           isManualFraming={framing.isManualFraming}
-          onEnableAutoFraming={framing.enableAutoFraming}
-          focus={feedback.focus}
-          onToggleFocus={feedback.toggleFocus}
           voiceEnabled={feedback.voice.enabled}
           voiceSupported={feedback.voice.supported}
           onToggleVoice={feedback.voice.toggle}
-          footer={
-            <>
-              Detecting at {profile.detectFps} fps
-              {holdView.farCamera && " · far-camera mode"}
-            </>
-          }
         >
           {videoReady && ready && (
             <>
@@ -185,13 +204,13 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
           )}
           {(armed || mode === "learn") && (
             <HoldHud
+              stage
               state={holdView.state}
               holdStartTime={holdView.holdStartTime}
               lastHoldMs={holdView.lastHoldMs}
               bestHoldMs={feedback.bestMs}
               formScore={holdView.formScore}
               mode={mode}
-              large={feedback.focus}
             />
           )}
           {mode !== "learn" && !armed && (
@@ -200,50 +219,63 @@ export function SkillTrainer({ skillId }: { skillId: string }) {
               guide={skill.cameraGuide}
               cameraAngle={skill.cameraAngle}
               bestMs={allTimeBestMs}
+              goal={pathStep ? describeGoal(pathStep.goal) : undefined}
               ready={videoReady && ready}
               onStart={start}
             />
           )}
-          <HoldResultToast hold={session.lastHold} newBest={feedback.lastWasBest} />
-          <CameraStatusBanner ready={ready} error={error} videoReady={videoReady} visibilityWarning={armed && !holdView.visibilityOk} />
-          <PersistentCueOverlay cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />
+          <CameraStatusBanner
+            stage
+            ready={ready}
+            error={error}
+            videoReady={videoReady}
+            visibilityWarning={armed && !holdView.visibilityOk}
+            hint={viewNote ?? (orientation.rotation !== 0 ? "Phone is turned; tracking corrected for gravity" : null)}
+          />
+          {!showResult && (
+            <PersistentCueOverlay stage cues={session.pinnedCues} onDismiss={session.dismissCue} onDismissAll={session.dismissAllCues} />
+          )}
         </TrainCameraPanel>
       }
-      belowCamera={
-        (prevSkillId || nextSkillId) && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
-            {prevSkillId && (
-              <Link href={`/train/${prevSkillId}`} className="btn-ghost">
-                ← {getSkill(prevSkillId)?.name}
-              </Link>
-            )}
-            {nextSkillId && (
-              <Link href={`/train/${nextSkillId}`} className="btn-ghost ml-auto text-accent">
-                {getSkill(nextSkillId)?.name} →
-              </Link>
-            )}
-          </div>
-        )
+      sheet={
+        showResult && session.lastHold ? (
+          <PostHoldSheet
+            hold={session.lastHold}
+            newBest={feedback.lastWasBest}
+            plan={session.coachingPlan}
+            saveState={session.saveState}
+            next={nextSkill ? { href: `/train/${nextSkill.id}`, label: `Next: ${nextSkill.name}` } : null}
+            skillName={skill.name}
+            onAgain={() => setDismissedHoldAt(lastHoldAt)}
+            video={recorder.clip ? { onSave: () => void recorder.save(), state: recorder.saveState } : null}
+          />
+        ) : null
       }
-      side={
+      details={
         <>
-          {mode !== "learn" && session.lastHold && (
-            <HoldSummaryCard
-              hold={session.lastHold}
-              saveState={session.saveState}
-              cloudConfigured={session.cloudConfigured}
-              signedIn={session.signedIn}
-              onClear={resetAll}
-            />
+          {mode === "learn" ? (
+            <LearnMetricsPanel metrics={session.learnMetrics} />
+          ) : (
+            <>
+              <LearnMetricsPanel metrics={session.liveMetrics} title="Live rule checks" footer="Score next to each rule; ✓ means it currently passes." />
+              <SessionProgressChart points={session.progressPoints} />
+            </>
           )}
-          {mode === "learn" && <LearnMetricsPanel metrics={session.learnMetrics} />}
-          {mode !== "learn" && <SessionProgressChart points={session.progressPoints} />}
           <CoachingPanel
             pinnedCues={session.pinnedCues}
             onDismissCue={session.dismissCue}
             drills={session.coachingPlan?.recommendedDrills}
             weakPoints={session.coachingPlan?.weakPoints}
           />
+          {pathStep && (
+            <p className="text-xs text-muted">
+              {pathStep.path.name} · step {pathStep.step} of {pathStep.total} · level {pathStep.level} · {describeGoal(pathStep.goal)}
+              {pathStep.focus ? ` · ${pathStep.focus}` : ""}{" "}
+              <Link href={`/learn/${skillId}`} className="text-accent">
+                Lesson
+              </Link>
+            </p>
+          )}
         </>
       }
     />
