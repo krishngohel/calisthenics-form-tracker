@@ -1,0 +1,926 @@
+{
+ "advanced-tuck-planche": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "bosu-single-leg-squats": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "chin-ups": {
+  "n": 1,
+  "holdPassRate": 0,
+  "T": {
+   "p10": 0.242,
+   "med": 0.242,
+   "p90": 0.242
+  },
+  "elbow": {
+   "p10": 106,
+   "med": 106,
+   "p90": 106
+  },
+  "knee": {
+   "p10": 26,
+   "med": 26,
+   "p90": 26
+  },
+  "hip": {
+   "p10": 46,
+   "med": 46,
+   "p90": 46
+  },
+  "bodyLine": {
+   "p10": 176,
+   "med": 176,
+   "p90": 176
+  },
+  "horizontal": {
+   "p10": 0.1,
+   "med": 0.1,
+   "p90": 0.1
+  },
+  "hangDepth": {
+   "p10": 0.59,
+   "med": 0.59,
+   "p90": 0.59
+  },
+  "lean": {
+   "p10": 0.18,
+   "med": 0.18,
+   "p90": 0.18
+  }
+ },
+ "crow-pose": {
+  "n": 12,
+  "holdPassRate": 17,
+  "T": {
+   "p10": 0.135,
+   "med": 0.321,
+   "p90": 0.464
+  },
+  "elbow": {
+   "p10": 112,
+   "med": 147,
+   "p90": 170
+  },
+  "knee": {
+   "p10": 46,
+   "med": 145,
+   "p90": 172
+  },
+  "hip": {
+   "p10": 26,
+   "med": 99,
+   "p90": 175
+  },
+  "bodyLine": {
+   "p10": 79,
+   "med": 120,
+   "p90": 179
+  },
+  "horizontal": {
+   "p10": 0.05,
+   "med": 0.85,
+   "p90": 0.97
+  },
+  "hangDepth": {
+   "p10": -1.16,
+   "med": -0.83,
+   "p90": -0.68
+  },
+  "lean": {
+   "p10": 0.15,
+   "med": 0.47,
+   "p90": 0.66
+  }
+ },
+ "dead-hang": {
+  "n": 4,
+  "holdPassRate": 25,
+  "T": {
+   "p10": 0.192,
+   "med": 0.225,
+   "p90": 0.254
+  },
+  "elbow": {
+   "p10": 123,
+   "med": 160,
+   "p90": 172
+  },
+  "knee": {
+   "p10": 96,
+   "med": 173,
+   "p90": 179
+  },
+  "hip": {
+   "p10": 163,
+   "med": 173,
+   "p90": 175
+  },
+  "bodyLine": {
+   "p10": 169,
+   "med": 173,
+   "p90": 179
+  },
+  "horizontal": {
+   "p10": 0.01,
+   "med": 0.08,
+   "p90": 0.14
+  },
+  "hangDepth": {
+   "p10": 0.55,
+   "med": 0.9,
+   "p90": 0.94
+  },
+  "lean": {
+   "p10": 0,
+   "med": 0.03,
+   "p90": 0.11
+  }
+ },
+ "dips": {
+  "n": 2,
+  "holdPassRate": 100,
+  "T": {
+   "p10": 0.048,
+   "med": 0.145,
+   "p90": 0.145
+  },
+  "elbow": {
+   "p10": 47,
+   "med": 170,
+   "p90": 170
+  },
+  "knee": {
+   "p10": 91,
+   "med": 170,
+   "p90": 170
+  },
+  "hip": {
+   "p10": 86,
+   "med": 171,
+   "p90": 171
+  },
+  "bodyLine": {
+   "p10": 156,
+   "med": 176,
+   "p90": 176
+  },
+  "horizontal": {
+   "p10": 0.03,
+   "med": 0.11,
+   "p90": 0.11
+  },
+  "hangDepth": {
+   "p10": -1.39,
+   "med": -0.59,
+   "p90": -0.59
+  },
+  "lean": {
+   "p10": 0.01,
+   "med": 0.05,
+   "p90": 0.05
+  }
+ },
+ "dragon-squats": {
+  "n": 1,
+  "holdPassRate": 0,
+  "T": {
+   "p10": 0.321,
+   "med": 0.321,
+   "p90": 0.321
+  },
+  "elbow": {
+   "p10": 60,
+   "med": 60,
+   "p90": 60
+  },
+  "knee": {
+   "p10": 106,
+   "med": 106,
+   "p90": 106
+  },
+  "hip": {
+   "p10": 82,
+   "med": 82,
+   "p90": 82
+  },
+  "bodyLine": {
+   "p10": 149,
+   "med": 149,
+   "p90": 149
+  },
+  "horizontal": {
+   "p10": 0.04,
+   "med": 0.04,
+   "p90": 0.04
+  },
+  "hangDepth": {
+   "p10": -0.07,
+   "med": -0.07,
+   "p90": -0.07
+  },
+  "lean": {
+   "p10": 0.1,
+   "med": 0.1,
+   "p90": 0.1
+  }
+ },
+ "frog-stand": {
+  "n": 1,
+  "holdPassRate": 0,
+  "T": {
+   "p10": 0.028,
+   "med": 0.028,
+   "p90": 0.028
+  },
+  "elbow": {
+   "p10": 164,
+   "med": 164,
+   "p90": 164
+  },
+  "knee": {
+   "p10": 178,
+   "med": 178,
+   "p90": 178
+  },
+  "hip": {
+   "p10": 172,
+   "med": 172,
+   "p90": 172
+  },
+  "bodyLine": {
+   "p10": 175,
+   "med": 175,
+   "p90": 175
+  },
+  "horizontal": {
+   "p10": 0,
+   "med": 0,
+   "p90": 0
+  },
+  "hangDepth": {
+   "p10": -1.06,
+   "med": -1.06,
+   "p90": -1.06
+  },
+  "lean": {
+   "p10": 0.06,
+   "med": 0.06,
+   "p90": 0.06
+  }
+ },
+ "front-lever": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "handstand": {
+  "n": 6,
+  "holdPassRate": 83,
+  "T": {
+   "p10": 0.14,
+   "med": 0.213,
+   "p90": 0.311
+  },
+  "elbow": {
+   "p10": 93,
+   "med": 155,
+   "p90": 179
+  },
+  "knee": {
+   "p10": 165,
+   "med": 172,
+   "p90": 175
+  },
+  "hip": {
+   "p10": 122,
+   "med": 160,
+   "p90": 176
+  },
+  "bodyLine": {
+   "p10": 158,
+   "med": 173,
+   "p90": 177
+  },
+  "horizontal": {
+   "p10": 0.01,
+   "med": 0.06,
+   "p90": 0.12
+  },
+  "hangDepth": {
+   "p10": -1.32,
+   "med": -0.75,
+   "p90": -0.08
+  },
+  "lean": {
+   "p10": 0,
+   "med": 0.05,
+   "p90": 0.1
+  }
+ },
+ "handstand-push-ups": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "handstand-push-ups-90": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "l-sit": {
+  "n": 10,
+  "holdPassRate": 40,
+  "T": {
+   "p10": 0.232,
+   "med": 0.31,
+   "p90": 0.378
+  },
+  "elbow": {
+   "p10": 154,
+   "med": 174,
+   "p90": 177
+  },
+  "knee": {
+   "p10": 67,
+   "med": 139,
+   "p90": 173
+  },
+  "hip": {
+   "p10": 49,
+   "med": 86,
+   "p90": 117
+  },
+  "bodyLine": {
+   "p10": 92,
+   "med": 105,
+   "p90": 172
+  },
+  "horizontal": {
+   "p10": 0.13,
+   "med": 0.36,
+   "p90": 0.52
+  },
+  "hangDepth": {
+   "p10": -1.31,
+   "med": -1.15,
+   "p90": -0.94
+  },
+  "lean": {
+   "p10": 0.01,
+   "med": 0.03,
+   "p90": 0.22
+  }
+ },
+ "muscle-up": {
+  "n": 2,
+  "holdPassRate": 50,
+  "T": {
+   "p10": 0.024,
+   "med": 0.379,
+   "p90": 0.379
+  },
+  "elbow": {
+   "p10": 61,
+   "med": 156,
+   "p90": 156
+  },
+  "knee": {
+   "p10": 1,
+   "med": 173,
+   "p90": 173
+  },
+  "hip": {
+   "p10": 69,
+   "med": 167,
+   "p90": 167
+  },
+  "bodyLine": {
+   "p10": 91,
+   "med": 171,
+   "p90": 171
+  },
+  "horizontal": {
+   "p10": 0.02,
+   "med": 0.42,
+   "p90": 0.42
+  },
+  "hangDepth": {
+   "p10": -0.7,
+   "med": 0.32,
+   "p90": 0.32
+  },
+  "lean": {
+   "p10": 0.02,
+   "med": 0.03,
+   "p90": 0.03
+  }
+ },
+ "nordic-curls": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "one-arm-handstand": {
+  "n": 2,
+  "holdPassRate": 100,
+  "T": {
+   "p10": 0.249,
+   "med": 0.282,
+   "p90": 0.282
+  },
+  "elbow": {
+   "p10": 165,
+   "med": 177,
+   "p90": 177
+  },
+  "knee": {
+   "p10": 129,
+   "med": 169,
+   "p90": 169
+  },
+  "hip": {
+   "p10": 90,
+   "med": 132,
+   "p90": 132
+  },
+  "bodyLine": {
+   "p10": 101,
+   "med": 139,
+   "p90": 139
+  },
+  "horizontal": {
+   "p10": 0.12,
+   "med": 0.89,
+   "p90": 0.89
+  },
+  "hangDepth": {
+   "p10": -1.42,
+   "med": -0.26,
+   "p90": -0.26
+  },
+  "lean": {
+   "p10": 0.09,
+   "med": 0.21,
+   "p90": 0.21
+  }
+ },
+ "pistol-squats": {
+  "n": 8,
+  "holdPassRate": 0,
+  "T": {
+   "p10": 0.178,
+   "med": 0.357,
+   "p90": 0.39
+  },
+  "elbow": {
+   "p10": 3,
+   "med": 105,
+   "p90": 172
+  },
+  "knee": {
+   "p10": 18,
+   "med": 110,
+   "p90": 124
+  },
+  "hip": {
+   "p10": 50,
+   "med": 99,
+   "p90": 117
+  },
+  "bodyLine": {
+   "p10": 107,
+   "med": 131,
+   "p90": 179
+  },
+  "horizontal": {
+   "p10": 0.02,
+   "med": 0.12,
+   "p90": 0.29
+  },
+  "hangDepth": {
+   "p10": -0.69,
+   "med": -0.26,
+   "p90": 0.43
+  },
+  "lean": {
+   "p10": 0.03,
+   "med": 0.36,
+   "p90": 1.33
+  }
+ },
+ "planche": {
+  "n": 1,
+  "holdPassRate": 100,
+  "T": {
+   "p10": 0.38,
+   "med": 0.38,
+   "p90": 0.38
+  },
+  "elbow": {
+   "p10": 170,
+   "med": 170,
+   "p90": 170
+  },
+  "knee": {
+   "p10": 47,
+   "med": 47,
+   "p90": 47
+  },
+  "hip": {
+   "p10": 174,
+   "med": 174,
+   "p90": 174
+  },
+  "bodyLine": {
+   "p10": 145,
+   "med": 145,
+   "p90": 145
+  },
+  "horizontal": {
+   "p10": 0.81,
+   "med": 0.81,
+   "p90": 0.81
+  },
+  "hangDepth": {
+   "p10": -0.95,
+   "med": -0.95,
+   "p90": -0.95
+  },
+  "lean": {
+   "p10": 0.91,
+   "med": 0.91,
+   "p90": 0.91
+  }
+ },
+ "planche-lean": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "plank-hold": {
+  "n": 13,
+  "holdPassRate": 31,
+  "T": {
+   "p10": 0.247,
+   "med": 0.326,
+   "p90": 0.429
+  },
+  "elbow": {
+   "p10": 80,
+   "med": 152,
+   "p90": 167
+  },
+  "knee": {
+   "p10": 111,
+   "med": 164,
+   "p90": 174
+  },
+  "hip": {
+   "p10": 139,
+   "med": 166,
+   "p90": 177
+  },
+  "bodyLine": {
+   "p10": 140,
+   "med": 173,
+   "p90": 179
+  },
+  "horizontal": {
+   "p10": 0.58,
+   "med": 0.76,
+   "p90": 0.86
+  },
+  "hangDepth": {
+   "p10": -1.19,
+   "med": -1.04,
+   "p90": -0.72
+  },
+  "lean": {
+   "p10": 0.03,
+   "med": 0.23,
+   "p90": 0.55
+  }
+ },
+ "pseudo-planche-push-ups": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "pull-ups": {
+  "n": 3,
+  "holdPassRate": 0,
+  "T": {
+   "p10": 0.171,
+   "med": 0.469,
+   "p90": 0.472
+  },
+  "elbow": {
+   "p10": 82,
+   "med": 84,
+   "p90": 166
+  },
+  "knee": {
+   "p10": 93,
+   "med": 102,
+   "p90": 115
+  },
+  "hip": {
+   "p10": 34,
+   "med": 36,
+   "p90": 157
+  },
+  "bodyLine": {
+   "p10": 11,
+   "med": 96,
+   "p90": 173
+  },
+  "horizontal": {
+   "p10": 0.05,
+   "med": 0.14,
+   "p90": 0.43
+  },
+  "hangDepth": {
+   "p10": 0.49,
+   "med": 0.75,
+   "p90": 0.83
+  },
+  "lean": {
+   "p10": 0.06,
+   "med": 0.12,
+   "p90": 0.2
+  }
+ },
+ "push-ups": {
+  "n": 4,
+  "holdPassRate": 50,
+  "T": {
+   "p10": 0.238,
+   "med": 0.344,
+   "p90": 0.386
+  },
+  "elbow": {
+   "p10": 79,
+   "med": 103,
+   "p90": 155
+  },
+  "knee": {
+   "p10": 36,
+   "med": 158,
+   "p90": 171
+  },
+  "hip": {
+   "p10": 71,
+   "med": 155,
+   "p90": 176
+  },
+  "bodyLine": {
+   "p10": 129,
+   "med": 157,
+   "p90": 172
+  },
+  "horizontal": {
+   "p10": 0.51,
+   "med": 0.79,
+   "p90": 0.91
+  },
+  "hangDepth": {
+   "p10": -1.54,
+   "med": -0.86,
+   "p90": -0.81
+  },
+  "lean": {
+   "p10": 0.07,
+   "med": 0.31,
+   "p90": 0.36
+  }
+ },
+ "scapular-pulls": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "shrimp-squats": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "sissy-squats": {
+  "n": 7,
+  "holdPassRate": 29,
+  "T": {
+   "p10": 0.192,
+   "med": 0.356,
+   "p90": 0.4
+  },
+  "elbow": {
+   "p10": 29,
+   "med": 80,
+   "p90": 154
+  },
+  "knee": {
+   "p10": 26,
+   "med": 57,
+   "p90": 126
+  },
+  "hip": {
+   "p10": 49,
+   "med": 100,
+   "p90": 116
+  },
+  "bodyLine": {
+   "p10": 122,
+   "med": 141,
+   "p90": 178
+  },
+  "horizontal": {
+   "p10": 0.01,
+   "med": 0.03,
+   "p90": 0.18
+  },
+  "hangDepth": {
+   "p10": -0.76,
+   "med": -0.2,
+   "p90": 0.42
+  },
+  "lean": {
+   "p10": 0.03,
+   "med": 0.28,
+   "p90": 1.03
+  }
+ },
+ "skin-the-cat": {
+  "n": 0,
+  "holdPassRate": null,
+  "T": null,
+  "elbow": null,
+  "knee": null,
+  "hip": null,
+  "bodyLine": null,
+  "horizontal": null,
+  "hangDepth": null,
+  "lean": null
+ },
+ "straddle-planche": {
+  "n": 1,
+  "holdPassRate": 0,
+  "T": {
+   "p10": 0.323,
+   "med": 0.323,
+   "p90": 0.323
+  },
+  "elbow": {
+   "p10": 150,
+   "med": 150,
+   "p90": 150
+  },
+  "knee": {
+   "p10": 178,
+   "med": 178,
+   "p90": 178
+  },
+  "hip": {
+   "p10": 174,
+   "med": 174,
+   "p90": 174
+  },
+  "bodyLine": {
+   "p10": 149,
+   "med": 149,
+   "p90": 149
+  },
+  "horizontal": {
+   "p10": 0.86,
+   "med": 0.86,
+   "p90": 0.86
+  },
+  "hangDepth": {
+   "p10": -0.93,
+   "med": -0.93,
+   "p90": -0.93
+  },
+  "lean": {
+   "p10": 0.77,
+   "med": 0.77,
+   "p90": 0.77
+  }
+ },
+ "tuck-planche": {
+  "n": 3,
+  "holdPassRate": 0,
+  "T": {
+   "p10": 0.073,
+   "med": 0.081,
+   "p90": 0.09
+  },
+  "elbow": {
+   "p10": 96,
+   "med": 121,
+   "p90": 171
+  },
+  "knee": {
+   "p10": 172,
+   "med": 176,
+   "p90": 178
+  },
+  "hip": {
+   "p10": 167,
+   "med": 169,
+   "p90": 170
+  },
+  "bodyLine": {
+   "p10": 173,
+   "med": 176,
+   "p90": 177
+  },
+  "horizontal": {
+   "p10": 0.05,
+   "med": 0.13,
+   "p90": 0.14
+  },
+  "hangDepth": {
+   "p10": -0.81,
+   "med": -0.29,
+   "p90": -0.25
+  },
+  "lean": {
+   "p10": 0.1,
+   "med": 0.19,
+   "p90": 0.24
+  }
+ }
+}

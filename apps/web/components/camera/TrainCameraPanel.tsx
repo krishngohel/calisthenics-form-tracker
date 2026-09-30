@@ -15,9 +15,11 @@ interface TrainCameraPanelProps {
   framingGuidance?: string | null;
   isManualFraming?: boolean;
   onEnableAutoFraming?: () => void;
-  /** Full-screen training view. */
+  /** Full-screen training view (desktop; phones are always full-screen). */
   focus?: boolean;
   onToggleFocus?: () => void;
+  /** Fill the parent stage instead of rendering as a card. */
+  stage?: boolean;
   voiceEnabled?: boolean;
   voiceSupported?: boolean;
   onToggleVoice?: () => void;
@@ -46,6 +48,7 @@ export function TrainCameraPanel({
   voiceEnabled = false,
   voiceSupported = false,
   onToggleVoice,
+  stage = false,
   children,
   footer,
 }: TrainCameraPanelProps) {
@@ -55,7 +58,9 @@ export function TrainCameraPanel({
 
   const frameClass = focus
     ? "fixed inset-0 z-[60] bg-black"
-    : "relative -mx-4 aspect-[3/4] max-h-[72vh] overflow-hidden bg-black shadow-card sm:mx-0 sm:aspect-video sm:max-h-none sm:rounded-2xl sm:border sm:border-border";
+    : stage
+      ? "relative h-full w-full bg-black max-lg:absolute max-lg:inset-0 lg:aspect-video"
+      : "relative -mx-4 aspect-[3/4] max-h-[72vh] overflow-hidden bg-black shadow-card sm:mx-0 sm:aspect-video sm:max-h-none sm:rounded-2xl sm:border sm:border-border";
 
   return (
     <div>
@@ -67,14 +72,24 @@ export function TrainCameraPanel({
           onFacingModeChange={onFacingModeChange}
           onStreamReady={onStreamReady}
           showFlipButton
-          flipButtonClassName="absolute right-3 z-30 top-[max(0.75rem,env(safe-area-inset-top))] cam-btn"
+          flipButtonClassName={
+            stage
+              ? "absolute right-3 z-30 top-[calc(max(0.75rem,env(safe-area-inset-top))+10.25rem)] cam-btn"
+              : "absolute right-3 z-30 top-[max(0.75rem,env(safe-area-inset-top))] cam-btn"
+          }
           onVideoReady={onVideoReady}
           onError={setCameraError}
         />
         {!cameraError && children}
 
         {!cameraError && (
-          <div className="absolute right-3 z-30 flex flex-col gap-2 top-[calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)]">
+          <div
+          className={`absolute right-3 z-30 flex flex-col gap-2 ${
+            stage
+              ? "top-[calc(max(0.75rem,env(safe-area-inset-top))+13.5rem)]"
+              : "top-[calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)]"
+          }`}
+        >
             {onToggleVoice && voiceSupported && (
               <button
                 type="button"
@@ -88,7 +103,7 @@ export function TrainCameraPanel({
                 <SpeakerIcon muted={!voiceEnabled} />
               </button>
             )}
-            {onToggleFocus && (
+            {onToggleFocus && !stage && (
               <button
                 type="button"
                 onClick={onToggleFocus}
@@ -112,7 +127,7 @@ export function TrainCameraPanel({
           )}
       </div>
 
-      {!focus && (footer || showFraming) && (
+      {!focus && !stage && (footer || showFraming) && (
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
           {footer && <span>{footer}</span>}
           {showFraming && framingLabel && !isManualFraming && (

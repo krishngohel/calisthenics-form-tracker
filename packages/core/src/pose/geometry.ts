@@ -237,9 +237,9 @@ export function hangDepth(lm: Body): number {
   return (shoulder.y - wrist.y) / bodyUnit(lm);
 }
 
-/** Straight-arm hang: shoulders well below the hands. */
+/** Straight-arm hang: shoulders well below the hands (photographed hangs: 0.55–0.94 T). */
 export function isHanging(lm: Body): boolean {
-  return hangDepth(lm) > 0.6;
+  return hangDepth(lm) > 0.5;
 }
 
 /** Mean squared displacement of a landmark over `history`, in body units². */
@@ -299,4 +299,62 @@ export function shoulderStackOffset(lm: Body): number {
   const wrist = midpoint(lm.leftWrist, lm.rightWrist);
   if (!shoulder || !wrist) return Infinity;
   return Math.abs(shoulder.x - wrist.x) / bodyUnit(lm);
+}
+
+/**
+ * Camera frame rotation relative to gravity, in degrees clockwise: 0 when the
+ * top of the frame is up, 180 when the phone is propped upside down, 90/270
+ * for landscape. Pose alone cannot tell a dead hang from a handstand in an
+ * upside-down frame, so rules must run in gravity-up space.
+ */
+export type FrameRotation = 0 | 90 | 180 | 270;
+
+/**
+ * Rotate isotropic landmarks so that "down" in the result is gravity-down.
+ * `aspect` is the frame width / height (the x range after toIsotropic).
+ */
+export function orientToGravity(body: Body, rotation: FrameRotation, aspect: number): Body {
+  if (rotation === 0) return body;
+  const w = aspect;
+  const h = 1;
+  const out: Body = {};
+  for (const [key, lm] of Object.entries(body)) {
+    if (!lm) {
+      out[key] = null;
+      continue;
+    }
+    let x = lm.x;
+    let y = lm.y;
+    if (rotation === 180) {
+      x = w - x;
+      y = h - y;
+    } else if (rotation === 90) {
+      // Frame top is at gravity-right: rotate 90° counter-clockwise.
+      const nx = y;
+      const ny = w - x;
+      x = nx;
+      y = ny;
+    } else {
+      const nx = h - y;
+      const ny = x;
+      x = nx;
+      y = ny;
+    }
+    out[key] = { ...lm, x, y };
+  }
+  return out;
+}
+
+/**
+ * Derive the frame rotation from a DeviceOrientation reading. `beta` is the
+ * front-back tilt (about 90° for a phone standing upright), `gamma` the
+ * left-right tilt. Returns null when the phone is lying flat (ambiguous).
+ */
+export function frameRotationFromOrientation(beta: number | null, gamma: number | null): FrameRotation | null {
+  if (beta === null || gamma === null) return null;
+  const upright = Math.abs(beta) > 35;
+  if (!upright && Math.abs(gamma) < 35) return null; // flat on a table
+  if (Math.abs(gamma) >= 45 && Math.abs(beta) < 60) return gamma > 0 ? 90 : 270;
+  if (beta < -35) return 180;
+  return 0;
 }

@@ -12,12 +12,17 @@
     "build:ios": "CAPACITOR_BUILD=1 next build && cap sync ios",
     "ios": "cap open ios",
     "ios:add": "cap add ios",
-    "test": "vitest run"
+    "test": "vitest run",
+    "preview": "node scripts/serve-out.mjs",
+    "test:e2e": "playwright test",
+    "build:export": "CAPACITOR_BUILD=1 next build"
   },
   "dependencies": {
     "@capacitor/core": "^6.2.2",
+    "@capacitor/filesystem": "^6.0.4",
     "@capacitor/haptics": "^6.0.3",
     "@capacitor/ios": "^6.2.2",
+    "@capacitor/share": "^6.0.4",
     "@capacitor/splash-screen": "^6.0.4",
     "@capacitor/status-bar": "^6.0.3",
     "@cft/core": "*",
@@ -37,6 +42,7 @@
   "devDependencies": {
     "@capacitor/cli": "^6.2.2",
     "@netlify/plugin-nextjs": "^5.9.0",
+    "@playwright/test": "^1.47.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

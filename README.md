@@ -98,7 +98,19 @@ Each skill has explicit hold criteria and continuously scored metrics (0–100, 
 - **Front lever** perfect mode requires straight arms as well as a straight body
 - **Planche family** shares one evaluator: lean, horizontality, leg position, and elbow lock, with per-progression thresholds
 
-Threshold constants are documented at the top of `packages/core/src/skills/registry.ts` with the anthropometric ratios they were chosen against.
+Threshold constants are documented at the top of `packages/core/src/skills/registry.ts`. Where reference data exists they are set from it; elsewhere from anthropometric ratios.
+
+### Reference data (`tools/pose-reference`)
+
+Rules and target skeletons are checked against real athletes, not guesses:
+
+1. `node search-commons.mjs` finds free-licence photos per skill on Wikimedia Commons (`manifest.json`, committed).
+2. `node download.mjs <dir>` fetches candidates into a scratch directory (photos are never committed).
+3. `node extract.mjs <dir>` runs MoveNet Thunder over them in headless Chrome → `landmarks.json`.
+4. `npx tsx analyze.ts` gates detections by skill-family geometry and prints per-skill measurement ranges and the current rule pass rate; `node sheet.mjs <dir> <out>` renders contact sheets with skeletons for review.
+5. `npx tsx derive-targets.ts` writes `packages/core/src/skills/targetPoses.generated.json`, the median hip-centred, torso-scaled skeleton per skill, used for Learn mode where enough images exist.
+
+Landmarks from reviewed photos live in `packages/core/src/__tests__/fixtures/reference-poses.json`; `referencePoses.test.ts` asserts every one passes its skill's hold criteria. Skills with data-backed rules and skeletons so far: plank, push-up, dead hang, L-sit, handstand, crow.
 
 Visit `/dev/pose-benchmark` to compare providers on your device. The winner is saved to `localStorage` as `cft-body-provider`.
 

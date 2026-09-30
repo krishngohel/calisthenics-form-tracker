@@ -14,7 +14,17 @@ export interface HandLandmarks {
   right: Landmark[] | null;
 }
 
-export type BodyProviderId = "movenet" | "mediapipe";
+/**
+ * Pose model. MoveNet Lightning is fastest; Thunder is ~2.5× the cost with
+ * noticeably better keypoint precision; MediaPipe Pose Lite gives 33 points.
+ */
+export type BodyProviderId = "movenet" | "movenet-thunder" | "mediapipe";
+
+export const BODY_PROVIDER_LABELS: Record<BodyProviderId, string> = {
+  movenet: "MoveNet Lightning · fastest",
+  "movenet-thunder": "MoveNet Thunder · more accurate",
+  mediapipe: "MediaPipe Pose Lite · 33 points",
+};
 
 export interface PoseFrame {
   body: BodyLandmarks;

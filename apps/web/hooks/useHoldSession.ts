@@ -60,6 +60,17 @@ export type SaveState =
 const MIN_RECORDED_HOLD_MS = 500;
 /** Learn-mode checklist re-renders at most this often unless a pass/fail flips. */
 const LEARN_METRICS_INTERVAL_MS = 300;
+/** Rule telemetry cadence: one line per second in the console (readable from the native log). */
+const RULE_LOG_INTERVAL_MS = 1000;
+
+function logRules(skillId: string, evaluation: SkillEvaluation, state: string) {
+  const m = evaluation.measures;
+  const metrics = evaluation.metrics.map((x) => `${x.id}=${x.score}${x.passed ? "✓" : "✗"}`).join(" ");
+  console.log(
+    `[rules] ${skillId} state=${state} hold=${evaluation.holdCriteriaMet} perfect=${evaluation.perfectCriteriaMet} form=${evaluation.formScore} vis=${evaluation.visibilityOk} | ${metrics} | ` +
+      (m ? `T=${m.T} elbow=${m.elbow} knee=${m.knee} hip=${m.hip} line=${m.bodyLine} horiz=${m.horizontal} hang=${m.hangDepth} lean=${m.lean} inv=${m.inverted} support=${m.support} visAvg=${m.visibility}` : "")
+  );
+}
 
 function sameView(a: HoldView, b: HoldView): boolean {
   return (
@@ -99,6 +110,9 @@ export function useHoldSession(mode: HoldMode) {
   const [holdView, setHoldView] = useState<HoldView>(INITIAL_HOLD_VIEW);
 
   const learnMetricsRef = useRef<FormMetric[]>([]);
+  const ruleLogAtRef = useRef(0);
+  const [liveMetrics, setLiveMetrics] = useState<FormMetric[]>([]);
+  const liveMetricsAtRef = useRef(0);
   const learnSignatureRef = useRef("");
   const learnUpdatedAtRef = useRef(0);
   const [learnMetrics, setLearnMetrics] = useState<FormMetric[]>([]);
@@ -193,6 +207,15 @@ export function useHoldSession(mode: HoldMode) {
       machine.setMode(holdMode);
       const result = machine.tick(criteriaMet, now);
 
+      if (now - ruleLogAtRef.current >= RULE_LOG_INTERVAL_MS) {
+        ruleLogAtRef.current = now;
+        logRules(skillId, evaluation, result.state);
+      }
+      if (now - liveMetricsAtRef.current >= LEARN_METRICS_INTERVAL_MS) {
+        liveMetricsAtRef.current = now;
+        setLiveMetrics(evaluation.metrics);
+      }
+
       if (result.state === "holding" || result.state === "qualifying") {
         accumulatorRef.current.push(evaluation.formScore, evaluation.metrics);
       } else if (result.state === "idle" && accumulatorRef.current.frameCount > 0) {
@@ -268,6 +291,7 @@ export function useHoldSession(mode: HoldMode) {
     learnSignatureRef.current = "";
     learnUpdatedAtRef.current = 0;
     setLearnMetrics([]);
+    setLiveMetrics([]);
     viewRef.current = INITIAL_HOLD_VIEW;
     setHoldView(INITIAL_HOLD_VIEW);
   }, [resetCues, resetProgress, resetFormScore]);
@@ -284,6 +308,8 @@ export function useHoldSession(mode: HoldMode) {
   return {
     holdView,
     learnMetrics,
+    /** Latest metrics in hold modes (~3 Hz), for the details sheet. */
+    liveMetrics,
     getLearnMetrics,
     bestHoldMs,
     lastHold,

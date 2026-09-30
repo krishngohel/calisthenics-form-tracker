@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732">
   <rect width="2732" height="2732" fill="#0b1512"/>
-  <g transform="translate(1366 1366) scale(0.55) translate(-512 -512)">
-    <circle cx="512" cy="512" r="330" fill="none" stroke="#134e48" stroke-width="56"/>
-    <circle cx="512" cy="512" r="330" fill="none" stroke="#2dd4bf" stroke-width="56" stroke-linecap="round" stroke-dasharray="1555 2074" transform="rotate(-90 512 512)"/>
-    <g stroke="#e8f4ee" stroke-width="44" stroke-linecap="round" stroke-linejoin="round" fill="none">
-      <circle cx="512" cy="300" r="52" fill="#e8f4ee" stroke="none"/>
-      <path d="M512 370v250M512 620l-120 170M512 620l120 170M512 430l-160-110M512 430l160-110"/>
+  <g transform="translate(1366 1366) scale(0.5) translate(-512 -512)">
+    <circle cx="512" cy="560" r="300" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="80"/>
+    <path d="M292 356 A300 300 0 1 0 732 356" fill="none" stroke="#2dd4bf" stroke-width="80" stroke-linecap="round"/>
+    <g stroke="#ffffff" stroke-width="54" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M430 790 L512 612 L594 790"/><path d="M512 612 V420"/><path d="M412 236 L512 420 L612 236"/>
     </g>
+    <circle cx="512" cy="700" r="46" fill="#ffffff"/>
   </g>
 </svg>

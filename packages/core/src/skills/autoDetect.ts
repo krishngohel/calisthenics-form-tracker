@@ -12,6 +12,9 @@ export interface SkillDetectionResult {
 }
 
 const MIN_CONFIDENCE = 45;
+
+/** Variants the camera cannot tell from their sibling (a wall handstand is a handstand); trained by name, never auto-named. */
+const NOT_AUTO_DETECTED = new Set(["wall-handstand"]);
 const MIN_MARGIN = 6;
 
 const INVERTED_SKILLS = new Set([
@@ -21,6 +24,14 @@ const INVERTED_SKILLS = new Set([
   "one-arm-handstand",
   "frog-stand",
   "crow-pose",
+  "headstand",
+  "wall-handstand",
+  "straddle-handstand",
+  "inverted-hang",
+  "deficit-handstand-push-ups",
+  "bent-arm-press",
+  "straddle-press",
+  "pike-press",
 ]);
 
 const PLANCHE_SKILLS = new Set([
@@ -38,6 +49,21 @@ const HANG_SKILLS = new Set([
   "pull-ups",
   "chin-ups",
   "muscle-up",
+  "negative-pull-ups",
+  "wide-pull-ups",
+  "l-sit-pull-ups",
+  "archer-pull-ups",
+  "one-arm-pull-ups",
+  "one-arm-dead-hang",
+  "l-hang",
+  "toes-to-bar",
+  "hanging-knee-raises",
+  "hanging-leg-raises",
+  "tuck-front-lever",
+  "advanced-tuck-front-lever",
+  "one-leg-front-lever",
+  "straddle-front-lever",
+  "front-lever",
 ]);
 
 const UPRIGHT_PUSH_PULL = new Set([
@@ -106,7 +132,7 @@ export function detectSkill(
   mode: HoldMode = "hold_only"
 ): SkillDetectionResult | null {
   const context = inferPoseContext(body);
-  const ranked: RankedSkill[] = SKILLS.map((skill) => {
+  const ranked: RankedSkill[] = SKILLS.filter((skill) => !NOT_AUTO_DETECTED.has(skill.id)).map((skill) => {
     const evaluation = evaluateSkill(skill.id, body, hands, history, mode);
     if (!evaluation) {
       return {
@@ -157,4 +183,37 @@ export function detectSkill(
     holdMatch: top.holdMatch,
     formScore: top.formScore,
   };
+}
+
+/**
+ * Temporal vote over recent detections. A single frame can favour the wrong
+ * skill during a transition (a pike on the way into a handstand looks like a
+ * pike push-up); requiring the same answer in most of the last few frames
+ * removes that flicker without adding much latency.
+ */
+export class SkillVote {
+  private recent: (string | null)[] = [];
+
+  constructor(private windowSize = 6, private needed = 4) {}
+
+  /** Push a detection (or null when nothing was confident) and return the current winner, if any. */
+  push(skillId: string | null): string | null {
+    this.recent.push(skillId);
+    if (this.recent.length > this.windowSize) this.recent.shift();
+    const counts = new Map<string, number>();
+    for (const id of this.recent) if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    let best: string | null = null;
+    let bestCount = 0;
+    counts.forEach((n, id) => {
+      if (n > bestCount) {
+        best = id;
+        bestCount = n;
+      }
+    });
+    return bestCount >= this.needed ? best : null;
+  }
+
+  reset(): void {
+    this.recent = [];
+  }
 }
